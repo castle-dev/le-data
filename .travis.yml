@@ -1,0 +1,21 @@
+language: node_js
+before_install:
+  - npm install -g gulp mocha
+  - npm install
+  - npm test
+install:
+  - 'git config --global user.email "travis-ci@entercastle.com"'
+  - 'git config --global user.name "Travis Castle"'
+script:
+  - gulp docs
+  - cd docs
+  - git init
+  - 'git remote add origin "https://${GH_TOKEN}@github.com/castle-dev/le-data-service.git"'
+  - git checkout -B gh-pages
+  - git add .
+  - 'git commit -m "Updating documentation"'
+  - 'git push origin gh-pages -fq > /dev/null'
+env:
+  global:
+    - ENVIRONMENT=staging
+    - secure: Os/SPHT0+mykJpPpxSFEVSNqyidRJrI6/sLlGb58UhnOaaJellPI5QpC6A1qXvS8u4eV3hUcD5F7KniBdlDEUxiRYOZPPgcEDF91yD6GTaXA+ZvlAIQQXaebARQYBIoPtV+eEL8ulE1leJvruBysPt64p6CP36i9LAT6EN/VNiel6HmEjA7MR4Cy9ohEL45UfsXXBDFvzqxJnBYv+tGumigE4m2xDrPNGQ0YJ3lmO5kmw0PAo9J+MsZ/j1aadH+2lDg/JlOvXPcvz9JDpb056HPDUlxPRXU1dYq8vhCVUUOgY3Nzicm8vPJSrlJfuIRWwkCkeMZMas1WBcALEDqIWQcNwjYsh6JB1fbvuIIP3uG7408lvNtGfUC/Jmmoi0TjFA7xiUZHBhiIo7XbU86wdKqZLpIhV94QKbfb64D5dGwW/IU3ynzqOiDdsr2tCD7CzZ8cQFGBnk0dKg/fVoZ5Ci957Dc0c8GGgThc4DAkD7vWEluNqggSI1G/PmKp5FdvJuSbtHfBj1Hru4z8ShwC4jVynuBbIP967cHH9mCWwaPoIc9Ptg3dSWi49trpvQgB33hkff3AhPblpaqiDtBCXro73R2vfoNnYiNo8r8OpNdi/oAfONFouDszNCxy48OcoVelay8I/kJCwzFeHMrs5VE1Vk4xpfNEZn4ro26bjaI=
