@@ -51,4 +51,25 @@ class LeDataService {
 
 		});
 	}
+
+	/**
+	 * Soft deletes the data in the database.
+	 * If a LeData object is configured with fields that cascade delete, the data at those fields will also soft delete.
+	 * Sets _deletedAt, and _lastUpdatedAt.
+	 *
+	 * Fails if the LeData object passed in does not matcht he LedData object stored in the database.
+	 * 		This is to insure that data writen to the database from another source is not inadvertently removed.
+	 * Fails if any of the values for the fields specified in the LeData interface differ from the ones saved in the database.
+	 *
+	 * @function deleteData
+	 * @memberof LeDataService
+	 * @instance
+	 * @param LeData - The data to delete.
+	 * @returns Promise<LeData> resolves with the data that was deleted.
+	 */
+	deleteData(data: LeData): Promise<LeData> {
+		return new Promise((resolve, reject) => {
+
+		});
+	}
 }

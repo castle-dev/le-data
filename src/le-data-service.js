@@ -12,6 +12,10 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
         });
     };
+    LeDataService.prototype.deleteData = function (data) {
+        return new ts_promise_1.default(function (resolve, reject) {
+        });
+    };
     return LeDataService;
 })();
 //# sourceMappingURL=le-data-service.js.map
