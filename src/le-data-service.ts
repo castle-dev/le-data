@@ -26,9 +26,7 @@ class LeDataService {
    * @returns Promise<LeData> resolves with the data that was saved.
    */
 	createData(data: LeData): Promise<LeData> {
-		return new Promise((resolve, reject) => {
-
-		});
+		return new Promise<LeData>((resolve, reject) => {});
 	}
 
 
@@ -47,9 +45,7 @@ class LeDataService {
    * @returns Promise<LeData> resolves with the data that was saved.
    */
 	updateData(data: LeData): Promise<LeData> {
-		return new Promise((resolve, reject) => {
-
-		});
+		return new Promise<LeData>((resolve, reject) => {});
 	}
 
 	/**
@@ -68,9 +64,7 @@ class LeDataService {
 	 * @returns Promise<LeData> - Resolves with the data that was deleted.
 	 */
 	deleteData(data: LeData): Promise<LeData> {
-		return new Promise((resolve, reject) => {
-
-		});
+		return new Promise<LeData>((resolve, reject) => {});
 	}
 
 	/**
@@ -114,9 +108,7 @@ class LeDataService {
 	 * @returns Promise<LeData> resolves with the desired data.
 	 */
 	search(query: LeDataQuery): Promise<LeData> {
-		return new Promise((resolve, reject) => {
-
-		});
+		return new Promise<LeData>((resolve, reject) => {});
 	}
 
 	/**
@@ -129,9 +121,7 @@ class LeDataService {
 	 * @param config LeTypeConfig - The object that defines how the type should be configured.
 	 * @returns Promis<any> - Resolves with no data when the type has been successfully configured.
 	 */
-	configureType(type: string, config: LeTypeConfig): Promise<any> {
-		return new Promise((resolve, reject) => {
-
-		});
+	configureType(type: string, config: LeTypeConfig): Promise<void> {
+		return new Promise<void>((resolve, reject) => {});
 	}
 }
