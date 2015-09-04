@@ -88,5 +88,16 @@ class LeDataService {
 	sync(query: LeDataQuery, callback:(data: LeData) => void, errorCallback:(error:Error)=>void): void {
 
 	}
-	
+
+	/**
+	 * Stops listening to a synced query. This needs to be called when the sync is no longer being used to avoid memory leaks and improve performance.
+	 *
+	 * @function unsync
+	 * @memberof LeDataService
+	 * @instance
+	 * @param query LeDataQuery - The query used in the origional sync. It must have the same id as the query used to sync. This insures that only the syncs used for that query object are removed.
+	 */
+	unsync(query: LeDataQuery): void {
+
+	}
 }

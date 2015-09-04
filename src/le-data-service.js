@@ -18,6 +18,8 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
     };
+    LeDataService.prototype.unsync = function (query) {
+    };
     return LeDataService;
 })();
 //# sourceMappingURL=le-data-service.js.map
