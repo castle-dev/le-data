@@ -65,7 +65,7 @@ class LeDataService {
 	 * @memberof LeDataService
 	 * @instance
 	 * @param data LeData - The data to delete.
-	 * @returns Promise<LeData> resolves with the data that was deleted.
+	 * @returns Promise<LeData> - Resolves with the data that was deleted.
 	 */
 	deleteData(data: LeData): Promise<LeData> {
 		return new Promise((resolve, reject) => {
@@ -76,7 +76,8 @@ class LeDataService {
 	/**
 	 * Retrieves the data that matches the query data, and retrieves it again every time the data that matches the query has changed.
 	 *
-	 *
+	 * Fails if the LeDataQuery object is invalid
+   *
 	 * @function sync
 	 * @memberof LeDataService
 	 * @instance
@@ -99,5 +100,38 @@ class LeDataService {
 	 */
 	unsync(query: LeDataQuery): void {
 
+	}
+
+	/**
+	 * Retrieves the data that matches the query data.
+	 *
+	 * Fails if the LeDataQuery object is invalid
+	 *
+	 * @function search
+	 * @memberof LeDataService
+	 * @instance
+	 * @param query LeDataQuery - The query used to get the data.
+	 * @returns Promise<LeData> resolves with the desired data.
+	 */
+	search(query: LeDataQuery): Promise<LeData> {
+		return new Promise((resolve, reject) => {
+
+		});
+	}
+
+	/**
+	 * Configures what passes as valid for the specified data type.
+	 *
+	 * @function configureType
+	 * @memberof LeDataService
+	 * @instance
+	 * @param type string - The name of the type to be configured.
+	 * @param config LeTypeConfig - The object that defines how the type should be configured.
+	 * @returns Promis<any> - Resolves with no data when the type has been successfully configured.
+	 */
+	configureType(type: string, config: LeTypeConfig): Promise<any> {
+		return new Promise((resolve, reject) => {
+
+		});
 	}
 }

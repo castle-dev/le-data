@@ -20,6 +20,14 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.unsync = function (query) {
     };
+    LeDataService.prototype.search = function (query) {
+        return new ts_promise_1.default(function (resolve, reject) {
+        });
+    };
+    LeDataService.prototype.configureType = function (type, config) {
+        return new ts_promise_1.default(function (resolve, reject) {
+        });
+    };
     return LeDataService;
 })();
 //# sourceMappingURL=le-data-service.js.map
