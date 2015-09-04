@@ -16,6 +16,8 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
         });
     };
+    LeDataService.prototype.sync = function (query, callback, errorCallback) {
+    };
     return LeDataService;
 })();
 //# sourceMappingURL=le-data-service.js.map

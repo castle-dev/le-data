@@ -22,7 +22,7 @@ class LeDataService {
    * @function createData
    * @memberof LeDataService
    * @instance
-   * @param LeData - The data to create.
+   * @param data LeData - The data to create.
    * @returns Promise<LeData> resolves with the data that was saved.
    */
 	createData(data: LeData): Promise<LeData> {
@@ -43,7 +43,7 @@ class LeDataService {
    * @function updateData
    * @memberof LeDataService
    * @instance
-   * @param LeData - The data to update.
+   * @param data LeData - The data to update.
    * @returns Promise<LeData> resolves with the data that was saved.
    */
 	updateData(data: LeData): Promise<LeData> {
@@ -64,7 +64,7 @@ class LeDataService {
 	 * @function deleteData
 	 * @memberof LeDataService
 	 * @instance
-	 * @param LeData - The data to delete.
+	 * @param data LeData - The data to delete.
 	 * @returns Promise<LeData> resolves with the data that was deleted.
 	 */
 	deleteData(data: LeData): Promise<LeData> {
@@ -72,4 +72,21 @@ class LeDataService {
 
 		});
 	}
+
+	/**
+	 * Retrieves the data that matches the query data, and retrieves it again every time the data that matches the query has changed.
+	 *
+	 *
+	 * @function sync
+	 * @memberof LeDataService
+	 * @instance
+	 * @param query LeDataQuery - The query used to get the data.
+	 * @param callback (data: LeData) => void - a function that is passed the data every time the data is retrieved from the remote storage provider
+	 * @param errorCallback (error: Error) => void - a function that is called if something went wrong with the data retrival,
+	 *					such as not having access to the requested data.
+	 */
+	sync(query: LeDataQuery, callback:(data: LeData) => void, errorCallback:(error:Error)=>void): void {
+
+	}
+	
 }
