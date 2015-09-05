@@ -13,7 +13,8 @@ interface LeData {
     _id?: string;
 
 		/**
-		* @var _type -  the type to validated the LeData object against. The type cannot end with the characters '[]'. That has reserved meaning as an array of the specified type.
+		* @var _type -  the type to validated the LeData object against. The type cannot end with the characters '[]'.
+    * '[]' at the end of a type has reserved meaning as an array of the specified type.
 		*/
 		_type: string;
 
