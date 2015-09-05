@@ -10,25 +10,25 @@ interface LeData {
 		/**
 		* @var _id -  the unique string for this specific data object
 		*/
-    _id: string;
+    _id?: string;
 
 		/**
-		* @var _type -  the type to validated the LeData object against
+		* @var _type -  the type to validated the LeData object against. The type cannot end with the characters '[]'. That has reserved meaning as an array of the specified type.
 		*/
 		_type: string;
 
 		/**
 		* @var _createdAt - the time the data was created in the remote storage provider
 		*/
-		_createdAt: Date;
+		_createdAt?: Date;
 
 		/**
 		* @var _lastUpdatedAt -  the time the data was last updated in the remote storage provider
 		*/
-		_lastUpdatedAt: Date;
+		_lastUpdatedAt?: Date;
 
 		/**
 		* @var _deletedAt -  the time the data was deleted in the remote storage provider
 		*/
-		_deletedAt: Date;
+		_deletedAt?: Date;
 }
