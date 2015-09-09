@@ -116,12 +116,13 @@ class LeDataService {
 	 *
 	 * @function configureType
 	 * @memberof LeDataService
+	 *
 	 * @instance
-	 * @param type string - The name of the type to be configured.
+	 *
 	 * @param config LeTypeConfig - The object that defines how the type should be configured.
 	 * @returns Promis<any> - Resolves with no data when the type has been successfully configured.
 	 */
-	configureType(type: string, config: LeTypeConfig): Promise<void> {
+	configureType(config: LeTypeConfig): Promise<void> {
 		return new Promise<void>((resolve, reject) => {});
 	}
 }

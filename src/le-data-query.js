@@ -4,7 +4,7 @@ var LeDataQuery = (function () {
     LeDataQuery.prototype.include = function (fieldName) {
         return new LeDataQuery('ExampleType');
     };
-    LeDataQuery.prototype.limitTo = function (fieldName, value) {
+    LeDataQuery.prototype.filterBy = function (fieldName, value) {
     };
     LeDataQuery.prototype.sortyBy = function (fieldName) {
     };

@@ -20,7 +20,7 @@ var LeDataService = (function () {
     LeDataService.prototype.search = function (query) {
         return new ts_promise_1.default(function (resolve, reject) { });
     };
-    LeDataService.prototype.configureType = function (type, config) {
+    LeDataService.prototype.configureType = function (config) {
         return new ts_promise_1.default(function (resolve, reject) { });
     };
     return LeDataService;

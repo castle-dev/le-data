@@ -1,1 +1,1 @@
-{"version":3,"file":"le-type-config.js","sourceRoot":"","sources":["le-type-config.ts"],"names":[],"mappings":""}
+{"version":3,"file":"le-type-config.js","sourceRoot":"","sources":["le-type-config.ts"],"names":["LeTypeConfig","LeTypeConfig.constructor","LeTypeConfig.addField"],"mappings":"AAOA;IAEEA,sBAAYA,IAAYA;IAExBC,CAACA;IAaDD,+BAAQA,GAARA,UAASA,SAAiBA,EAAEA,IAAYA;QACtCE,MAAMA,CAACA,IAAIA,iBAAiBA,CAACA,kBAAkBA,EAAEA,mBAAmBA,CAACA,CAACA;IACxEA,CAACA;IACHF,mBAACA;AAADA,CAACA,AApBD,IAoBC"}

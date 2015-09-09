@@ -32,13 +32,13 @@ class LeDataQuery {
 	 * limitTo cannot be called multiple times on the same query object.
 	 * Also calls sortyBy(fieldName)
 	 *
-	 * @function limitTo
+	 * @function filterBy
 	 * @memberof LeDataQuery
 	 * @instance
 	 * @param filedName string - the name of the field to check the values of
 	 * @param value any -  the value to check the field against. Only accepts primitive values such as strings, numbers, and booleans.
 	 */
-	limitTo(fieldName:string, value:any):void {
+	filterBy(fieldName:string, value:any):void {
 
 	}
 
@@ -79,7 +79,7 @@ class LeDataQuery {
 	 * @param number number -  the number of results to limit the query to
 	 */
 	limitToBottom(number: number) {
-		
+
 	}
 
 	/**
