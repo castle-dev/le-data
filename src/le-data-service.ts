@@ -1,6 +1,8 @@
 /// <reference path="le-data.ts"/>
 /// <reference path="../node_modules/ts-promise/dist/ts-promise.d.ts" />
+
 import Promise from "ts-promise";
+import LeDataServiceProvider from "./le-data-service-provider.ts";
 
 /**
  * The main service for the module.
@@ -12,7 +14,11 @@ import Promise from "ts-promise";
  *                                with the remote storage provider.
  *
  */
-class LeDataService {
+export class LeDataService {
+	private dataServiceProvider: LeDataServiceProvider;
+	constructor(provider: LeDataServiceProvider) {
+		this.dataServiceProvider = provider;
+	}
 
   /**
    * Creates the passed in data in the remote storage provider.
@@ -26,6 +32,34 @@ class LeDataService {
    * @returns Promise<LeData> resolves with the data that was saved.
    */
 	createData(data: LeData): Promise<LeData> {
+		if(!data){
+			var errorMessage = 'No data passed to createData function';
+			var error = new Error(errorMessage);
+			var promise = new Promise<LeData>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
+		if(!data._type) {
+			var errorMessage = 'No _type specified in LeData object passed to createData, object: ' + JSON.stringify(data);
+			var error = new Error(errorMessage);
+			var promise = new Promise<LeData>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
+		if(data._id) {
+			return this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
+				if(dataExists) {
+					var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
+					var error = new Error(errorMessage);
+					var promise = new Promise<LeData>((resolve, reject)=>{
+						reject(error);
+					});
+					return promise;
+				}
+			});
+		}
 		return new Promise<LeData>((resolve, reject) => {});
 	}
 
