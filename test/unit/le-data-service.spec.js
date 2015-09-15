@@ -86,6 +86,28 @@ describe('LeDataService', function () {
                 done();
             });
         });
+        it('should return the data that was returned from the save', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(false);
+            };
+            mockProvider.validateData = function (data) {
+                return ts_promise_1.default.resolve();
+            };
+            mockProvider.saveData = function (data) {
+                var objectReturnedFromSave = {
+                    returnedField: '1234'
+                };
+                return ts_promise_1.default.resolve(objectReturnedFromSave);
+            };
+            var returnedPromise = dataService.createData({
+                _id: 'existingDataID',
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(function (returnedData) {
+                expect(returnedData.returnedField).to.equal('1234');
+                done();
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

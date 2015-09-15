@@ -60,8 +60,8 @@ export class LeDataService {
 					}
 				}).then(()=>{
 					return this.dataServiceProvider.saveData(data);
-				}).then(()=>{
-					resolve(data);
+				}).then((returnedData)=>{
+					resolve(returnedData);
 				}, (err)=>{
 					reject(err);
 				});

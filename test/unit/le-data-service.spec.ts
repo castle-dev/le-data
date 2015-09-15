@@ -90,5 +90,27 @@ describe('LeDataService', ()=>{
           done();
         });
       });
+      it('should return the data that was returned from the save', (done)=>{
+        mockProvider.dataExists = function (type, id) {
+          return Promise.resolve(false);
+        };
+        mockProvider.validateData = function (data) {
+          return Promise.resolve();
+        };
+        mockProvider.saveData = function (data) {
+          var objectReturnedFromSave = {
+            returnedField: '1234'
+          };
+          return Promise.resolve(objectReturnedFromSave);
+        }
+        var returnedPromise = dataService.createData({
+          _id: 'existingDataID',
+          _type: 'ExampleType'
+        });
+        returnedPromise.then((returnedData)=> {
+          expect(returnedData.returnedField).to.equal('1234');
+          done();
+        });
+      });
     });
 });
