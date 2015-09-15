@@ -6,6 +6,7 @@ var LeDataService = (function () {
         this.dataServiceProvider = provider;
     }
     LeDataService.prototype.createData = function (data) {
+        var _this = this;
         if (!data) {
             var errorMessage = 'No data passed to createData function';
             var error = new Error(errorMessage);
@@ -31,6 +32,14 @@ var LeDataService = (function () {
                         reject(error);
                     });
                     return promise;
+                }
+                else {
+                    var validationPromise = _this.dataServiceProvider.validateData(data);
+                    return validationPromise.then(function () {
+                        return new ts_promise_1.default(function (resolve, reject) {
+                            resolve(data);
+                        });
+                    });
                 }
             });
         }

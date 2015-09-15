@@ -57,6 +57,13 @@ export class LeDataService {
 						reject(error);
 					});
 					return promise;
+				} else {
+					var validationPromise = this.dataServiceProvider.validateData(data);
+					return validationPromise.then(()=>{
+						return new Promise<LeData>((resolve, reject)=>{
+							resolve(data);
+						});
+					});
 				}
 			});
 		}

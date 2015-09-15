@@ -51,5 +51,23 @@ describe('LeDataService', ()=>{
           done();
         });
       });
+      it('should reject if data is invalid', (done)=>{
+        mockProvider.dataExists = function (type, id) {
+          return Promise.resolve(false);
+        };
+        mockProvider.validateData = function (data) {
+          var errorMessage = 'Error message returned from validateData';
+          var error = new Error(errorMessage);
+          return Promise.reject(error);
+        };
+        var returnedPromise = dataService.createData({
+          _id: 'existingDataID',
+          _type: 'ExampleType'
+        });
+        returnedPromise.then(undefined, (err)=> {
+          expect(err.message).to.equal('Error message returned from validateData');
+          done();
+        });
+      });
     });
 });

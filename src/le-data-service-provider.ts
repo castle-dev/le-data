@@ -3,7 +3,7 @@ import Promise from "ts-promise";
 
 export interface LeDataServiceProvider {
   dataExists(type: string, id: string): Promise<boolean>;
-  checkDataValidity(type:string, id: string): Promise<boolean>;
+  validateData(data: LeData): Promise<void>;
   saveData(type:string, id: string): Promise<LeData>;
   saveTypeConfig(config: LeTypeConfig): Promise<void>;
   // sync(type: string, id?: string, config?: LeDataServiceProviderSyncConfig);
