@@ -59,6 +59,8 @@ export class LeDataService {
 						return this.dataServiceProvider.validateData(data);
 					}
 				}).then(()=>{
+					return this.dataServiceProvider.saveData(data);
+				}).then(()=>{
 					resolve(data);
 				}, (err)=>{
 					reject(err);

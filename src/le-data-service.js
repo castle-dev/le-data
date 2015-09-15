@@ -35,6 +35,8 @@ var LeDataService = (function () {
                         return _this.dataServiceProvider.validateData(data);
                     }
                 }).then(function () {
+                    return _this.dataServiceProvider.saveData(data);
+                }).then(function () {
                     resolve(data);
                 }, function (err) {
                     reject(err);
