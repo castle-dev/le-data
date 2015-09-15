@@ -49,22 +49,20 @@ export class LeDataService {
 			return promise;
 		}
 		if(data._id) {
-			return this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
-				if(dataExists) {
-					var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
-					var error = new Error(errorMessage);
-					var promise = new Promise<LeData>((resolve, reject)=>{
+			return new Promise<LeData>((resolve, reject)=>{
+				this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
+					if(dataExists){
+						var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
+						var error = new Error(errorMessage);
 						reject(error);
-					});
-					return promise;
-				} else {
-					var validationPromise = this.dataServiceProvider.validateData(data);
-					return validationPromise.then(()=>{
-						return new Promise<LeData>((resolve, reject)=>{
-							resolve(data);
-						});
-					});
-				}
+					} else {
+						return this.dataServiceProvider.validateData(data);
+					}
+				}).then(()=>{
+					resolve(data);
+				}, (err)=>{
+					reject(err);
+				});
 			});
 		}
 		return new Promise<LeData>((resolve, reject) => {});

@@ -24,23 +24,21 @@ var LeDataService = (function () {
             return promise;
         }
         if (data._id) {
-            return this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
-                if (dataExists) {
-                    var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
-                    var error = new Error(errorMessage);
-                    var promise = new ts_promise_1.default(function (resolve, reject) {
+            return new ts_promise_1.default(function (resolve, reject) {
+                _this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
+                    if (dataExists) {
+                        var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
+                        var error = new Error(errorMessage);
                         reject(error);
-                    });
-                    return promise;
-                }
-                else {
-                    var validationPromise = _this.dataServiceProvider.validateData(data);
-                    return validationPromise.then(function () {
-                        return new ts_promise_1.default(function (resolve, reject) {
-                            resolve(data);
-                        });
-                    });
-                }
+                    }
+                    else {
+                        return _this.dataServiceProvider.validateData(data);
+                    }
+                }).then(function () {
+                    resolve(data);
+                }, function (err) {
+                    reject(err);
+                });
             });
         }
         return new ts_promise_1.default(function (resolve, reject) { });
