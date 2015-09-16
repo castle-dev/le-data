@@ -154,4 +154,31 @@ describe('LeDataService', ()=>{
         });
       });
     });
+
+
+    describe('updateData', ()=>{
+      it('should return a promise', ()=>{
+        var returnedObject = dataService.updateData({_type:'exampleType'});
+        expect(returnedObject instanceof Promise).to.be.true;
+      });
+      it('should reject if no data is passed to the function', (done)=>{
+        var returnedPromise = dataService.updateData();
+        returnedPromise.then(undefined, (err)=>{
+          expect(err.message).to.equal('No data passed to updateData function');
+          done();
+        });
+      });
+      it('should reject if there is no _type specified in the data', (done)=>{
+        var returnedPromise = dataService.updateData({
+          _id: 'exampleID',
+          exampleField: 'exampleFieldData'
+        });
+        returnedPromise.then(undefined, (err)=>{
+          expect(err.message).to.equal('No _type specified in LeData object passed to updateData, object: {"_id":"exampleID","exampleField":"exampleFieldData"}');
+          done();
+        });
+      });
+    });
+
+
 });

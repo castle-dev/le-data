@@ -150,5 +150,28 @@ describe('LeDataService', function () {
             });
         });
     });
+    describe('updateData', function () {
+        it('should return a promise', function () {
+            var returnedObject = dataService.updateData({ _type: 'exampleType' });
+            expect(returnedObject instanceof ts_promise_1.default).to.be.true;
+        });
+        it('should reject if no data is passed to the function', function (done) {
+            var returnedPromise = dataService.updateData();
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('No data passed to updateData function');
+                done();
+            });
+        });
+        it('should reject if there is no _type specified in the data', function (done) {
+            var returnedPromise = dataService.updateData({
+                _id: 'exampleID',
+                exampleField: 'exampleFieldData'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('No _type specified in LeData object passed to updateData, object: {"_id":"exampleID","exampleField":"exampleFieldData"}');
+                done();
+            });
+        });
+    });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

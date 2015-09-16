@@ -56,6 +56,23 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.updateData = function (data) {
+        if (!data) {
+            var errorMessage = 'No data passed to updateData function';
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
+        if (!data._type) {
+            var errorMessage = 'No _type specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
+            console.log(errorMessage);
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
         return new ts_promise_1.default(function (resolve, reject) { });
     };
     LeDataService.prototype.deleteData = function (data) {
