@@ -104,14 +104,20 @@ export class LeDataService {
 		}
 		if(!data._type) {
 			var errorMessage = 'No _type specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
-			console.log(errorMessage);
 			var error = new Error(errorMessage);
 			var promise = new Promise<LeData>((resolve, reject)=>{
 				reject(error);
 			});
 			return promise;
 		}
-
+		if(!data._id) {
+			var errorMessage = 'No _id specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
+			var error = new Error(errorMessage);
+			var promise = new Promise<LeData>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
 
 		return new Promise<LeData>((resolve, reject) => {});
 	}

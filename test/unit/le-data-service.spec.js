@@ -172,6 +172,16 @@ describe('LeDataService', function () {
                 done();
             });
         });
+        it('should reject if there is no _id specified in the data', function (done) {
+            var returnedPromise = dataService.updateData({
+                _type: 'ExampleType',
+                exampleField: 'exampleFieldData'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('No _id specified in LeData object passed to updateData, object: {"_type":"ExampleType","exampleField":"exampleFieldData"}');
+                done();
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

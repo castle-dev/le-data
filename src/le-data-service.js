@@ -66,7 +66,14 @@ var LeDataService = (function () {
         }
         if (!data._type) {
             var errorMessage = 'No _type specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
-            console.log(errorMessage);
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
+        if (!data._id) {
+            var errorMessage = 'No _id specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
             var promise = new ts_promise_1.default(function (resolve, reject) {
                 reject(error);
