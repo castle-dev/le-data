@@ -66,10 +66,18 @@ export class LeDataService {
 					reject(err);
 				});
 			});
+		} else {
+			return new Promise<LeData>((resolve, reject)=>{
+				this.dataServiceProvider.validateData(data).then(()=>{
+					return this.dataServiceProvider.saveData(data);
+				}).then((returnedData)=>{
+					resolve(returnedData);
+				}, (err)=>{
+					reject(err);
+				});
+			});
 		}
-		return new Promise<LeData>((resolve, reject) => {});
 	}
-
 
   /**
    * Updates the data in the database. This only removes data from the database if the field is specified

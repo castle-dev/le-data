@@ -108,6 +108,47 @@ describe('LeDataService', function () {
                 done();
             });
         });
+        it('should return the data that was returned from the save if _id was not set', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(false);
+            };
+            mockProvider.validateData = function (data) {
+                return ts_promise_1.default.resolve();
+            };
+            mockProvider.saveData = function (data) {
+                var objectReturnedFromSave = {
+                    returnedField: '1234'
+                };
+                return ts_promise_1.default.resolve(objectReturnedFromSave);
+            };
+            var returnedPromise = dataService.createData({
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(function (returnedData) {
+                expect(returnedData.returnedField).to.equal('1234');
+                done();
+            });
+        });
+        it('should reject if unable to save data without _id', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(false);
+            };
+            mockProvider.validateData = function (data) {
+                return ts_promise_1.default.resolve();
+            };
+            mockProvider.saveData = function (data) {
+                var errorMessage = 'Error message returned from save';
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            };
+            var returnedPromise = dataService.createData({
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Error message returned from save');
+                done();
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

@@ -43,7 +43,17 @@ var LeDataService = (function () {
                 });
             });
         }
-        return new ts_promise_1.default(function (resolve, reject) { });
+        else {
+            return new ts_promise_1.default(function (resolve, reject) {
+                _this.dataServiceProvider.validateData(data).then(function () {
+                    return _this.dataServiceProvider.saveData(data);
+                }).then(function (returnedData) {
+                    resolve(returnedData);
+                }, function (err) {
+                    reject(err);
+                });
+            });
+        }
     };
     LeDataService.prototype.updateData = function (data) {
         return new ts_promise_1.default(function (resolve, reject) { });
