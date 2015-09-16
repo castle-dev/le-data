@@ -118,8 +118,23 @@ export class LeDataService {
 			});
 			return promise;
 		}
-
-		return new Promise<LeData>((resolve, reject) => {});
+		return new Promise<LeData>((resolve, reject) => {
+			this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
+				if(dataExists){
+					return this.dataServiceProvider.validateData(data);
+				} else {
+					var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
+					var error = new Error(errorMessage);
+					reject(error);
+				}
+			}).then(()=>{
+				return this.dataServiceProvider.saveData(data);
+			}).then((returnedData)=>{
+				resolve(returnedData);
+			}, (err)=>{
+				reject(err);
+			});
+		});
 	}
 
 	/**

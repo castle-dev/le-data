@@ -56,6 +56,7 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.updateData = function (data) {
+        var _this = this;
         if (!data) {
             var errorMessage = 'No data passed to updateData function';
             var error = new Error(errorMessage);
@@ -80,7 +81,24 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        return new ts_promise_1.default(function (resolve, reject) { });
+        return new ts_promise_1.default(function (resolve, reject) {
+            _this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
+                if (dataExists) {
+                    return _this.dataServiceProvider.validateData(data);
+                }
+                else {
+                    var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
+                    var error = new Error(errorMessage);
+                    reject(error);
+                }
+            }).then(function () {
+                return _this.dataServiceProvider.saveData(data);
+            }).then(function (returnedData) {
+                resolve(returnedData);
+            }, function (err) {
+                reject(err);
+            });
+        });
     };
     LeDataService.prototype.deleteData = function (data) {
         return new ts_promise_1.default(function (resolve, reject) { });

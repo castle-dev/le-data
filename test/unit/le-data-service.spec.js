@@ -182,6 +182,80 @@ describe('LeDataService', function () {
                 done();
             });
         });
+        it('should reject if the data does not exist remotely', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(false);
+            };
+            var returnedPromise = dataService.updateData({
+                _id: 'dataID',
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Attempted to update data that does not exist, object:{"_id":"dataID","_type":"ExampleType"}');
+                done();
+            });
+        });
+        it('should reject if the data is invalid', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(true);
+            };
+            mockProvider.validateData = function (data) {
+                var errorMessage = 'Error message returned from validateData';
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            };
+            var returnedPromise = dataService.updateData({
+                _id: 'existingDataID',
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Error message returned from validateData');
+                done();
+            });
+        });
+        it('should reject if unable to save data', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(true);
+            };
+            mockProvider.validateData = function (data) {
+                return ts_promise_1.default.resolve();
+            };
+            mockProvider.saveData = function (data) {
+                var errorMessage = 'Error message returned from save';
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            };
+            var returnedPromise = dataService.updateData({
+                _id: 'existingDataID',
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Error message returned from save');
+                done();
+            });
+        });
+        it('should return the data that was returned from the save', function (done) {
+            mockProvider.dataExists = function (type, id) {
+                return ts_promise_1.default.resolve(true);
+            };
+            mockProvider.validateData = function (data) {
+                return ts_promise_1.default.resolve();
+            };
+            mockProvider.saveData = function (data) {
+                var objectReturnedFromSave = {
+                    returnedField: '1234'
+                };
+                return ts_promise_1.default.resolve(objectReturnedFromSave);
+            };
+            var returnedPromise = dataService.updateData({
+                _id: 'existingDataID',
+                _type: 'ExampleType'
+            });
+            returnedPromise.then(function (returnedData) {
+                expect(returnedData.returnedField).to.equal('1234');
+                done();
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map
