@@ -26,6 +26,11 @@ class LeTypeFieldConfig {
   cascadeDelete: boolean;
 
   /**
+   * @var required boolean - if set to true, the field must be set to a value on the LeData object
+   */
+  required: boolean;
+  
+  /**
    * @function addField - adds a field to the current field if it's of type 'object'
    *
    * @param fieldname string - the name for the new field, the key on the object
