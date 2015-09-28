@@ -150,7 +150,17 @@ export class LeDataService {
 	 * @returns Promise<void>.
 	 */
 	deleteData(type: string, id: string): Promise<void> {
-		return new Promise<void>((resolve, reject) => {});
+		if(!type) {
+			var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
+			console.log(errorMessage);
+			var error = new Error(errorMessage);
+			var promise = new Promise<void>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
+		return new Promise<void>(()=>{});
+		return this.dataServiceProvider.deleteData(type, id);
 	}
 
 	/**

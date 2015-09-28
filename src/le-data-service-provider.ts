@@ -6,7 +6,7 @@ export interface LeDataServiceProvider {
   validateData(data: LeData): Promise<void>;
   saveData(data: LeData): Promise<LeData>;
   saveTypeConfig(config: LeTypeConfig): Promise<void>;
-  // sync(type: string, id?: string, config?: LeDataServiceProviderSyncConfig);
+  deleteData(type: string, id: string): Promise<void>;
 }
 
 export default LeDataServiceProvider;

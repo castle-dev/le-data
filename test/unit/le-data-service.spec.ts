@@ -263,4 +263,18 @@ describe('LeDataService', ()=>{
         });
       });
     });
+
+    describe('deleteData', ()=>{
+      it('should return a promise', ()=>{
+        var returnedObject = dataService.deleteData('exampleType', 'exampleID');
+        expect(returnedObject instanceof Promise).to.be.true;
+      });
+      it('should reject if no _type is passed in parameters', (done)=>{
+        var returnedPromise = dataService.deleteData(undefined, 'exampleID');
+        returnedPromise.then(undefined, (err)=>{
+          expect(err.message).to.equal('Undefined type passed to deleteData.\ntype: undefined id: exampleID');
+          done();
+        })
+      })
+    });
 });

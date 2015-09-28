@@ -1,6 +1,3 @@
-/// <reference path="../../typings/mocha/mocha.d.ts" />
-/// <reference path="../../typings/chai/chai.d.ts" />
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
@@ -253,6 +250,19 @@ describe('LeDataService', function () {
             });
             returnedPromise.then(function (returnedData) {
                 expect(returnedData.returnedField).to.equal('1234');
+                done();
+            });
+        });
+    });
+    describe('deleteData', function () {
+        it('should return a promise', function () {
+            var returnedObject = dataService.deleteData('exampleType', 'exampleID');
+            expect(returnedObject instanceof ts_promise_1.default).to.be.true;
+        });
+        it('should reject if no _type is passed in parameters', function (done) {
+            var returnedPromise = dataService.deleteData(undefined, 'exampleID');
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Undefined type passed to deleteData.\ntype: undefined id: exampleID');
                 done();
             });
         });

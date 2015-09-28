@@ -99,7 +99,17 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.deleteData = function (type, id) {
-        return new ts_promise_1.default(function (resolve, reject) { });
+        if (!type) {
+            var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
+            console.log(errorMessage);
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
+        return new ts_promise_1.default(function () { });
+        return this.dataServiceProvider.deleteData(type, id);
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
     };
