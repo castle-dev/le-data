@@ -280,5 +280,7 @@ describe('LeDataService', function () {
             });
         });
     });
+    describe('sync', function () {
+    });
 });
 //# sourceMappingURL=le-data-service.spec.js.map
