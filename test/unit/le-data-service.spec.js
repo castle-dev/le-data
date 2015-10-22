@@ -255,14 +255,27 @@ describe('LeDataService', function () {
         });
     });
     describe('deleteData', function () {
-        it('should return a promise', function () {
+        it('should call deleteData on the provider and return a promise', function () {
+            var didCallDeleteData = false;
+            mockProvider.deleteData = function (type, id) {
+                didCallDeleteData = true;
+                return ts_promise_1.default.resolve();
+            };
             var returnedObject = dataService.deleteData('exampleType', 'exampleID');
             expect(returnedObject instanceof ts_promise_1.default).to.be.true;
+            expect(didCallDeleteData).to.be.true;
         });
         it('should reject if no _type is passed in parameters', function (done) {
             var returnedPromise = dataService.deleteData(undefined, 'exampleID');
             returnedPromise.then(undefined, function (err) {
                 expect(err.message).to.equal('Undefined type passed to deleteData.\ntype: undefined id: exampleID');
+                done();
+            });
+        });
+        it('should reject if no _id is passed in parameters', function (done) {
+            var returnedPromise = dataService.deleteData('ExampleType', undefined);
+            returnedPromise.then(undefined, function (err) {
+                expect(err.message).to.equal('Undefined id passed to deleteData.\ntype: ExampleType id: undefined');
                 done();
             });
         });

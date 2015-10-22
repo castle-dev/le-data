@@ -108,7 +108,15 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        return new ts_promise_1.default(function () { });
+        if (!id) {
+            var errorMessage = 'Undefined id passed to deleteData.\ntype: ' + type + ' id: ' + id;
+            console.log(errorMessage);
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
         return this.dataServiceProvider.deleteData(type, id);
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {

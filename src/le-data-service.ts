@@ -159,7 +159,15 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		return new Promise<void>(()=>{});
+		if(!id) {
+			var errorMessage = 'Undefined id passed to deleteData.\ntype: ' + type + ' id: ' + id;
+			console.log(errorMessage);
+			var error = new Error(errorMessage);
+			var promise = new Promise<void>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
 		return this.dataServiceProvider.deleteData(type, id);
 	}
 
