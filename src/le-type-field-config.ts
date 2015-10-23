@@ -7,6 +7,8 @@
 class LeTypeFieldConfig {
   private fieldName: string;
   private type: string;
+  private addedFieldsArray: LeTypeFieldConfig[];
+  private addedFieldsObejct: Object;
   /**
    * @param type string - the type for the field.
    * Accepts values of 'string', 'boolean', 'number', 'Date', 'object' or any a LeData type configured in the storage provider.
@@ -18,6 +20,8 @@ class LeTypeFieldConfig {
   constructor(fieldName:string, type:string) {
     this.fieldName = fieldName;
     this.type = type;
+    this.addedFieldsArray = [];
+    this.addedFieldsObejct = {};
   }
 
   /**
@@ -52,7 +56,10 @@ class LeTypeFieldConfig {
    * @returns LeTypeFieldConfig -  the config object to configure the new field
    */
   addField(fieldName: string, type: string): LeTypeFieldConfig {
-    return new LeTypeFieldConfig('exampleFieldName', 'ExampleCustomType');
+    var newFieldConfig = new LeTypeFieldConfig(fieldName, type);
+    this.addedFieldsArray.push(newFieldConfig);
+    this.addedFieldsObejct[fieldName] = newFieldConfig;
+    return newFieldConfig;
   }
 
   /**
@@ -79,6 +86,15 @@ class LeTypeFieldConfig {
    * @returns LeTypeFieldConfig[] - all the field all the fieldConfigs that have been added to this fieldConfig
    */
   getFieldConfigs():LeTypeFieldConfig[] {
-    return [];
+    return this.addedFieldsArray;
+  }
+
+  /**
+   * @function fieldExists - returns if the field is configured on the fieldConfig
+   *
+   * @returns boolean - if the field is configured on the fieldConfig
+   */
+  fieldExists(fieldName: string): boolean {
+    return !!this.addedFieldsObejct[fieldName];
   }
 }

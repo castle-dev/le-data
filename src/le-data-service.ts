@@ -247,8 +247,35 @@ export class LeDataService {
 				var fieldConfig = fieldConfigs[i];
 				validateFieldPromises.push(this.validateField(fieldConfig, data));
 			}
+			validateFieldPromises.push(this.validateNoExtraFields(typeConfig, data));
 			return Promise.all(validateFieldPromises);
 		});
+	}
+
+	private validateNoExtraFields(typeConfig: LeTypeConfig, data: LeData): Promise<void> {
+		for(var key in data) {
+			if(key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
+				var errorMessage = 'An additional field was set on the data object.\n';
+				errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type +'\n';
+				errorMessage += 'data: ' + JSON.stringify(data);
+				var error = new Error(errorMessage);
+				return Promise.reject(error);
+			}
+		}
+		return Promise.resolve();
+	}
+
+	private validateNoExtraFieldsOnObject(fieldConfig: LeTypeFieldConfig, data: Object) {
+		for(var key in data) {
+			if(key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
+				var errorMessage = 'An additional field was set on the data object.\n';
+				errorMessage += 'the field "' + key + '" is not configured on the object\n';
+				errorMessage += 'data: ' + JSON.stringify(data);
+				var error = new Error(errorMessage);
+				return Promise.reject(error);
+			}
+		}
+		return Promise.resolve();
 	}
 
 	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
@@ -292,7 +319,21 @@ export class LeDataService {
 	}
 
 	private validateObjectTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
-		return Promise.resolve();
+		var innerFieldConfigs = fieldConfig.getFieldConfigs();
+		var objectUnderValidation = data[fieldConfig.getFieldName()];
+		var promises: Promise<void>[] = [];
+		for(var i = 0; i < innerFieldConfigs.length; i += 1) {
+			var innerFieldConfig = innerFieldConfigs[i];
+			promises.push(this.validateField(innerFieldConfig, objectUnderValidation));
+		}
+		promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
+		return new Promise<void>((resolve, reject)=>{
+			Promise.all(promises).then(()=>{
+				resolve(undefined);
+			}, (err)=>{
+				reject(err);
+			});
+		});
 	}
 
 	private validateRequiredPropertyOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
@@ -303,17 +344,23 @@ export class LeDataService {
 			return Promise.reject(error);
 		} else if(fieldConfig.required && !data[fieldName]) {
 			return new Promise<void>((resolve, reject)=>{
-				this.dataServiceProvider.dataExists(data._type, data._id).then((doesExist)=>{
-					if(doesExist){
-						resolve(undefined);
-					} else {
-						var errorMessage = fieldConfig.getFieldName() +' is required but was not set on the LeData and the object does not exist remotely, object, data: '  + JSON.stringify(data);
-						var error = new Error(errorMessage);
-						reject(error);
-					}
-				}, (err)=>{
-					reject(err);
-				});
+				if(data._id) {
+					this.dataServiceProvider.dataExists(data._type, data._id).then((doesExist)=>{
+						if(doesExist){
+							resolve(undefined);
+						} else {
+							var errorMessage = fieldConfig.getFieldName() +' is required but was not set on the LeData and the object does not exist remotely, object, data: '  + JSON.stringify(data);
+							var error = new Error(errorMessage);
+							reject(error);
+						}
+					}, (err)=>{
+						reject(err);
+					});
+				} else {
+					var errorMessage = fieldConfig.getFieldName() +' is required but was not set on the LeData and the object does not exist remotely, object, data: '  + JSON.stringify(data);
+					var error = new Error(errorMessage);
+					reject(error);
+				}
 			});
 		} else {
 			return Promise.resolve();

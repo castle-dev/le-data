@@ -6,9 +6,12 @@
  * @param type string - the type to be configured
  */
 class LeTypeConfig {
-  private fieldConfigs: LeTypeFieldConfig[];
+  private fieldConfigsArray: LeTypeFieldConfig[];
+  private fieldConfigsObject: Object;
+
   constructor(type: string) {
-    this.fieldConfigs = [];
+    this.fieldConfigsArray = [];
+    this.fieldConfigsObject = {};
   }
 
   /**
@@ -24,7 +27,8 @@ class LeTypeConfig {
    */
   addField(fieldName: string, type: string): LeTypeFieldConfig {
     var newFieldConfig = new LeTypeFieldConfig('exampleFieldName', 'ExampleCustomType');
-    this.fieldConfigs.push(newFieldConfig);
+    this.fieldConfigsArray.push(newFieldConfig);
+    this.fieldConfigsObject[fieldName] = newFieldConfig;
     return newFieldConfig;
   }
 
@@ -34,6 +38,15 @@ class LeTypeConfig {
    * @returns LeTypeFieldConfig[] - all the LeTypeFieldConfig objects set on the LeTypeConfig object
    */
   getFieldConfigs(): LeTypeFieldConfig[] {
-    return this.fieldConfigs;
+    return this.fieldConfigsArray;
+  }
+
+  /**
+   * @function fieldExists - returns if the field is configured on the typeConfig
+   *
+   * @returns boolean - if the field is configured on the typeConfig
+   */
+  fieldExists(fieldName: string): boolean {
+    return !!this.fieldConfigsObject[fieldName];
   }
 }

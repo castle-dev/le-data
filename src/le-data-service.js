@@ -147,8 +147,33 @@ var LeDataService = (function () {
                 var fieldConfig = fieldConfigs[i];
                 validateFieldPromises.push(_this.validateField(fieldConfig, data));
             }
+            validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
             return ts_promise_1.default.all(validateFieldPromises);
         });
+    };
+    LeDataService.prototype.validateNoExtraFields = function (typeConfig, data) {
+        for (var key in data) {
+            if (key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
+                var errorMessage = 'An additional field was set on the data object.\n';
+                errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type + '\n';
+                errorMessage += 'data: ' + JSON.stringify(data);
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            }
+        }
+        return ts_promise_1.default.resolve();
+    };
+    LeDataService.prototype.validateNoExtraFieldsOnObject = function (fieldConfig, data) {
+        for (var key in data) {
+            if (key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
+                var errorMessage = 'An additional field was set on the data object.\n';
+                errorMessage += 'the field "' + key + '" is not configured on the object\n';
+                errorMessage += 'data: ' + JSON.stringify(data);
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            }
+        }
+        return ts_promise_1.default.resolve();
     };
     LeDataService.prototype.validateField = function (fieldConfig, data) {
         var validationPromises;
@@ -192,7 +217,21 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data) {
-        return ts_promise_1.default.resolve();
+        var innerFieldConfigs = fieldConfig.getFieldConfigs();
+        var objectUnderValidation = data[fieldConfig.getFieldName()];
+        var promises = [];
+        for (var i = 0; i < innerFieldConfigs.length; i += 1) {
+            var innerFieldConfig = innerFieldConfigs[i];
+            promises.push(this.validateField(innerFieldConfig, objectUnderValidation));
+        }
+        promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
+        return new ts_promise_1.default(function (resolve, reject) {
+            ts_promise_1.default.all(promises).then(function () {
+                resolve(undefined);
+            }, function (err) {
+                reject(err);
+            });
+        });
     };
     LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data) {
         var _this = this;
@@ -204,18 +243,25 @@ var LeDataService = (function () {
         }
         else if (fieldConfig.required && !data[fieldName]) {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.dataServiceProvider.dataExists(data._type, data._id).then(function (doesExist) {
-                    if (doesExist) {
-                        resolve(undefined);
-                    }
-                    else {
-                        var errorMessage = fieldConfig.getFieldName() + ' is required but was not set on the LeData and the object does not exist remotely, object, data: ' + JSON.stringify(data);
-                        var error = new Error(errorMessage);
-                        reject(error);
-                    }
-                }, function (err) {
-                    reject(err);
-                });
+                if (data._id) {
+                    _this.dataServiceProvider.dataExists(data._type, data._id).then(function (doesExist) {
+                        if (doesExist) {
+                            resolve(undefined);
+                        }
+                        else {
+                            var errorMessage = fieldConfig.getFieldName() + ' is required but was not set on the LeData and the object does not exist remotely, object, data: ' + JSON.stringify(data);
+                            var error = new Error(errorMessage);
+                            reject(error);
+                        }
+                    }, function (err) {
+                        reject(err);
+                    });
+                }
+                else {
+                    var errorMessage = fieldConfig.getFieldName() + ' is required but was not set on the LeData and the object does not exist remotely, object, data: ' + JSON.stringify(data);
+                    var error = new Error(errorMessage);
+                    reject(error);
+                }
             });
         }
         else {

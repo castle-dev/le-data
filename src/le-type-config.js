@@ -1,14 +1,19 @@
 var LeTypeConfig = (function () {
     function LeTypeConfig(type) {
-        this.fieldConfigs = [];
+        this.fieldConfigsArray = [];
+        this.fieldConfigsObject = {};
     }
     LeTypeConfig.prototype.addField = function (fieldName, type) {
         var newFieldConfig = new LeTypeFieldConfig('exampleFieldName', 'ExampleCustomType');
-        this.fieldConfigs.push(newFieldConfig);
+        this.fieldConfigsArray.push(newFieldConfig);
+        this.fieldConfigsObject[fieldName] = newFieldConfig;
         return newFieldConfig;
     };
     LeTypeConfig.prototype.getFieldConfigs = function () {
-        return this.fieldConfigs;
+        return this.fieldConfigsArray;
+    };
+    LeTypeConfig.prototype.fieldExists = function (fieldName) {
+        return !!this.fieldConfigsObject[fieldName];
     };
     return LeTypeConfig;
 })();
