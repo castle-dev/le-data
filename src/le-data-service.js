@@ -30,7 +30,7 @@ var LeDataService = (function () {
                         reject(error);
                     }
                     else {
-                        return _this.dataServiceProvider.validateData(data);
+                        return _this.validateData(data);
                     }
                 }).then(function () {
                     return _this.dataServiceProvider.saveData(data);
@@ -43,7 +43,7 @@ var LeDataService = (function () {
         }
         else {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.dataServiceProvider.validateData(data).then(function () {
+                _this.validateData(data).then(function () {
                     return _this.dataServiceProvider.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
@@ -82,7 +82,7 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
             _this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
-                    return _this.dataServiceProvider.validateData(data);
+                    return _this.validateData(data);
                 }
                 else {
                     var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
@@ -128,6 +128,103 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.configureType = function (config) {
         return new ts_promise_1.default(function (resolve, reject) { });
+    };
+    LeDataService.prototype.validateData = function (data) {
+        var _this = this;
+        if (!data) {
+            var errorMessage = 'Invalid LeData object - cannot be undefined';
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
+        this.dataServiceProvider.fetchTypeConfig(data._type).then(function (typeConfig) {
+            var fieldConfigs = typeConfig.getFieldConfigs();
+            var validateFieldPromises;
+            validateFieldPromises = [];
+            for (var i = 0; i < fieldConfigs.length; i += 1) {
+                var fieldConfig = fieldConfigs[i];
+                validateFieldPromises.push(_this.validateField(fieldConfig, data));
+            }
+            return ts_promise_1.default.all(validateFieldPromises);
+        });
+    };
+    LeDataService.prototype.validateField = function (fieldConfig, data) {
+        var validationPromises;
+        var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
+        var typePromise = this.validateTypeOnField(fieldConfig, data);
+        validationPromises.push(requiredPromise);
+        validationPromises.push(typePromise);
+        return new ts_promise_1.default(function (resolve, reject) {
+            ts_promise_1.default.all(validationPromises).then(function () {
+                resolve(undefined);
+            }, function (err) {
+                reject(err);
+            });
+        });
+    };
+    LeDataService.prototype.validateTypeOnField = function (fieldConfig, data) {
+        var type = fieldConfig.getFieldType();
+        var fieldName = fieldConfig.getFieldName();
+        if (!data[fieldName]) {
+            return ts_promise_1.default.resolve();
+        }
+        else if (type === 'object') {
+            return this.validateObjectTypeOnField(fieldConfig, data);
+        }
+        else if (typeof data[fieldName] === type) {
+            return ts_promise_1.default.resolve();
+        }
+        else if (type === 'Date' && data[fieldName] instanceof Date) {
+            return ts_promise_1.default.resolve();
+        }
+        else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
+            return ts_promise_1.default.resolve();
+        }
+        else {
+            var errorMessage = 'The specified field is set to an invalid type -\n';
+            errorMessage += 'fieldName: ' + fieldName + '\n';
+            errorMessage += "field's configured type: " + type + '\n';
+            errorMessage += 'data: ' + JSON.stringify(data);
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+    };
+    LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data) {
+        return ts_promise_1.default.resolve();
+    };
+    LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data) {
+        var _this = this;
+        var fieldName = fieldConfig.getFieldName();
+        if (fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
+            var errorMessage = fieldConfig.getFieldName() + ' is required but was not set to undefined on the LeData object, data: ' + JSON.stringify(data);
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        else if (fieldConfig.required && !data[fieldName]) {
+            return new ts_promise_1.default(function (resolve, reject) {
+                _this.dataServiceProvider.dataExists(data._type, data._id).then(function (doesExist) {
+                    if (doesExist) {
+                        resolve(undefined);
+                    }
+                    else {
+                        var errorMessage = fieldConfig.getFieldName() + ' is required but was not set on the LeData and the object does not exist remotely, object, data: ' + JSON.stringify(data);
+                        var error = new Error(errorMessage);
+                        reject(error);
+                    }
+                }, function (err) {
+                    reject(err);
+                });
+            });
+        }
+        else {
+            return ts_promise_1.default.resolve();
+        }
+    };
+    LeDataService.prototype.fieldConfigTypeIsACustomLeDataType = function (fieldConfig) {
+        var type = fieldConfig.getFieldType();
+        return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
     };
     return LeDataService;
 })();

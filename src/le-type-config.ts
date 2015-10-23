@@ -6,9 +6,9 @@
  * @param type string - the type to be configured
  */
 class LeTypeConfig {
-
+  private fieldConfigs: LeTypeFieldConfig[];
   constructor(type: string) {
-
+    this.fieldConfigs = [];
   }
 
   /**
@@ -23,6 +23,17 @@ class LeTypeConfig {
    * @returns LeTypeFieldConfig -  the config object to configure the new field
    */
   addField(fieldName: string, type: string): LeTypeFieldConfig {
-    return new LeTypeFieldConfig('exampleFieldName', 'ExampleCustomType');
+    var newFieldConfig = new LeTypeFieldConfig('exampleFieldName', 'ExampleCustomType');
+    this.fieldConfigs.push(newFieldConfig);
+    return newFieldConfig;
+  }
+
+  /**
+   * @function getFieldConfigs - returns all the LeTypeFieldConfig objects set on the LeTypeConfig object
+   *
+   * @returns LeTypeFieldConfig[] - all the LeTypeFieldConfig objects set on the LeTypeConfig object
+   */
+  getFieldConfigs(): LeTypeFieldConfig[] {
+    return this.fieldConfigs;
   }
 }

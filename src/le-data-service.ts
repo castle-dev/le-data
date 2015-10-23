@@ -56,7 +56,7 @@ export class LeDataService {
 						var error = new Error(errorMessage);
 						reject(error);
 					} else {
-						return this.dataServiceProvider.validateData(data);
+						return this.validateData(data);
 					}
 				}).then(()=>{
 					return this.dataServiceProvider.saveData(data);
@@ -68,7 +68,7 @@ export class LeDataService {
 			});
 		} else {
 			return new Promise<LeData>((resolve, reject)=>{
-				this.dataServiceProvider.validateData(data).then(()=>{
+				this.validateData(data).then(()=>{
 					return this.dataServiceProvider.saveData(data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
@@ -121,7 +121,7 @@ export class LeDataService {
 		return new Promise<LeData>((resolve, reject) => {
 			this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
 				if(dataExists){
-					return this.dataServiceProvider.validateData(data);
+					return this.validateData(data);
 				} else {
 					var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
 					var error = new Error(errorMessage);
@@ -228,5 +228,99 @@ export class LeDataService {
 	 */
 	configureType(config: LeTypeConfig): Promise<void> {
 		return new Promise<void>((resolve, reject) => {});
+	}
+
+	private validateData(data:LeData): Promise<void> {
+		if(!data) {
+			var errorMessage = 'Invalid LeData object - cannot be undefined';
+			var error = new Error(errorMessage);
+			var promise = new Promise<void>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
+		this.dataServiceProvider.fetchTypeConfig(data._type).then((typeConfig)=>{
+			var fieldConfigs = typeConfig.getFieldConfigs();
+			var validateFieldPromises: Promise<void>[];
+			validateFieldPromises = [];
+			for(var i = 0; i < fieldConfigs.length; i += 1) {
+				var fieldConfig = fieldConfigs[i];
+				validateFieldPromises.push(this.validateField(fieldConfig, data));
+			}
+			return Promise.all(validateFieldPromises);
+		});
+	}
+
+	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+		var validationPromises: Promise<void>[];
+		var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
+		var typePromise = this.validateTypeOnField(fieldConfig, data);
+
+		validationPromises.push(requiredPromise);
+		validationPromises.push(typePromise);
+
+		return new Promise<void>((resolve, reject)=>{
+			Promise.all(validationPromises).then(()=>{
+				resolve(undefined);
+			}, (err)=>{
+				reject(err);
+			});
+		});
+	}
+
+	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+		var type = fieldConfig.getFieldType();
+		var fieldName = fieldConfig.getFieldName();
+		if (!data[fieldName]) {
+			return Promise.resolve();
+		} else if (type === 'object'){
+			return this.validateObjectTypeOnField(fieldConfig, data);
+		} else if (typeof data[fieldName] === type) {
+			return Promise.resolve();
+		} else if (type === 'Date' && data[fieldName] instanceof Date) {
+			return Promise.resolve();
+		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
+			return Promise.resolve();
+		} else {
+			var errorMessage = 'The specified field is set to an invalid type -\n';
+			errorMessage += 'fieldName: ' + fieldName + '\n';
+			errorMessage += "field's configured type: " + type + '\n';
+			errorMessage += 'data: ' + JSON.stringify(data);
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+	}
+
+	private validateObjectTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+		return Promise.resolve();
+	}
+
+	private validateRequiredPropertyOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+		var fieldName = fieldConfig.getFieldName();
+		if(fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
+			var errorMessage = fieldConfig.getFieldName() +' is required but was not set to undefined on the LeData object, data: '  + JSON.stringify(data);
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		} else if(fieldConfig.required && !data[fieldName]) {
+			return new Promise<void>((resolve, reject)=>{
+				this.dataServiceProvider.dataExists(data._type, data._id).then((doesExist)=>{
+					if(doesExist){
+						resolve(undefined);
+					} else {
+						var errorMessage = fieldConfig.getFieldName() +' is required but was not set on the LeData and the object does not exist remotely, object, data: '  + JSON.stringify(data);
+						var error = new Error(errorMessage);
+						reject(error);
+					}
+				}, (err)=>{
+					reject(err);
+				});
+			});
+		} else {
+			return Promise.resolve();
+		}
+	}
+	private fieldConfigTypeIsACustomLeDataType(fieldConfig:LeTypeFieldConfig):boolean {
+		var type = fieldConfig.getFieldType();
+		return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
 	}
 }
