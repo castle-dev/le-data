@@ -1,11 +1,11 @@
 var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
+var mock_le_data_service_provider_1 = require("../mock-le-data-service-provider/mock-le-data-service-provider");
 var expect = chai.expect;
 describe('LeDataService', function () {
     var dataService;
-    var mockProvider = new function () {
-    };
+    var mockProvider = new mock_le_data_service_provider_1.default();
     before(function () {
         dataService = new data.LeDataService(mockProvider);
     });
@@ -28,19 +28,6 @@ describe('LeDataService', function () {
             var returnedPromise = dataService.createData();
             returnedPromise.then(undefined, function (err) {
                 expect(err.message).to.equal('No data passed to createData function');
-                done();
-            });
-        });
-        it('should reject if data with the set _id and type exists remotely', function (done) {
-            mockProvider.dataExists = function (type, id) {
-                return ts_promise_1.default.resolve(true);
-            };
-            var returnedPromise = dataService.createData({
-                _id: 'existingDataID',
-                _type: 'ExampleType'
-            });
-            returnedPromise.then(undefined, function (err) {
-                expect(err.message).to.equal('Attempted to create data with an id and type that already exists, _id: existingDataID, _type: ExampleType');
                 done();
             });
         });
@@ -77,31 +64,8 @@ describe('LeDataService', function () {
                 done();
             });
         });
-        it('should reject if the data does not exist remotely', function (done) {
-            mockProvider.dataExists = function (type, id) {
-                return ts_promise_1.default.resolve(false);
-            };
-            var returnedPromise = dataService.updateData({
-                _id: 'dataID',
-                _type: 'ExampleType'
-            });
-            returnedPromise.then(undefined, function (err) {
-                expect(err.message).to.equal('Attempted to update data that does not exist, object:{"_id":"dataID","_type":"ExampleType"}');
-                done();
-            });
-        });
     });
     describe('deleteData', function () {
-        it('should call deleteData on the provider and return a promise', function () {
-            var didCallDeleteData = false;
-            mockProvider.deleteData = function (type, id) {
-                didCallDeleteData = true;
-                return ts_promise_1.default.resolve();
-            };
-            var returnedObject = dataService.deleteData('exampleType', 'exampleID');
-            expect(returnedObject instanceof ts_promise_1.default).to.be.true;
-            expect(didCallDeleteData).to.be.true;
-        });
         it('should reject if no _type is passed in parameters', function (done) {
             var returnedPromise = dataService.deleteData(undefined, 'exampleID');
             returnedPromise.then(undefined, function (err) {

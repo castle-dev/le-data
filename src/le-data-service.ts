@@ -50,7 +50,7 @@ export class LeDataService {
 		}
 		if(data._id) {
 			return new Promise<LeData>((resolve, reject)=>{
-				this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
+				this.dataExists(data._type, data._id).then((dataExists)=>{
 					if(dataExists){
 						var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
 						var error = new Error(errorMessage);
@@ -59,7 +59,7 @@ export class LeDataService {
 						return this.validateData(data);
 					}
 				}).then(()=>{
-					return this.dataServiceProvider.saveData(data);
+					return this.saveData(data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
 				}, (err)=>{
@@ -69,7 +69,7 @@ export class LeDataService {
 		} else {
 			return new Promise<LeData>((resolve, reject)=>{
 				this.validateData(data).then(()=>{
-					return this.dataServiceProvider.saveData(data);
+					return this.saveData(data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
 				}, (err)=>{
@@ -119,7 +119,7 @@ export class LeDataService {
 			return promise;
 		}
 		return new Promise<LeData>((resolve, reject) => {
-			this.dataServiceProvider.dataExists(data._type, data._id).then((dataExists)=>{
+			this.dataExists(data._type, data._id).then((dataExists)=>{
 				if(dataExists){
 					return this.validateData(data);
 				} else {
@@ -128,7 +128,7 @@ export class LeDataService {
 					reject(error);
 				}
 			}).then(()=>{
-				return this.dataServiceProvider.saveData(data);
+				return this.saveData(data);
 			}).then((returnedData)=>{
 				resolve(returnedData);
 			}, (err)=>{
@@ -168,7 +168,7 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		return this.dataServiceProvider.deleteData(type, id);
+		return this.deleteData(type, id);
 	}
 
 	/**
@@ -239,7 +239,7 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		this.dataServiceProvider.fetchTypeConfig(data._type).then((typeConfig)=>{
+		this.fetchTypeConfig(data._type).then((typeConfig)=>{
 			var fieldConfigs = typeConfig.getFieldConfigs();
 			var validateFieldPromises: Promise<void>[];
 			validateFieldPromises = [];
@@ -345,7 +345,7 @@ export class LeDataService {
 		} else if(fieldConfig.required && !data[fieldName]) {
 			return new Promise<void>((resolve, reject)=>{
 				if(data._id) {
-					this.dataServiceProvider.dataExists(data._type, data._id).then((doesExist)=>{
+					this.dataExists(data._type, data._id).then((doesExist)=>{
 						if(doesExist){
 							resolve(undefined);
 						} else {
@@ -369,5 +369,96 @@ export class LeDataService {
 	private fieldConfigTypeIsACustomLeDataType(fieldConfig:LeTypeFieldConfig):boolean {
 		var type = fieldConfig.getFieldType();
 		return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
+	}
+
+	/**
+	 * Checks if the data with the specified type and id exist remotely.
+	 * Fails if id is undefined.
+	 * Fails if type is undefined.
+	 * Fails if the type is not configured.
+	 *
+	 * @function dataExists
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param type string - The type of the data we are checking.
+	 * @returns Promise<boolean> resolves with true if the data exists remotely.
+	 */
+	private dataExists(type: string, id: string): Promise<boolean> {
+		return new Promise<boolean>((resolve,reject)=>{});
+	}
+
+	/**
+	 * Returns the LeTypeConfig stored remotely for the specified type
+	 * Fails if the type is not configured
+	 *
+	 * @function fetchTypeConfig
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param type LeDataQuery - The type for the LeTypeConfig
+	 * @returns Promise<LeTypeConfig>
+	 */
+	private fetchTypeConfig(type:string): Promise<LeTypeConfig> {
+		return new Promise<LeTypeConfig>((resolve, reject)=>{})
+	};
+
+	/**
+	 * Saves the LeData remotely. It will recursively save all the data.
+	 * This will not do any checks on if the data is valid.
+	 * only removes fields if the field is explicitly passed with undefined set as the value
+	 *
+	 * @function saveData
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param data LeData - The data to be saved.
+	 * @returns Promise<LeData>
+	 */
+	private saveData(data: LeData): Promise<LeData> {
+		return new Promise<LeData>((resovle, reject)=>{});
+	};
+
+	/**
+	 * Saves the LeTypeConfig remotely.
+	 *
+	 * @function saveTypeConfig
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param config LeTypeConfig - The LeTypeConfig to be saved.
+	 * @returns Promise<void>
+	 */
+	private saveTypeConfig(config: LeTypeConfig): Promise<void> {
+		return new Promise<void>(()=>{});
+	}
+
+	/**
+	 * Sync with the remote data.
+	 *
+	 * @function syncData
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param type string - the type of the data to sync.
+	 * @param id string - the id of the data to sync.
+	 * @param callback (LeData)=>void - the method called when the data is initially retieved and each time the data changes
+	 * @param errorCallback (Error)=>void - the method called when ever there is an error with the sync
+	 * @returns Promise<void>
+	 */
+	private syncData(type: string, id: string, callback:(data: LeData) => void, errorCallback:(error:Error)=>void): void {
+
+	}
+
+	/**
+	 * fetches the remotely stored LeData object.
+	 * The child LeData fields are not fetched,
+	 * instead the id's for those feilds are returned in feilds with the "_id_" or "_ids_" prepended on it
+	 * depending on if the field is sigular or an array of objects
+	 *
+	 * @function fetchData
+	 * @memberof LeDataServiceProvider
+	 * @instance
+	 * @param type string - the type of the data to fetch.
+	 * @param id string - the id of the data to fetch.
+	 * @returns Promise<LeData>
+	 */
+	private fetchData(type: string, id:string): Promise<LeData> {
+		return new Promise<LeData>(()=>{});
 	}
 }

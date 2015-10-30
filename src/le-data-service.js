@@ -23,7 +23,7 @@ var LeDataService = (function () {
         }
         if (data._id) {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
+                _this.dataExists(data._type, data._id).then(function (dataExists) {
                     if (dataExists) {
                         var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
                         var error = new Error(errorMessage);
@@ -33,7 +33,7 @@ var LeDataService = (function () {
                         return _this.validateData(data);
                     }
                 }).then(function () {
-                    return _this.dataServiceProvider.saveData(data);
+                    return _this.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
                 }, function (err) {
@@ -44,7 +44,7 @@ var LeDataService = (function () {
         else {
             return new ts_promise_1.default(function (resolve, reject) {
                 _this.validateData(data).then(function () {
-                    return _this.dataServiceProvider.saveData(data);
+                    return _this.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
                 }, function (err) {
@@ -80,7 +80,7 @@ var LeDataService = (function () {
             return promise;
         }
         return new ts_promise_1.default(function (resolve, reject) {
-            _this.dataServiceProvider.dataExists(data._type, data._id).then(function (dataExists) {
+            _this.dataExists(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
                     return _this.validateData(data);
                 }
@@ -90,7 +90,7 @@ var LeDataService = (function () {
                     reject(error);
                 }
             }).then(function () {
-                return _this.dataServiceProvider.saveData(data);
+                return _this.saveData(data);
             }).then(function (returnedData) {
                 resolve(returnedData);
             }, function (err) {
@@ -117,7 +117,7 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        return this.dataServiceProvider.deleteData(type, id);
+        return this.deleteData(type, id);
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
     };
@@ -139,7 +139,7 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        this.dataServiceProvider.fetchTypeConfig(data._type).then(function (typeConfig) {
+        this.fetchTypeConfig(data._type).then(function (typeConfig) {
             var fieldConfigs = typeConfig.getFieldConfigs();
             var validateFieldPromises;
             validateFieldPromises = [];
@@ -244,7 +244,7 @@ var LeDataService = (function () {
         else if (fieldConfig.required && !data[fieldName]) {
             return new ts_promise_1.default(function (resolve, reject) {
                 if (data._id) {
-                    _this.dataServiceProvider.dataExists(data._type, data._id).then(function (doesExist) {
+                    _this.dataExists(data._type, data._id).then(function (doesExist) {
                         if (doesExist) {
                             resolve(undefined);
                         }
@@ -271,6 +271,25 @@ var LeDataService = (function () {
     LeDataService.prototype.fieldConfigTypeIsACustomLeDataType = function (fieldConfig) {
         var type = fieldConfig.getFieldType();
         return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
+    };
+    LeDataService.prototype.dataExists = function (type, id) {
+        return new ts_promise_1.default(function (resolve, reject) { });
+    };
+    LeDataService.prototype.fetchTypeConfig = function (type) {
+        return new ts_promise_1.default(function (resolve, reject) { });
+    };
+    ;
+    LeDataService.prototype.saveData = function (data) {
+        return new ts_promise_1.default(function (resovle, reject) { });
+    };
+    ;
+    LeDataService.prototype.saveTypeConfig = function (config) {
+        return new ts_promise_1.default(function () { });
+    };
+    LeDataService.prototype.syncData = function (type, id, callback, errorCallback) {
+    };
+    LeDataService.prototype.fetchData = function (type, id) {
+        return new ts_promise_1.default(function () { });
     };
     return LeDataService;
 })();
