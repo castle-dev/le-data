@@ -25,4 +25,7 @@ var LeTypeFieldConfig = (function () {
     };
     return LeTypeFieldConfig;
 })();
+exports.LeTypeFieldConfig = LeTypeFieldConfig;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = LeTypeFieldConfig;
 //# sourceMappingURL=le-type-field-config.js.map

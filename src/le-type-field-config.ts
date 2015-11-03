@@ -4,7 +4,7 @@
  * @class LeTypeFieldConfig
  *
  */
-class LeTypeFieldConfig {
+export class LeTypeFieldConfig {
   private fieldName: string;
   private type: string;
   private addedFieldsArray: LeTypeFieldConfig[];
@@ -98,3 +98,5 @@ class LeTypeFieldConfig {
     return !!this.addedFieldsObejct[fieldName];
   }
 }
+
+export default LeTypeFieldConfig;

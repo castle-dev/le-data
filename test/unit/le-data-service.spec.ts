@@ -7,7 +7,11 @@ import chai = require('chai');
 
 import data = require("../../src/le-data-service");
 
+import LeTypeConfig from "../../src/le-type-config";
+import LeTypeFieldConfig from "../../src/le-type-field-config";
+
 import MockLeDataServiceProvider from "../mock-le-data-service-provider/mock-le-data-service-provider";
+
 var expect = chai.expect;
 
 describe('LeDataService', ()=>{
@@ -38,123 +42,7 @@ describe('LeDataService', ()=>{
           done();
         });
       });
-      // it('should reject if data with the set _id and type exists remotely', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(true);
-      //   };
-      //   var returnedPromise = dataService.createData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Attempted to create data with an id and type that already exists, _id: existingDataID, _type: ExampleType');
-      //     done();
-      //   });
-      // });
-      // it('should reject if data is invalid', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     var errorMessage = 'Error message returned from validateData';
-      //     var error = new Error(errorMessage);
-      //     return Promise.reject(error);
-      //   };
-      //   var returnedPromise = dataService.createData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Error message returned from validateData');
-      //     done();
-      //   });
-      // });
-      // it('should reject if unable to save data', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var errorMessage = 'Error message returned from save';
-      //     var error =  new Error(errorMessage);
-      //     return Promise.reject(error);
-      //   }
-      //   var returnedPromise = dataService.createData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Error message returned from save');
-      //     done();
-      //   });
-      // });
-      // it('should return the data that was returned from the save', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var objectReturnedFromSave = {
-      //       returnedField: '1234'
-      //     };
-      //     return Promise.resolve(objectReturnedFromSave);
-      //   }
-      //   var returnedPromise = dataService.createData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then((returnedData)=> {
-      //     expect(returnedData.returnedField).to.equal('1234');
-      //     done();
-      //   });
-      // });
-      // it('should return the data that was returned from the save if _id was not set', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var objectReturnedFromSave = {
-      //       returnedField: '1234'
-      //     };
-      //     return Promise.resolve(objectReturnedFromSave);
-      //   }
-      //   var returnedPromise = dataService.createData({
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then((returnedData)=> {
-      //     expect(returnedData.returnedField).to.equal('1234');
-      //     done();
-      //   });
-      // });
-      // it('should reject if unable to save data without _id', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var errorMessage = 'Error message returned from save';
-      //     var error =  new Error(errorMessage);
-      //     return Promise.reject(error);
-      //   }
-      //   var returnedPromise = dataService.createData({
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Error message returned from save');
-      //     done();
-      //   });
-      // });
     });
-
 
     describe('updateData', ()=>{
       it('should return a promise', ()=>{
@@ -188,93 +76,9 @@ describe('LeDataService', ()=>{
           done();
         });
       });
-      // it('should reject if the data does not exist remotely', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(false);
-      //   };
-      //   var returnedPromise = dataService.updateData({
-      //     _id: 'dataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Attempted to update data that does not exist, object:{"_id":"dataID","_type":"ExampleType"}');
-      //     done();
-      //   });
-      // });
-      // it('should reject if the data is invalid', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(true);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     var errorMessage = 'Error message returned from validateData';
-      //     var error = new Error(errorMessage);
-      //     return Promise.reject(error);
-      //   };
-      //   var returnedPromise = dataService.updateData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Error message returned from validateData');
-      //     done();
-      //   });
-      // });
-      // it('should reject if unable to save data', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(true);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var errorMessage = 'Error message returned from save';
-      //     var error =  new Error(errorMessage);
-      //     return Promise.reject(error);
-      //   }
-      //   var returnedPromise = dataService.updateData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then(undefined, (err)=> {
-      //     expect(err.message).to.equal('Error message returned from save');
-      //     done();
-      //   });
-      // });
-      // it('should return the data that was returned from the save', (done)=>{
-      //   mockProvider.dataExists = function (type, id) {
-      //     return Promise.resolve(true);
-      //   };
-      //   mockProvider.validateData = function (data) {
-      //     return Promise.resolve();
-      //   };
-      //   mockProvider.saveData = function (data) {
-      //     var objectReturnedFromSave = {
-      //       returnedField: '1234'
-      //     };
-      //     return Promise.resolve(objectReturnedFromSave);
-      //   }
-      //   var returnedPromise = dataService.updateData({
-      //     _id: 'existingDataID',
-      //     _type: 'ExampleType'
-      //   });
-      //   returnedPromise.then((returnedData)=> {
-      //     expect(returnedData.returnedField).to.equal('1234');
-      //     done();
-      //   });
-      // });
     });
 
     describe('deleteData', ()=>{
-      // it('should call deleteData on the provider and return a promise', ()=>{
-      //   var didCallDeleteData = false;
-      //   mockProvider.deleteData = function (type, id) {
-      //     didCallDeleteData = true;
-      //     return Promise.resolve();
-      //   };
-      //   var returnedObject = dataService.deleteData('exampleType', 'exampleID');
-      //   expect(returnedObject instanceof Promise).to.be.true;
-      //   expect(didCallDeleteData).to.be.true;
-      // });
       it('should reject if no _type is passed in parameters', (done)=>{
         var returnedPromise = dataService.deleteData(undefined, 'exampleID');
         returnedPromise.then(undefined, (err)=>{
@@ -291,6 +95,15 @@ describe('LeDataService', ()=>{
       });
     });
 
+    describe('configureType', ()=>{
+      it('should throw an error if the type is not configured', (done)=>{
+        dataService.createData({_type:'Cat'}).then(undefined, (err)=>{
+          console.log(err.message);
+          expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
+          done();
+        });
+      });
+    });
 
     describe('sync', ()=>{
     });

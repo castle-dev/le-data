@@ -1,3 +1,4 @@
+import LeTypeFieldConfig from "./le-type-field-config";
 /**
  * The object used to configure a type of data
  *
@@ -5,7 +6,7 @@
  *
  * @param type string - the type to be configured
  */
-class LeTypeConfig {
+export class LeTypeConfig {
   private fieldConfigsArray: LeTypeFieldConfig[];
   private fieldConfigsObject: Object;
 
@@ -50,3 +51,5 @@ class LeTypeConfig {
     return !!this.fieldConfigsObject[fieldName];
   }
 }
+
+export default LeTypeConfig;

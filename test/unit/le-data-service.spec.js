@@ -81,6 +81,15 @@ describe('LeDataService', function () {
             });
         });
     });
+    describe('configureType', function () {
+        it('should throw an error if the type is not configured', function (done) {
+            dataService.createData({ _type: 'Cat' }).then(undefined, function (err) {
+                console.log(err.message);
+                expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
+                done();
+            });
+        });
+    });
     describe('sync', function () {
     });
 });

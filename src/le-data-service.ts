@@ -2,7 +2,9 @@
 /// <reference path="../node_modules/ts-promise/dist/ts-promise.d.ts" />
 
 import Promise from "ts-promise";
-import LeDataServiceProvider from "./le-data-service-provider.ts";
+import LeDataServiceProvider from "./le-data-service-provider";
+import LeTypeConfig from "./le-type-config";
+import LeTypeFieldConfig from "./le-type-field-config";
 
 /**
  * The main service for the module.
@@ -152,7 +154,6 @@ export class LeDataService {
 	deleteData(type: string, id: string): Promise<void> {
 		if(!type) {
 			var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
-			console.log(errorMessage);
 			var error = new Error(errorMessage);
 			var promise = new Promise<void>((resolve, reject)=>{
 				reject(error);
@@ -161,7 +162,6 @@ export class LeDataService {
 		}
 		if(!id) {
 			var errorMessage = 'Undefined id passed to deleteData.\ntype: ' + type + ' id: ' + id;
-			console.log(errorMessage);
 			var error = new Error(errorMessage);
 			var promise = new Promise<void>((resolve, reject)=>{
 				reject(error);
@@ -239,16 +239,39 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		this.fetchTypeConfig(data._type).then((typeConfig)=>{
-			var fieldConfigs = typeConfig.getFieldConfigs();
-			var validateFieldPromises: Promise<void>[];
-			validateFieldPromises = [];
-			for(var i = 0; i < fieldConfigs.length; i += 1) {
-				var fieldConfig = fieldConfigs[i];
-				validateFieldPromises.push(this.validateField(fieldConfig, data));
-			}
-			validateFieldPromises.push(this.validateNoExtraFields(typeConfig, data));
-			return Promise.all(validateFieldPromises);
+		if(!data._type) {
+			var errorMessage = 'Invalid LeData object - _type must be set, data: ' + JSON.stringify(data);
+			var error = new Error(errorMessage);
+			var promise = new Promise<void>((resolve, reject)=>{
+				reject(error);
+			});
+			return promise;
+		}
+		var configLocation = '_typeConfigs/' + data;
+		return new Promise<void>((resolve, reject)=>{
+			this.dataServiceProvider.dataExists(configLocation).then((doesConfigExist)=>{
+				if(!doesConfigExist) {
+					var errorMessage = 'Invalid _type set on data: ' + JSON.stringify(data);
+					var error = new Error(errorMessage);
+					reject(error);
+				} else {
+					return this.fetchTypeConfig(data._type);
+				}
+			}).then((typeConfig)=>{
+				var fieldConfigs = typeConfig.getFieldConfigs();
+				var validateFieldPromises: Promise<void>[];
+				validateFieldPromises = [];
+				for(var i = 0; i < fieldConfigs.length; i += 1) {
+					var fieldConfig = fieldConfigs[i];
+					validateFieldPromises.push(this.validateField(fieldConfig, data));
+				}
+				validateFieldPromises.push(this.validateNoExtraFields(typeConfig, data));
+				return Promise.all(validateFieldPromises).then(()=>{
+					resolve(undefined);
+				}, (error)=>{
+					reject(error);
+				});
+			});
 		});
 	}
 
@@ -398,7 +421,7 @@ export class LeDataService {
 	 * @returns Promise<LeTypeConfig>
 	 */
 	private fetchTypeConfig(type:string): Promise<LeTypeConfig> {
-		return new Promise<LeTypeConfig>((resolve, reject)=>{})
+		return new Promise<LeTypeConfig>((resolve, reject)=>{});
 	};
 
 	/**

@@ -101,7 +101,6 @@ var LeDataService = (function () {
     LeDataService.prototype.deleteData = function (type, id) {
         if (!type) {
             var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
-            console.log(errorMessage);
             var error = new Error(errorMessage);
             var promise = new ts_promise_1.default(function (resolve, reject) {
                 reject(error);
@@ -110,7 +109,6 @@ var LeDataService = (function () {
         }
         if (!id) {
             var errorMessage = 'Undefined id passed to deleteData.\ntype: ' + type + ' id: ' + id;
-            console.log(errorMessage);
             var error = new Error(errorMessage);
             var promise = new ts_promise_1.default(function (resolve, reject) {
                 reject(error);
@@ -139,16 +137,40 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        this.fetchTypeConfig(data._type).then(function (typeConfig) {
-            var fieldConfigs = typeConfig.getFieldConfigs();
-            var validateFieldPromises;
-            validateFieldPromises = [];
-            for (var i = 0; i < fieldConfigs.length; i += 1) {
-                var fieldConfig = fieldConfigs[i];
-                validateFieldPromises.push(_this.validateField(fieldConfig, data));
-            }
-            validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
-            return ts_promise_1.default.all(validateFieldPromises);
+        if (!data._type) {
+            var errorMessage = 'Invalid LeData object - _type must be set, data: ' + JSON.stringify(data);
+            var error = new Error(errorMessage);
+            var promise = new ts_promise_1.default(function (resolve, reject) {
+                reject(error);
+            });
+            return promise;
+        }
+        var configLocation = '_typeConfigs/' + data;
+        return new ts_promise_1.default(function (resolve, reject) {
+            _this.dataServiceProvider.dataExists(configLocation).then(function (doesConfigExist) {
+                if (!doesConfigExist) {
+                    var errorMessage = 'Invalid _type set on data: ' + JSON.stringify(data);
+                    var error = new Error(errorMessage);
+                    reject(error);
+                }
+                else {
+                    return _this.fetchTypeConfig(data._type);
+                }
+            }).then(function (typeConfig) {
+                var fieldConfigs = typeConfig.getFieldConfigs();
+                var validateFieldPromises;
+                validateFieldPromises = [];
+                for (var i = 0; i < fieldConfigs.length; i += 1) {
+                    var fieldConfig = fieldConfigs[i];
+                    validateFieldPromises.push(_this.validateField(fieldConfig, data));
+                }
+                validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
+                return ts_promise_1.default.all(validateFieldPromises).then(function () {
+                    resolve(undefined);
+                }, function (error) {
+                    reject(error);
+                });
+            });
         });
     };
     LeDataService.prototype.validateNoExtraFields = function (typeConfig, data) {
