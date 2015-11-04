@@ -5,8 +5,10 @@ import LeDataServiceProvider from "../../src/le-data-service-provider.ts";
 
 export class MockLeDataServiceProvider implements LeDataServiceProvider {
   private remoteStoredData: Object;
+  private uniqueID: number;
   constructor(){
     this.remoteStoredData = {};
+    this.uniqueID = 0;
   }
   dataExists(location:string): Promise<boolean>{
     return new Promise<boolean>((resolve, reject)=>{
@@ -32,18 +34,39 @@ export class MockLeDataServiceProvider implements LeDataServiceProvider {
     return Promise.resolve(dataToReturn);
   }
 
-  saveData(location:string, data:any): Promise<void>{
+  createData(location:string, data:LeData):Promise<LeData> {
     var locationArray: string[] = location.split('/');
     var locationToSaveAt = this.remoteStoredData;
+    var sublocation;
     for(var i = 0; i < locationArray.length; i += 1) {
-      var sublocation = locationArray[i];
+      sublocation = locationArray[i];
       if (!locationToSaveAt[sublocation]) {
         locationToSaveAt[sublocation] = {}
       }
+
       locationToSaveAt = locationToSaveAt[sublocation];
     }
-    locationToSaveAt = data;
-    return Promise.resolve();
+    data._id = '' + this.uniqueID;
+    locationToSaveAt[this.uniqueID] = data;
+    this.uniqueID += 1;
+    return Promise.resolve(data);
+  }
+
+  updateData(location:string, data:any): Promise<any>{
+    var locationArray: string[] = location.split('/');
+    var locationToSaveAt = this.remoteStoredData;
+    var sublocation
+    for(var i = 0; i < locationArray.length; i += 1) {
+      sublocation = locationArray[i];
+      if (!locationToSaveAt[sublocation]) {
+        locationToSaveAt[sublocation] = {}
+      }
+      if(i < locationArray.length -1) {
+        locationToSaveAt = locationToSaveAt[sublocation];
+      }
+    }
+    locationToSaveAt[sublocation] = data;
+    return Promise.resolve(data);
   }
 
   deleteData(location:string): Promise<void>{

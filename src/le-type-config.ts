@@ -9,8 +9,9 @@ import LeTypeFieldConfig from "./le-type-field-config";
 export class LeTypeConfig {
   private fieldConfigsArray: LeTypeFieldConfig[];
   private fieldConfigsObject: Object;
-
+  private type: string;
   constructor(type: string) {
+    this.type = type;
     this.fieldConfigsArray = [];
     this.fieldConfigsObject = {};
   }
@@ -49,6 +50,12 @@ export class LeTypeConfig {
    */
   fieldExists(fieldName: string): boolean {
     return !!this.fieldConfigsObject[fieldName];
+  }
+
+  saveAt: string;
+
+  getType(): string {
+    return this.type;
   }
 }
 

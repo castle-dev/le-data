@@ -94,17 +94,21 @@ describe('LeDataService', ()=>{
         });
       });
     });
-
-    describe('configureType', ()=>{
-      it('should throw an error if the type is not configured', (done)=>{
-        dataService.createData({_type:'Cat'}).then(undefined, (err)=>{
-          console.log(err.message);
-          expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
-          done();
-        });
+    it('should throw an error if the type is not configured', (done)=>{
+      dataService.createData({_type:'Cat'}).then(undefined, (err)=>{
+        expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
+        done();
       });
     });
-
-    describe('sync', ()=>{
+    it('should successfully create a configured type',(done)=>{
+      var dogTypeConfig = new LeTypeConfig('Dog');
+      dataService.configureType(dogTypeConfig).then(()=>{
+        return dataService.createData({_type:'Dog'});
+      }).then((returnedData)=>{
+        expect(typeof returnedData._id === 'string').to.be.true;
+        expect(returnedData._createdAt instanceof Date).to.be.true;
+        expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+        done();
+      });
     });
 });

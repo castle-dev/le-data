@@ -1,6 +1,7 @@
 var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
+var le_type_config_1 = require("../../src/le-type-config");
 var mock_le_data_service_provider_1 = require("../mock-le-data-service-provider/mock-le-data-service-provider");
 var expect = chai.expect;
 describe('LeDataService', function () {
@@ -81,16 +82,22 @@ describe('LeDataService', function () {
             });
         });
     });
-    describe('configureType', function () {
-        it('should throw an error if the type is not configured', function (done) {
-            dataService.createData({ _type: 'Cat' }).then(undefined, function (err) {
-                console.log(err.message);
-                expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
-                done();
-            });
+    it('should throw an error if the type is not configured', function (done) {
+        dataService.createData({ _type: 'Cat' }).then(undefined, function (err) {
+            expect(err.message).to.equal('Invalid _type set on data: {"_type":"Cat"}');
+            done();
         });
     });
-    describe('sync', function () {
+    it('should successfully create a configured type', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        dataService.configureType(dogTypeConfig).then(function () {
+            return dataService.createData({ _type: 'Dog' });
+        }).then(function (returnedData) {
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData._createdAt instanceof Date).to.be.true;
+            expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+            done();
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

@@ -2,6 +2,7 @@ var ts_promise_1 = require("ts-promise");
 var MockLeDataServiceProvider = (function () {
     function MockLeDataServiceProvider() {
         this.remoteStoredData = {};
+        this.uniqueID = 0;
     }
     MockLeDataServiceProvider.prototype.dataExists = function (location) {
         var _this = this;
@@ -27,18 +28,37 @@ var MockLeDataServiceProvider = (function () {
         }
         return ts_promise_1.default.resolve(dataToReturn);
     };
-    MockLeDataServiceProvider.prototype.saveData = function (location, data) {
+    MockLeDataServiceProvider.prototype.createData = function (location, data) {
         var locationArray = location.split('/');
         var locationToSaveAt = this.remoteStoredData;
+        var sublocation;
         for (var i = 0; i < locationArray.length; i += 1) {
-            var sublocation = locationArray[i];
+            sublocation = locationArray[i];
             if (!locationToSaveAt[sublocation]) {
                 locationToSaveAt[sublocation] = {};
             }
             locationToSaveAt = locationToSaveAt[sublocation];
         }
-        locationToSaveAt = data;
-        return ts_promise_1.default.resolve();
+        data._id = '' + this.uniqueID;
+        locationToSaveAt[this.uniqueID] = data;
+        this.uniqueID += 1;
+        return ts_promise_1.default.resolve(data);
+    };
+    MockLeDataServiceProvider.prototype.updateData = function (location, data) {
+        var locationArray = location.split('/');
+        var locationToSaveAt = this.remoteStoredData;
+        var sublocation;
+        for (var i = 0; i < locationArray.length; i += 1) {
+            sublocation = locationArray[i];
+            if (!locationToSaveAt[sublocation]) {
+                locationToSaveAt[sublocation] = {};
+            }
+            if (i < locationArray.length - 1) {
+                locationToSaveAt = locationToSaveAt[sublocation];
+            }
+        }
+        locationToSaveAt[sublocation] = data;
+        return ts_promise_1.default.resolve(data);
     };
     MockLeDataServiceProvider.prototype.deleteData = function (location) {
         var locationArray = location.split('/');

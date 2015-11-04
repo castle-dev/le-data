@@ -1,6 +1,7 @@
 var le_type_field_config_1 = require("./le-type-field-config");
 var LeTypeConfig = (function () {
     function LeTypeConfig(type) {
+        this.type = type;
         this.fieldConfigsArray = [];
         this.fieldConfigsObject = {};
     }
@@ -15,6 +16,9 @@ var LeTypeConfig = (function () {
     };
     LeTypeConfig.prototype.fieldExists = function (fieldName) {
         return !!this.fieldConfigsObject[fieldName];
+    };
+    LeTypeConfig.prototype.getType = function () {
+        return this.type;
     };
     return LeTypeConfig;
 })();

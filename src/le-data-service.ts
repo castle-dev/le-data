@@ -6,6 +6,7 @@ import LeDataServiceProvider from "./le-data-service-provider";
 import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 
+var configObjectIndex = '_leTypeConfigs/';
 /**
  * The main service for the module.
  * In charge of sending and recieving arbitrary JSON data to
@@ -71,7 +72,11 @@ export class LeDataService {
 		} else {
 			return new Promise<LeData>((resolve, reject)=>{
 				this.validateData(data).then(()=>{
-					return this.saveData(data);
+					data._createdAt = new Date();
+					data._lastUpdatedAt = data._createdAt;
+					return this.locationForData(data);
+				}).then((location)=>{
+					return this.dataServiceProvider.createData(location, data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
 				}, (err)=>{
@@ -133,6 +138,23 @@ export class LeDataService {
 				return this.saveData(data);
 			}).then((returnedData)=>{
 				resolve(returnedData);
+			}, (err)=>{
+				reject(err);
+			});
+		});
+	}
+
+	private locationForData(data:LeData): Promise<string> {
+		return new Promise<string>((resolve, reject)=>{
+			this.fetchTypeConfig(data._type).then((typeConfig)=>{
+				var locationToReturn = data._type;
+				if (typeConfig.saveAt) {
+					locationToReturn = typeConfig.saveAt;
+				}
+				if (data._id) {
+					locationToReturn += '/' + data._id;
+				}
+				resolve(locationToReturn);
 			}, (err)=>{
 				reject(err);
 			});
@@ -227,7 +249,16 @@ export class LeDataService {
 	 * @returns Promis<any> - Resolves with no data when the type has been successfully configured.
 	 */
 	configureType(config: LeTypeConfig): Promise<void> {
-		return new Promise<void>((resolve, reject) => {});
+		return new Promise<void>((resolve, reject) => {
+			var configObjectToSave:any = {};
+			configObjectToSave.type = config.getType();
+			var location = configObjectIndex + configObjectToSave.type;
+			this.dataServiceProvider.updateData(location, configObjectToSave).then(()=>{
+				resolve(undefined);
+			}, (err)=>{
+				reject(err);
+			});
+		});
 	}
 
 	private validateData(data:LeData): Promise<void> {
@@ -247,7 +278,7 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		var configLocation = '_typeConfigs/' + data;
+		var configLocation = configObjectIndex + data._type;
 		return new Promise<void>((resolve, reject)=>{
 			this.dataServiceProvider.dataExists(configLocation).then((doesConfigExist)=>{
 				if(!doesConfigExist) {
@@ -421,7 +452,15 @@ export class LeDataService {
 	 * @returns Promise<LeTypeConfig>
 	 */
 	private fetchTypeConfig(type:string): Promise<LeTypeConfig> {
-		return new Promise<LeTypeConfig>((resolve, reject)=>{});
+		return new Promise<LeTypeConfig>((resolve, reject)=>{
+			var location = configObjectIndex + type;
+			this.dataServiceProvider.fetchData(location).then((returnedConfigObject)=>{
+				var configObject = new LeTypeConfig(returnedConfigObject.type);
+				resolve(configObject);
+			}, (err)=>{
+				reject(err);
+			});
+		});
 	};
 
 	/**

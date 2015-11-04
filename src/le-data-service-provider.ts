@@ -4,7 +4,8 @@ import Promise from "ts-promise";
 export interface LeDataServiceProvider {
   dataExists(location:string): Promise<boolean>;
   fetchData(location:string): Promise<any>;
-  saveData(location:string, data:any): Promise<void>;
+  createData(location:string, data:LeData): Promise<LeData>;
+  updateData(location:string, data:any): Promise<any>;
   deleteData(location:string): Promise<void>;
 }
 

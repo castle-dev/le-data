@@ -1,4 +1,6 @@
 var ts_promise_1 = require("ts-promise");
+var le_type_config_1 = require("./le-type-config");
+var configObjectIndex = '_leTypeConfigs/';
 var LeDataService = (function () {
     function LeDataService(provider) {
         this.dataServiceProvider = provider;
@@ -44,7 +46,11 @@ var LeDataService = (function () {
         else {
             return new ts_promise_1.default(function (resolve, reject) {
                 _this.validateData(data).then(function () {
-                    return _this.saveData(data);
+                    data._createdAt = new Date();
+                    data._lastUpdatedAt = data._createdAt;
+                    return _this.locationForData(data);
+                }).then(function (location) {
+                    return _this.dataServiceProvider.createData(location, data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
                 }, function (err) {
@@ -98,6 +104,23 @@ var LeDataService = (function () {
             });
         });
     };
+    LeDataService.prototype.locationForData = function (data) {
+        var _this = this;
+        return new ts_promise_1.default(function (resolve, reject) {
+            _this.fetchTypeConfig(data._type).then(function (typeConfig) {
+                var locationToReturn = data._type;
+                if (typeConfig.saveAt) {
+                    locationToReturn = typeConfig.saveAt;
+                }
+                if (data._id) {
+                    locationToReturn += '/' + data._id;
+                }
+                resolve(locationToReturn);
+            }, function (err) {
+                reject(err);
+            });
+        });
+    };
     LeDataService.prototype.deleteData = function (type, id) {
         if (!type) {
             var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
@@ -125,7 +148,17 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) { });
     };
     LeDataService.prototype.configureType = function (config) {
-        return new ts_promise_1.default(function (resolve, reject) { });
+        var _this = this;
+        return new ts_promise_1.default(function (resolve, reject) {
+            var configObjectToSave = {};
+            configObjectToSave.type = config.getType();
+            var location = configObjectIndex + configObjectToSave.type;
+            _this.dataServiceProvider.updateData(location, configObjectToSave).then(function () {
+                resolve(undefined);
+            }, function (err) {
+                reject(err);
+            });
+        });
     };
     LeDataService.prototype.validateData = function (data) {
         var _this = this;
@@ -145,7 +178,7 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        var configLocation = '_typeConfigs/' + data;
+        var configLocation = configObjectIndex + data._type;
         return new ts_promise_1.default(function (resolve, reject) {
             _this.dataServiceProvider.dataExists(configLocation).then(function (doesConfigExist) {
                 if (!doesConfigExist) {
@@ -298,7 +331,16 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) { });
     };
     LeDataService.prototype.fetchTypeConfig = function (type) {
-        return new ts_promise_1.default(function (resolve, reject) { });
+        var _this = this;
+        return new ts_promise_1.default(function (resolve, reject) {
+            var location = configObjectIndex + type;
+            _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
+                var configObject = new le_type_config_1.default(returnedConfigObject.type);
+                resolve(configObject);
+            }, function (err) {
+                reject(err);
+            });
+        });
     };
     ;
     LeDataService.prototype.saveData = function (data) {
