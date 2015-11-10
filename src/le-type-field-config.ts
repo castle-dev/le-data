@@ -42,6 +42,8 @@ export class LeTypeFieldConfig {
    */
   convertToLocalTimeZone: boolean;
 
+  saveAt: string;
+
   /**
    * @function addField - adds a field to the current field if it's of type 'object'
    *
@@ -96,6 +98,10 @@ export class LeTypeFieldConfig {
    */
   fieldExists(fieldName: string): boolean {
     return !!this.addedFieldsObejct[fieldName];
+  }
+
+  isCustomeType(): boolean {
+    return this.type !== 'string' && this.type !== 'boolean' && this.type !== 'number' && this.type !== 'Date' && this.type !== 'object';
   }
 }
 

@@ -64,6 +64,10 @@ export class LeTypeConfig {
     return !!this.fieldConfigsObject[fieldName];
   }
 
+  getFieldConfig(fieldName: string): LeTypeFieldConfig {
+    return this.fieldConfigsObject[fieldName];
+  }
+
   saveAt: string;
 
   getType(): string {

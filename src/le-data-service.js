@@ -47,11 +47,7 @@ var LeDataService = (function () {
         else {
             return new ts_promise_1.default(function (resolve, reject) {
                 _this.validateData(data).then(function () {
-                    data._createdAt = new Date();
-                    data._lastUpdatedAt = data._createdAt;
-                    return _this.locationForData(data);
-                }).then(function (location) {
-                    return _this.dataServiceProvider.createData(location, data);
+                    return _this.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
                 }, function (err) {
@@ -399,9 +395,71 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.saveData = function (data) {
-        return new ts_promise_1.default(function (resovle, reject) { });
+        var _this = this;
+        return this.locationForData(data).then(function (location) {
+            var updateCreatedAtPropmise;
+            if (!data._id) {
+                data._createdAt = new Date();
+                updateCreatedAtPropmise = ts_promise_1.default.resolve();
+            }
+            else {
+                updateCreatedAtPropmise = _this.dataServiceProvider.dataExists(location).then(function (doesExist) {
+                    if (!doesExist) {
+                        data._createdAt = new Date();
+                    }
+                });
+            }
+            return updateCreatedAtPropmise;
+        }).then(function () {
+            data._lastUpdatedAt = new Date();
+            if (!data._id) {
+                return _this.saveToCreateID(data);
+            }
+        }).then(function () {
+            var promises = [];
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    promises.push(_this.saveFieldForData(data, key));
+                }
+            }
+            return ts_promise_1.default.all(promises);
+        }).then(function () {
+            return data;
+        });
     };
     ;
+    LeDataService.prototype.saveFieldForData = function (data, fieldName) {
+        var _this = this;
+        var location;
+        return this.fetchTypeConfig(data._type).then(function (typeConfig) {
+            var fieldConfig = typeConfig.getFieldConfig(fieldName);
+            location = data._type;
+            if (typeConfig.saveAt) {
+                location = typeConfig.saveAt;
+            }
+            location += '/' + data._id;
+            if (fieldConfig && fieldConfig.saveAt) {
+                location += '/' + fieldConfig.saveAt;
+            }
+            else {
+                location += '/' + fieldName;
+            }
+            if (fieldConfig && fieldConfig.isCustomeType()) {
+                return _this.saveData(data[fieldName]);
+            }
+        }).then(function (returnedData) {
+            if (returnedData) {
+            }
+        });
+    };
+    LeDataService.prototype.saveToCreateID = function (data) {
+        var _this = this;
+        return this.locationForData(data).then(function (location) {
+            return _this.dataServiceProvider.createData(location, { _type: data._type });
+        }).then(function (returnedData) {
+            data._id = returnedData._id;
+        });
+    };
     LeDataService.prototype.saveTypeConfig = function (config) {
         return new ts_promise_1.default(function () { });
     };

@@ -28,6 +28,9 @@ var LeTypeConfig = (function () {
     LeTypeConfig.prototype.fieldExists = function (fieldName) {
         return !!this.fieldConfigsObject[fieldName];
     };
+    LeTypeConfig.prototype.getFieldConfig = function (fieldName) {
+        return this.fieldConfigsObject[fieldName];
+    };
     LeTypeConfig.prototype.getType = function () {
         return this.type;
     };

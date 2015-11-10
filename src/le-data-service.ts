@@ -73,11 +73,7 @@ export class LeDataService {
 		} else {
 			return new Promise<LeData>((resolve, reject)=>{
 				this.validateData(data).then(()=>{
-					data._createdAt = new Date();
-					data._lastUpdatedAt = data._createdAt;
-					return this.locationForData(data);
-				}).then((location)=>{
-					return this.dataServiceProvider.createData(location, data);
+					return this.saveData(data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
 				}, (err)=>{
@@ -524,8 +520,67 @@ export class LeDataService {
 	 * @returns Promise<LeData>
 	 */
 	private saveData(data: LeData): Promise<LeData> {
-		return new Promise<LeData>((resovle, reject)=>{});
+		return this.locationForData(data).then((location)=>{
+			var updateCreatedAtPropmise;
+			if(!data._id) {
+				data._createdAt = new Date();
+				updateCreatedAtPropmise = Promise.resolve();
+			} else {
+				updateCreatedAtPropmise = this.dataServiceProvider.dataExists(location).then((doesExist)=>{
+					if(!doesExist) {
+						data._createdAt = new Date();
+					}
+				});
+			}
+			return updateCreatedAtPropmise;
+		}).then(()=>{
+			data._lastUpdatedAt = new Date();
+			if(!data._id) {
+				return this.saveToCreateID(data);
+			}
+		}).then(()=>{
+			var promises = [];
+			for(var key in data) {
+				if(data.hasOwnProperty(key)) {
+					promises.push(this.saveFieldForData(data, key));
+				}
+			}
+			return Promise.all(promises);
+		}).then(()=>{
+			return data;
+		});
 	};
+
+	private saveFieldForData(data:LeData, fieldName:string): Promise<any> {
+		var location;
+		return this.fetchTypeConfig(data._type).then((typeConfig)=>{
+			var fieldConfig = typeConfig.getFieldConfig(fieldName);
+			location = data._type;
+			if (typeConfig.saveAt) {
+				location = typeConfig.saveAt;
+			}
+			location += '/' + data._id;
+			if(fieldConfig && fieldConfig.saveAt) {
+				location += '/' + fieldConfig.saveAt;
+			} else {
+				location += '/' + fieldName;
+			}
+			if(fieldConfig && fieldConfig.isCustomeType()){
+				return this.saveData(data[fieldName]);
+			}
+		}).then((returnedData)=>{
+			if(returnedData) {
+			}
+		});
+	}
+
+	private saveToCreateID(data:LeData): Promise<any> {
+		return this.locationForData(data).then((location)=>{
+				return this.dataServiceProvider.createData(location, {_type:data._type});
+			}).then((returnedData)=>{
+				data._id = returnedData._id;
+			});
+	}
 
 	/**
 	 * Saves the LeTypeConfig remotely.

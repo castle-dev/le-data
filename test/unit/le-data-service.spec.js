@@ -124,5 +124,37 @@ describe('LeDataService', function () {
             console.log(err);
         });
     });
+    it('should throw an error on create create if the field is the wrong type', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var goodFieldConfig = dogTypeConfig.addField('goodField', 'string');
+        dataService.configureType(dogTypeConfig).then(function () {
+            return dataService.createData({ _type: 'Dog', goodField: 74 });
+        }).then(undefined, function (err) {
+            done();
+        });
+    });
+    it('should correctly configure and save custom type fields', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var goodFieldConfig = dogTypeConfig.addField('catField', 'Cat');
+        dataService.configureType(dogTypeConfig).then(function () {
+            var catTypeConfig = new le_type_config_1.default('Cat');
+            return dataService.configureType(catTypeConfig);
+        }).then(function () {
+            return dataService.createData({ _type: 'Dog', catField: { _type: "Cat" } });
+        }).then(function (returnedData) {
+            console.log(returnedData);
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData._createdAt instanceof Date).to.be.true;
+            expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+            expect(returnedData._type === 'Dog').to.be.true;
+            expect(returnedData.catField._type === 'Cat').to.be.true;
+            expect(typeof returnedData.catField._id === 'string').to.be.true;
+            expect(returnedData.catField._createdAt instanceof Date).to.be.true;
+            expect(returnedData.catField._lastUpdatedAt instanceof Date).to.be.true;
+            done();
+        }, function (err) {
+            console.log(err);
+        });
+    });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

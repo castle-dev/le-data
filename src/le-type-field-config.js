@@ -23,6 +23,9 @@ var LeTypeFieldConfig = (function () {
     LeTypeFieldConfig.prototype.fieldExists = function (fieldName) {
         return !!this.addedFieldsObejct[fieldName];
     };
+    LeTypeFieldConfig.prototype.isCustomeType = function () {
+        return this.type !== 'string' && this.type !== 'boolean' && this.type !== 'number' && this.type !== 'Date' && this.type !== 'object';
+    };
     return LeTypeFieldConfig;
 })();
 exports.LeTypeFieldConfig = LeTypeFieldConfig;
