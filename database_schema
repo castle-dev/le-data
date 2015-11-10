@@ -1,0 +1,19 @@
+{
+  '_leTypeConfigs': {
+    'type': string,
+    'saveAt': string,
+    'fieldConfigs': {
+      specific LeTypeFieldConfig id: boolean
+    }
+  },
+  '_leTypeFieldConfigs': {
+    'type': string,
+    'fieldName': string,
+    'cascadeDelete': boolean,
+    'required': boolean
+    'convertToLocalTimeZone',
+    'fieldConfigs': {
+      specific LeTypeFieldConfig id: boolean
+    }
+  }
+}

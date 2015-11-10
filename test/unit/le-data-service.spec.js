@@ -99,5 +99,30 @@ describe('LeDataService', function () {
             done();
         });
     });
+    it('should throw an error if there is an unconfigured field', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        dataService.configureType(dogTypeConfig).then(function () {
+            return dataService.createData({ _type: 'Dog', badField: 'thisFieldIsTrash' });
+        }).then(undefined, function (err) {
+            expect(err.message).to.equal('An additional field was set on the data object.\nthe field "badField" is not configured on objects of type Dog\ndata: {"_type":"Dog","badField":"thisFieldIsTrash"}');
+            done();
+        });
+    });
+    it('should successfully create if there is a configured field', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var goodFieldConfig = dogTypeConfig.addField('goodField', 'string');
+        dataService.configureType(dogTypeConfig).then(function () {
+            return dataService.createData({ _type: 'Dog', goodField: 'thisfieldIsAwesome' });
+        }).then(function (returnedData) {
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData._createdAt instanceof Date).to.be.true;
+            expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+            expect(returnedData._type === 'Dog').to.be.true;
+            expect(returnedData.goodField === 'thisfieldIsAwesome').to.be.true;
+            done();
+        }, function (err) {
+            console.log(err);
+        });
+    });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

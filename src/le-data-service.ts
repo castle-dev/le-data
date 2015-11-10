@@ -7,6 +7,7 @@ import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 
 var configObjectIndex = '_leTypeConfigs/';
+
 /**
  * The main service for the module.
  * In charge of sending and recieving arbitrary JSON data to
@@ -252,15 +253,48 @@ export class LeDataService {
 		return new Promise<void>((resolve, reject) => {
 			var configObjectToSave:any = {};
 			configObjectToSave.type = config.getType();
+			configObjectToSave.saveAt = config.saveAt;
 			var location = configObjectIndex + configObjectToSave.type;
-			this.dataServiceProvider.updateData(location, configObjectToSave).then(()=>{
-				resolve(undefined);
-			}, (err)=>{
-				reject(err);
+			configObjectToSave.fieldConfigObjects = {};
+			var fieldConfigs = config.getFieldConfigs();
+			var promises = [];
+			for(var i = 0; i < fieldConfigs.length; i += 1) {
+				var fieldConfig = fieldConfigs[i];
+				var fieldConfigObject = this.fieldConfigObjectForFieldConfig(fieldConfig);
+				promises.push(this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject).then((returnedFieldConfigObject)=>{
+					if(!configObjectToSave.fieldConfigs) {
+						configObjectToSave.fieldConfigs = {};
+					}
+					configObjectToSave.fieldConfigs[returnedFieldConfigObject._id] = true;
+				}));
+			}
+			Promise.all(promises).then(()=>{
+				this.dataServiceProvider.updateData(location, configObjectToSave).then(()=>{
+					resolve(undefined);
+				}, (err)=>{
+					reject(err);
+				});
 			});
 		});
 	}
-
+	private fieldConfigObjectForFieldConfig(fieldConfig:LeTypeFieldConfig):any {
+		var fieldConfigObject:any = {};
+		fieldConfigObject.type = fieldConfig.getFieldType();
+		fieldConfigObject.fieldName = fieldConfig.getFieldName();
+		fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
+		fieldConfigObject.required = fieldConfig.required;
+		fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
+		return fieldConfigObject;
+	}
+	private fieldConfigForFieldConfigObject(fieldConfigObject:any): Promise<LeTypeFieldConfig> {
+		return new Promise<LeTypeFieldConfig>((resolve, reject)=>{
+			var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, fieldConfigObject.type);
+			fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
+			fieldConfig.required = fieldConfigObject.required;
+			fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
+			resolve(fieldConfig);
+		});
+	}
 	private validateData(data:LeData): Promise<void> {
 		if(!data) {
 			var errorMessage = 'Invalid LeData object - cannot be undefined';
@@ -290,7 +324,7 @@ export class LeDataService {
 				}
 			}).then((typeConfig)=>{
 				var fieldConfigs = typeConfig.getFieldConfigs();
-				var validateFieldPromises: Promise<void>[];
+				var validateFieldPromises: Promise<any>[];
 				validateFieldPromises = [];
 				for(var i = 0; i < fieldConfigs.length; i += 1) {
 					var fieldConfig = fieldConfigs[i];
@@ -308,7 +342,7 @@ export class LeDataService {
 
 	private validateNoExtraFields(typeConfig: LeTypeConfig, data: LeData): Promise<void> {
 		for(var key in data) {
-			if(key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
+			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
 				var errorMessage = 'An additional field was set on the data object.\n';
 				errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type +'\n';
 				errorMessage += 'data: ' + JSON.stringify(data);
@@ -321,7 +355,7 @@ export class LeDataService {
 
 	private validateNoExtraFieldsOnObject(fieldConfig: LeTypeFieldConfig, data: Object) {
 		for(var key in data) {
-			if(key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
+			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
 				var errorMessage = 'An additional field was set on the data object.\n';
 				errorMessage += 'the field "' + key + '" is not configured on the object\n';
 				errorMessage += 'data: ' + JSON.stringify(data);
@@ -332,21 +366,13 @@ export class LeDataService {
 		return Promise.resolve();
 	}
 
-	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
-		var validationPromises: Promise<void>[];
+	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<any> {
+		var validationPromises: Promise<any>[] = [];
 		var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
 		var typePromise = this.validateTypeOnField(fieldConfig, data);
-
 		validationPromises.push(requiredPromise);
 		validationPromises.push(typePromise);
-
-		return new Promise<void>((resolve, reject)=>{
-			Promise.all(validationPromises).then(()=>{
-				resolve(undefined);
-			}, (err)=>{
-				reject(err);
-			});
-		});
+		return Promise.all(validationPromises);
 	}
 
 	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
@@ -455,14 +481,37 @@ export class LeDataService {
 		return new Promise<LeTypeConfig>((resolve, reject)=>{
 			var location = configObjectIndex + type;
 			this.dataServiceProvider.fetchData(location).then((returnedConfigObject)=>{
-				var configObject = new LeTypeConfig(returnedConfigObject.type);
+				var typeConfig = new LeTypeConfig(returnedConfigObject.type);
+				return this.typeConfigForTypeConfigObject(returnedConfigObject);
+			}).then((configObject)=>{
 				resolve(configObject);
 			}, (err)=>{
 				reject(err);
 			});
 		});
 	};
-
+	private fetchTypeFieldConfig(fieldConfigID: string): Promise<LeTypeFieldConfig> {
+		var location = '_leTypeFieldConfigs/' + fieldConfigID;
+		return this.dataServiceProvider.fetchData(location).then((fieldConfigObject)=>{
+			return this.fieldConfigForFieldConfigObject(fieldConfigObject);
+		});
+	}
+	private typeConfigForTypeConfigObject(typeConfigObject: any):Promise<LeTypeConfig> {
+		return new Promise<LeTypeConfig>((resolve, reject)=>{
+			var typeConfig = new LeTypeConfig(typeConfigObject.type);
+			var promises = [];
+			for(var fieldConfigID in typeConfigObject.fieldConfigs) {
+				if(typeConfigObject.fieldConfigs.hasOwnProperty(fieldConfigID)) {
+					promises.push(this.fetchTypeFieldConfig(fieldConfigID).then((fieldConfig)=>{
+						typeConfig.addField(fieldConfig);
+					}));
+				}
+			}
+			Promise.all(promises).then(()=>{
+				resolve(typeConfig);
+			});
+		});
+	}
 	/**
 	 * Saves the LeData remotely. It will recursively save all the data.
 	 * This will not do any checks on if the data is valid.
