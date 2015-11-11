@@ -156,12 +156,11 @@ var LeDataService = (function () {
             var promises = [];
             for (var i = 0; i < fieldConfigs.length; i += 1) {
                 var fieldConfig = fieldConfigs[i];
-                var fieldConfigObject = _this.fieldConfigObjectForFieldConfig(fieldConfig);
-                promises.push(_this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject).then(function (returnedFieldConfigObject) {
+                promises.push(_this.saveFieldConfig(fieldConfig).then(function (returnedFieldConfigID) {
                     if (!configObjectToSave.fieldConfigs) {
                         configObjectToSave.fieldConfigs = {};
                     }
-                    configObjectToSave.fieldConfigs[returnedFieldConfigObject._id] = true;
+                    configObjectToSave.fieldConfigs[returnedFieldConfigID] = true;
                 }));
             }
             ts_promise_1.default.all(promises).then(function () {
@@ -173,22 +172,51 @@ var LeDataService = (function () {
             });
         });
     };
-    LeDataService.prototype.fieldConfigObjectForFieldConfig = function (fieldConfig) {
+    LeDataService.prototype.saveFieldConfig = function (fieldConfig) {
+        var _this = this;
         var fieldConfigObject = {};
         fieldConfigObject.type = fieldConfig.getFieldType();
         fieldConfigObject.fieldName = fieldConfig.getFieldName();
         fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
         fieldConfigObject.required = fieldConfig.required;
         fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
-        return fieldConfigObject;
+        var promises = [];
+        var innerFieldConfigs = fieldConfig.getFieldConfigs();
+        for (var i = 0; i < innerFieldConfigs.length; i += 1) {
+            var innerFieldConfig = innerFieldConfigs[i];
+            promises.push(this.saveFieldConfig(innerFieldConfig).then(function (returnedFieldConfigID) {
+                if (!fieldConfigObject.fieldConfigs) {
+                    fieldConfigObject.fieldConfigs = {};
+                }
+                fieldConfigObject.fieldConfigs[returnedFieldConfigID] = true;
+            }));
+        }
+        return ts_promise_1.default.all(promises).then(function () {
+            return _this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject);
+        }).then(function (returnedConfigObject) {
+            return returnedConfigObject._id;
+        });
     };
     LeDataService.prototype.fieldConfigForFieldConfigObject = function (fieldConfigObject) {
-        return new ts_promise_1.default(function (resolve, reject) {
+        var promises = [];
+        var innerFieldConfigs = [];
+        if (fieldConfigObject.fieldConfigs) {
+            for (var fieldConfigID in fieldConfigObject.fieldConfigs) {
+                promises.push(this.fetchTypeFieldConfig(fieldConfigID).then(function (returnedFieldConfig) {
+                    innerFieldConfigs.push(returnedFieldConfig);
+                }));
+            }
+        }
+        return ts_promise_1.default.all(promises).then(function () {
             var fieldConfig = new le_type_field_config_1.default(fieldConfigObject.fieldName, fieldConfigObject.type);
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
-            resolve(fieldConfig);
+            for (var i = 0; i < innerFieldConfigs.length; i += 1) {
+                var innerFieldConfig = innerFieldConfigs[i];
+                fieldConfig.addField(innerFieldConfig);
+            }
+            return fieldConfig;
         });
     };
     LeDataService.prototype.validateData = function (data) {
@@ -239,7 +267,7 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.validateNoExtraFields = function (typeConfig, data) {
         for (var key in data) {
-            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
+            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key)) {
                 var errorMessage = 'An additional field was set on the data object.\n';
                 errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type + '\n';
                 errorMessage += 'data: ' + JSON.stringify(data);
@@ -250,7 +278,7 @@ var LeDataService = (function () {
         return ts_promise_1.default.resolve();
     };
     LeDataService.prototype.validateNoExtraFieldsOnObject = function (fieldConfig, data) {
-        for (var key in data) {
+        for (var key in data[fieldConfig.getFieldName()]) {
             if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
                 var errorMessage = 'An additional field was set on the data object.\n';
                 errorMessage += 'the field "' + key + '" is not configured on the object\n';
@@ -362,8 +390,8 @@ var LeDataService = (function () {
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
                 var typeConfig = new le_type_config_1.default(returnedConfigObject.type);
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
-            }).then(function (configObject) {
-                resolve(configObject);
+            }).then(function (typeConfig) {
+                resolve(typeConfig);
             }, function (err) {
                 reject(err);
             });
@@ -431,8 +459,9 @@ var LeDataService = (function () {
     LeDataService.prototype.saveFieldForData = function (data, fieldName) {
         var _this = this;
         var location;
+        var fieldConfig;
         return this.fetchTypeConfig(data._type).then(function (typeConfig) {
-            var fieldConfig = typeConfig.getFieldConfig(fieldName);
+            fieldConfig = typeConfig.getFieldConfig(fieldName);
             location = data._type;
             if (typeConfig.saveAt) {
                 location = typeConfig.saveAt;
@@ -449,8 +478,42 @@ var LeDataService = (function () {
             }
         }).then(function (returnedData) {
             if (returnedData) {
+                return _this.dataServiceProvider.updateData(location, returnedData._id);
+            }
+            else if (fieldConfig && fieldConfig.getFieldType() === 'object') {
+                return _this.saveObjectField(location, fieldConfig, data[fieldName]);
+            }
+            else {
+                return _this.dataServiceProvider.updateData(location, data[fieldName]);
             }
         });
+    };
+    LeDataService.prototype.saveObjectField = function (location, fieldConfig, data) {
+        var promises = [];
+        var innerFieldConfigs = fieldConfig.getFieldConfigs();
+        for (var i = 0; i < innerFieldConfigs.length; i += 1) {
+            var innerFieldConfig = innerFieldConfigs[i];
+            var innerLocation;
+            if (innerFieldConfig.saveAt) {
+                innerLocation = location + innerFieldConfig.saveAt;
+            }
+            else {
+                innerLocation = location + innerFieldConfig.getFieldName();
+            }
+            promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()]));
+        }
+        return ts_promise_1.default.all(promises);
+    };
+    LeDataService.prototype.saveField = function (location, fieldConfig, fieldData) {
+        var _this = this;
+        if (fieldConfig.isCustomeType()) {
+            return this.saveData(fieldData).then(function (returnedData) {
+                return _this.dataServiceProvider.updateData(location, returnedData._id);
+            });
+        }
+        else if (fieldConfig.getFieldType() === 'object') {
+            return this.saveObjectField(location, fieldConfig, fieldData);
+        }
     };
     LeDataService.prototype.saveToCreateID = function (data) {
         var _this = this;

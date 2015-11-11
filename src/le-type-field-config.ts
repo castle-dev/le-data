@@ -57,13 +57,24 @@ export class LeTypeFieldConfig {
    *
    * @returns LeTypeFieldConfig -  the config object to configure the new field
    */
-  addField(fieldName: string, type: string): LeTypeFieldConfig {
-    var newFieldConfig = new LeTypeFieldConfig(fieldName, type);
-    this.addedFieldsArray.push(newFieldConfig);
-    this.addedFieldsObejct[fieldName] = newFieldConfig;
-    return newFieldConfig;
+  addField(filedConfig: LeTypeFieldConfig): LeTypeFieldConfig;
+  addField(fieldName: string, type: string): LeTypeFieldConfig;
+  addField(argument1, argument2?) {
+    var fieldConfigToAdd: LeTypeFieldConfig;
+    var fieldName:string;
+    if(argument1 instanceof LeTypeFieldConfig) {
+      var passedInFieldConfig:LeTypeFieldConfig = argument1;
+      fieldName = passedInFieldConfig.getFieldName();
+      fieldConfigToAdd = passedInFieldConfig;
+    } else {
+      fieldName = argument1;
+      var type:string = argument2;
+      fieldConfigToAdd = new LeTypeFieldConfig(fieldName, type);
+    }
+    this.addedFieldsArray.push(fieldConfigToAdd);
+    this.addedFieldsObejct[fieldName] = fieldConfigToAdd;
+    return fieldConfigToAdd;
   }
-
   /**
    * @function getFieldName - returns the fieldname
    *

@@ -256,12 +256,11 @@ export class LeDataService {
 			var promises = [];
 			for(var i = 0; i < fieldConfigs.length; i += 1) {
 				var fieldConfig = fieldConfigs[i];
-				var fieldConfigObject = this.fieldConfigObjectForFieldConfig(fieldConfig);
-				promises.push(this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject).then((returnedFieldConfigObject)=>{
+				promises.push(this.saveFieldConfig(fieldConfig).then((returnedFieldConfigID)=>{
 					if(!configObjectToSave.fieldConfigs) {
 						configObjectToSave.fieldConfigs = {};
 					}
-					configObjectToSave.fieldConfigs[returnedFieldConfigObject._id] = true;
+					configObjectToSave.fieldConfigs[returnedFieldConfigID] = true;
 				}));
 			}
 			Promise.all(promises).then(()=>{
@@ -273,22 +272,53 @@ export class LeDataService {
 			});
 		});
 	}
-	private fieldConfigObjectForFieldConfig(fieldConfig:LeTypeFieldConfig):any {
+
+	private saveFieldConfig(fieldConfig: LeTypeFieldConfig):Promise<string> {
 		var fieldConfigObject:any = {};
 		fieldConfigObject.type = fieldConfig.getFieldType();
 		fieldConfigObject.fieldName = fieldConfig.getFieldName();
 		fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
 		fieldConfigObject.required = fieldConfig.required;
 		fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
-		return fieldConfigObject;
+
+		var promises = [];
+		var innerFieldConfigs = fieldConfig.getFieldConfigs();
+		for(var i = 0; i < innerFieldConfigs.length; i += 1) {
+			var innerFieldConfig = innerFieldConfigs[i];
+			promises.push(this.saveFieldConfig(innerFieldConfig).then((returnedFieldConfigID)=>{
+				if(!fieldConfigObject.fieldConfigs) {
+					fieldConfigObject.fieldConfigs = {};
+				}
+				fieldConfigObject.fieldConfigs[returnedFieldConfigID] = true;
+			}));
+		}
+		return Promise.all(promises).then(()=>{
+			return this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject);
+		}).then((returnedConfigObject)=>{
+			return returnedConfigObject._id;
+		});
 	}
+
 	private fieldConfigForFieldConfigObject(fieldConfigObject:any): Promise<LeTypeFieldConfig> {
-		return new Promise<LeTypeFieldConfig>((resolve, reject)=>{
+		var promises = [];
+		var innerFieldConfigs = [];
+		if(fieldConfigObject.fieldConfigs) {
+			for(var fieldConfigID in fieldConfigObject.fieldConfigs) {
+				promises.push(this.fetchTypeFieldConfig(fieldConfigID).then((returnedFieldConfig)=>{
+					innerFieldConfigs.push(returnedFieldConfig);
+				}));
+			}
+		}
+		return Promise.all(promises).then(()=>{
 			var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, fieldConfigObject.type);
 			fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
 			fieldConfig.required = fieldConfigObject.required;
 			fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
-			resolve(fieldConfig);
+			for(var i = 0; i < innerFieldConfigs.length; i += 1) {
+				var innerFieldConfig = innerFieldConfigs[i];
+				fieldConfig.addField(innerFieldConfig);
+			}
+			return fieldConfig;
 		});
 	}
 	private validateData(data:LeData): Promise<void> {
@@ -338,7 +368,7 @@ export class LeDataService {
 
 	private validateNoExtraFields(typeConfig: LeTypeConfig, data: LeData): Promise<void> {
 		for(var key in data) {
-			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !typeConfig.fieldExists(key)) {
+			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key)) {
 				var errorMessage = 'An additional field was set on the data object.\n';
 				errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type +'\n';
 				errorMessage += 'data: ' + JSON.stringify(data);
@@ -350,7 +380,7 @@ export class LeDataService {
 	}
 
 	private validateNoExtraFieldsOnObject(fieldConfig: LeTypeFieldConfig, data: Object) {
-		for(var key in data) {
+		for(var key in data[fieldConfig.getFieldName()]) {
 			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && data.hasOwnProperty(key) && !fieldConfig.fieldExists(key)) {
 				var errorMessage = 'An additional field was set on the data object.\n';
 				errorMessage += 'the field "' + key + '" is not configured on the object\n';
@@ -467,7 +497,7 @@ export class LeDataService {
 	 * Returns the LeTypeConfig stored remotely for the specified type
 	 * Fails if the type is not configured
 	 *
-	 * @function fetchTypeConfig
+	 * @function ypeConfig
 	 * @memberof LeDataServiceProvider
 	 * @instance
 	 * @param type LeDataQuery - The type for the LeTypeConfig
@@ -479,8 +509,8 @@ export class LeDataService {
 			this.dataServiceProvider.fetchData(location).then((returnedConfigObject)=>{
 				var typeConfig = new LeTypeConfig(returnedConfigObject.type);
 				return this.typeConfigForTypeConfigObject(returnedConfigObject);
-			}).then((configObject)=>{
-				resolve(configObject);
+			}).then((typeConfig)=>{
+				resolve(typeConfig);
 			}, (err)=>{
 				reject(err);
 			});
@@ -553,8 +583,9 @@ export class LeDataService {
 
 	private saveFieldForData(data:LeData, fieldName:string): Promise<any> {
 		var location;
+		var fieldConfig;
 		return this.fetchTypeConfig(data._type).then((typeConfig)=>{
-			var fieldConfig = typeConfig.getFieldConfig(fieldName);
+			fieldConfig = typeConfig.getFieldConfig(fieldName);
 			location = data._type;
 			if (typeConfig.saveAt) {
 				location = typeConfig.saveAt;
@@ -570,10 +601,40 @@ export class LeDataService {
 			}
 		}).then((returnedData)=>{
 			if(returnedData) {
+				return this.dataServiceProvider.updateData(location, returnedData._id);
+			} else if(fieldConfig && fieldConfig.getFieldType() === 'object') {
+				return this.saveObjectField(location, fieldConfig, data[fieldName]);
+			} else {
+				return this.dataServiceProvider.updateData(location, data[fieldName]);
 			}
 		});
 	}
 
+	private saveObjectField(location:string, fieldConfig: LeTypeFieldConfig, data:any): Promise<any>{
+		var promises = [];
+		var innerFieldConfigs = fieldConfig.getFieldConfigs();
+		for(var i = 0; i < innerFieldConfigs.length; i += 1) {
+			var innerFieldConfig = innerFieldConfigs[i];
+			var innerLocation;
+			if(innerFieldConfig.saveAt) {
+				innerLocation = location + innerFieldConfig.saveAt;
+			} else {
+				innerLocation = location + innerFieldConfig.getFieldName();
+			}
+			promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()]));
+		}
+		return Promise.all(promises);
+	}
+
+	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any):Promise<any>{
+		if(fieldConfig.isCustomeType()){
+			return this.saveData(fieldData).then((returnedData)=>{
+				return this.dataServiceProvider.updateData(location, returnedData._id);
+			});
+		} else if(fieldConfig.getFieldType() === 'object') {
+			return this.saveObjectField(location, fieldConfig, fieldData);
+		}
+	}
 	private saveToCreateID(data:LeData): Promise<any> {
 		return this.locationForData(data).then((location)=>{
 				return this.dataServiceProvider.createData(location, {_type:data._type});

@@ -4,7 +4,7 @@ import Promise from "ts-promise";
 import LeDataServiceProvider from "../../src/le-data-service-provider.ts";
 
 export class MockLeDataServiceProvider implements LeDataServiceProvider {
-  private remoteStoredData: Object;
+  remoteStoredData: Object;
   private uniqueID: number;
   constructor(){
     this.remoteStoredData = {};

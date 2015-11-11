@@ -5,11 +5,22 @@ var LeTypeFieldConfig = (function () {
         this.addedFieldsArray = [];
         this.addedFieldsObejct = {};
     }
-    LeTypeFieldConfig.prototype.addField = function (fieldName, type) {
-        var newFieldConfig = new LeTypeFieldConfig(fieldName, type);
-        this.addedFieldsArray.push(newFieldConfig);
-        this.addedFieldsObejct[fieldName] = newFieldConfig;
-        return newFieldConfig;
+    LeTypeFieldConfig.prototype.addField = function (argument1, argument2) {
+        var fieldConfigToAdd;
+        var fieldName;
+        if (argument1 instanceof LeTypeFieldConfig) {
+            var passedInFieldConfig = argument1;
+            fieldName = passedInFieldConfig.getFieldName();
+            fieldConfigToAdd = passedInFieldConfig;
+        }
+        else {
+            fieldName = argument1;
+            var type = argument2;
+            fieldConfigToAdd = new LeTypeFieldConfig(fieldName, type);
+        }
+        this.addedFieldsArray.push(fieldConfigToAdd);
+        this.addedFieldsObejct[fieldName] = fieldConfigToAdd;
+        return fieldConfigToAdd;
     };
     LeTypeFieldConfig.prototype.getFieldName = function () {
         return this.fieldName;

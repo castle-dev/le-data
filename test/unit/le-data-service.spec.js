@@ -142,7 +142,6 @@ describe('LeDataService', function () {
         }).then(function () {
             return dataService.createData({ _type: 'Dog', catField: { _type: "Cat" } });
         }).then(function (returnedData) {
-            console.log(returnedData);
             expect(typeof returnedData._id === 'string').to.be.true;
             expect(returnedData._createdAt instanceof Date).to.be.true;
             expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
@@ -151,6 +150,41 @@ describe('LeDataService', function () {
             expect(typeof returnedData.catField._id === 'string').to.be.true;
             expect(returnedData.catField._createdAt instanceof Date).to.be.true;
             expect(returnedData.catField._lastUpdatedAt instanceof Date).to.be.true;
+            done();
+        }, function (err) {
+            console.log(err);
+        });
+    });
+    it('should correctly configure and save object type fields', function (done) {
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        dogTypeConfig.addField('name', 'string');
+        var myJsonConfig = dogTypeConfig.addField('myJson', 'object');
+        myJsonConfig.addField('theStringField', 'string');
+        myJsonConfig.addField('theDogField', 'Dog');
+        dataService.configureType(dogTypeConfig).then(function () {
+            return dataService.createData({
+                _type: 'Dog',
+                name: 'Goofy',
+                myJson: {
+                    theStringField: 'testString',
+                    theDogField: {
+                        _type: 'Dog',
+                        name: 'Pluto'
+                    }
+                }
+            });
+        }).then(function (returnedData) {
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData._createdAt instanceof Date).to.be.true;
+            expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+            expect(returnedData._type === 'Dog').to.be.true;
+            expect(returnedData.name === 'Goofy').to.be.true;
+            expect(returnedData.myJson.theStringField === 'testString').to.be.true;
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData.myJson.theDogField._createdAt instanceof Date).to.be.true;
+            expect(returnedData.myJson.theDogField._lastUpdatedAt instanceof Date).to.be.true;
+            expect(returnedData.myJson.theDogField._type === 'Dog').to.be.true;
+            expect(returnedData.myJson.theDogField.name === 'Pluto').to.be.true;
             done();
         }, function (err) {
             console.log(err);
