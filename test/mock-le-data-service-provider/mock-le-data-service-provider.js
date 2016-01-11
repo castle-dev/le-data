@@ -1,3 +1,4 @@
+/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var MockLeDataServiceProvider = (function () {
     function MockLeDataServiceProvider() {
@@ -6,7 +7,7 @@ var MockLeDataServiceProvider = (function () {
     }
     MockLeDataServiceProvider.prototype.dataExists = function (location) {
         var _this = this;
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             _this.fetchData(location).then(function (fetchedData) {
                 resolve(!!fetchedData);
             }, function () {
@@ -23,10 +24,10 @@ var MockLeDataServiceProvider = (function () {
                 dataToReturn = dataToReturn[sublocation];
             }
             else {
-                return ts_promise_1.default.reject(new Error('data did not exist remotely'));
+                return ts_promise_1["default"].reject(new Error('data did not exist remotely'));
             }
         }
-        return ts_promise_1.default.resolve(dataToReturn);
+        return ts_promise_1["default"].resolve(dataToReturn);
     };
     MockLeDataServiceProvider.prototype.createData = function (location, data) {
         var locationArray = location.split('/');
@@ -42,7 +43,7 @@ var MockLeDataServiceProvider = (function () {
         data._id = '' + this.uniqueID;
         locationToSaveAt[this.uniqueID] = data;
         this.uniqueID += 1;
-        return ts_promise_1.default.resolve(data);
+        return ts_promise_1["default"].resolve(data);
     };
     MockLeDataServiceProvider.prototype.updateData = function (location, data) {
         var locationArray = location.split('/');
@@ -58,7 +59,7 @@ var MockLeDataServiceProvider = (function () {
             }
         }
         locationToSaveAt[sublocation] = data;
-        return ts_promise_1.default.resolve(data);
+        return ts_promise_1["default"].resolve(data);
     };
     MockLeDataServiceProvider.prototype.deleteData = function (location) {
         var locationArray = location.split('/');
@@ -67,19 +68,18 @@ var MockLeDataServiceProvider = (function () {
         for (var i = 0; i < locationArray.length - 1; i += 1) {
             var sublocation = locationArray[i];
             if (!locationToDeleteAt[sublocation]) {
-                return ts_promise_1.default.reject(new Error('location to data to delete does not exist'));
+                return ts_promise_1["default"].reject(new Error('location to data to delete does not exist'));
             }
             locationToDeleteAt = locationToDeleteAt[sublocation];
         }
         if (!locationToDeleteAt[fieldToDelete]) {
-            return ts_promise_1.default.reject(new Error('the field ' + fieldToDelete + ' does not exist'));
+            return ts_promise_1["default"].reject(new Error('the field ' + fieldToDelete + ' does not exist'));
         }
         delete locationToDeleteAt[fieldToDelete];
-        return ts_promise_1.default.resolve();
+        return ts_promise_1["default"].resolve();
     };
     return MockLeDataServiceProvider;
 })();
 exports.MockLeDataServiceProvider = MockLeDataServiceProvider;
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MockLeDataServiceProvider;
+exports["default"] = MockLeDataServiceProvider;
 //# sourceMappingURL=mock-le-data-service-provider.js.map

@@ -1,4 +1,11 @@
 var le_type_field_config_1 = require("./le-type-field-config");
+/**
+ * The object used to configure a type of data
+ *
+ * @class LeTypeConfig
+ *
+ * @param type string - the type to be configured
+ */
 var LeTypeConfig = (function () {
     function LeTypeConfig(type) {
         this.type = type;
@@ -8,7 +15,7 @@ var LeTypeConfig = (function () {
     LeTypeConfig.prototype.addField = function (argument1, argument2) {
         var fieldConfigToAdd;
         var fieldName;
-        if (argument1 instanceof le_type_field_config_1.default) {
+        if (argument1 instanceof le_type_field_config_1["default"]) {
             var passedInFieldConfig = argument1;
             fieldName = passedInFieldConfig.getFieldName();
             fieldConfigToAdd = passedInFieldConfig;
@@ -16,15 +23,25 @@ var LeTypeConfig = (function () {
         else {
             fieldName = argument1;
             var type = argument2;
-            fieldConfigToAdd = new le_type_field_config_1.default(fieldName, type);
+            fieldConfigToAdd = new le_type_field_config_1["default"](fieldName, type);
         }
         this.fieldConfigsArray.push(fieldConfigToAdd);
         this.fieldConfigsObject[fieldName] = fieldConfigToAdd;
         return fieldConfigToAdd;
     };
+    /**
+     * @function getFieldConfigs - returns all the LeTypeFieldConfig objects set on the LeTypeConfig object
+     *
+     * @returns LeTypeFieldConfig[] - all the LeTypeFieldConfig objects set on the LeTypeConfig object
+     */
     LeTypeConfig.prototype.getFieldConfigs = function () {
         return this.fieldConfigsArray;
     };
+    /**
+     * @function fieldExists - returns if the field is configured on the typeConfig
+     *
+     * @returns boolean - if the field is configured on the typeConfig
+     */
     LeTypeConfig.prototype.fieldExists = function (fieldName) {
         return !!this.fieldConfigsObject[fieldName];
     };
@@ -37,6 +54,4 @@ var LeTypeConfig = (function () {
     return LeTypeConfig;
 })();
 exports.LeTypeConfig = LeTypeConfig;
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = LeTypeConfig;
-//# sourceMappingURL=le-type-config.js.map
+exports["default"] = LeTypeConfig;
