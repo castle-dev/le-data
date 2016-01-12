@@ -203,4 +203,34 @@ describe('LeDataService', ()=>{
         console.log(err);
       });
     });
+    it('should correctly configure and save custom type array fields', (done)=>{
+      mockProvider.remoteStoredData = {};
+      var dogTypeConfig = new LeTypeConfig('Dog');
+      var goodFieldConfig = dogTypeConfig.addField('catsField', 'Cat[]');
+      dataService.configureType(dogTypeConfig).then(()=>{
+        var catTypeConfig = new LeTypeConfig('Cat');
+        catTypeConfig.addField('name', 'string');
+        return dataService.configureType(catTypeConfig);
+      }).then(()=>{
+        return dataService.createData({_type:'Dog', catsField: [{_type:'Cat', name:'Pickle'}, {_type:'Cat', name:'Oliver'}]});
+      }).then((returnedData)=>{
+        expect(typeof returnedData._id === 'string').to.be.true;
+        expect(returnedData._createdAt instanceof Date).to.be.true;
+        expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+        expect(returnedData._type === 'Dog').to.be.true;
+        expect(returnedData.catsField[0]._type === 'Cat').to.be.true;
+        expect(returnedData.catsField[0].name === 'Pickle').to.be.true;
+        expect(typeof returnedData.catsField[0]._id === 'string').to.be.true;
+        expect(returnedData.catsField[0]._createdAt instanceof Date).to.be.true;
+        expect(returnedData.catsField[0]._lastUpdatedAt instanceof Date).to.be.true;
+        expect(returnedData.catsField[1]._type === 'Cat').to.be.true;
+        expect(returnedData.catsField[1].name === 'Oliver').to.be.true;
+        expect(typeof returnedData.catsField[1]._id === 'string').to.be.true;
+        expect(returnedData.catsField[1]._createdAt instanceof Date).to.be.true;
+        expect(returnedData.catsField[1]._lastUpdatedAt instanceof Date).to.be.true;
+        done();
+      }, (err)=>{
+        console.log(err);
+      });
+    });
 });

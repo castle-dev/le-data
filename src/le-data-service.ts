@@ -275,7 +275,12 @@ export class LeDataService {
 
 	private saveFieldConfig(fieldConfig: LeTypeFieldConfig):Promise<string> {
 		var fieldConfigObject:any = {};
-		fieldConfigObject.type = fieldConfig.getFieldType();
+		var fieldType = fieldConfig.getFieldType();
+		if(this.isFieldConfigTypeAnArray(fieldConfig)) {
+			fieldConfigObject.many = true;
+			fieldType = this.singularVersionOfType(fieldConfig);
+		}
+		fieldConfigObject.type = fieldType;
 		fieldConfigObject.fieldName = fieldConfig.getFieldName();
 		fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
 		fieldConfigObject.required = fieldConfig.required;
@@ -310,7 +315,8 @@ export class LeDataService {
 			}
 		}
 		return Promise.all(promises).then(()=>{
-			var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, fieldConfigObject.type);
+			var typeToSet = fieldConfigObject.many ? fieldConfigObject.type + '[]' : fieldConfigObject.type;
+			var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, typeToSet);
 			fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
 			fieldConfig.required = fieldConfigObject.required;
 			fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
@@ -414,16 +420,40 @@ export class LeDataService {
 			return Promise.resolve();
 		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
 			return Promise.resolve();
+		} else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+			var fieldData = data[fieldName];
+			if(fieldData.constructor === Array) {
+				var isValid = true;
+				for(var i = 0; i < fieldData.length; i += 1) {
+					if(fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
+						isValid = false;
+						break;
+					}
+				}
+				if (isValid) {
+					return Promise.resolve();
+				}
+			}
+		}
+		var errorMessage = 'The specified field is set to an invalid type -\n';
+		errorMessage += 'fieldName: ' + fieldName + '\n';
+		errorMessage += "field's set type: " + type + '\n';
+		errorMessage += 'data: ' + JSON.stringify(data);
+		var error = new Error(errorMessage);
+		return Promise.reject(error);
+	}
+	private isFieldConfigTypeAnArray(fieldConfig: LeTypeFieldConfig): boolean {
+		var fieldType = fieldConfig.getFieldType();
+		return fieldType.indexOf('[]') === fieldType.length - 2;
+	}
+	private singularVersionOfType(fieldConfig:LeTypeFieldConfig): string {
+		var fieldType = fieldConfig.getFieldType();
+		if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+			return fieldType.substring(0, fieldType.length - 2);
 		} else {
-			var errorMessage = 'The specified field is set to an invalid type -\n';
-			errorMessage += 'fieldName: ' + fieldName + '\n';
-			errorMessage += "field's configured type: " + type + '\n';
-			errorMessage += 'data: ' + JSON.stringify(data);
-			var error = new Error(errorMessage);
-			return Promise.reject(error);
+			return fieldType;
 		}
 	}
-
 	private validateObjectTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
 		var innerFieldConfigs = fieldConfig.getFieldConfigs();
 		var objectUnderValidation = data[fieldConfig.getFieldName()];
@@ -597,17 +627,32 @@ export class LeDataService {
 				location += '/' + fieldName;
 			}
 			if(fieldConfig && fieldConfig.isCustomeType()){
-				return this.saveData(data[fieldName]);
-			}
-		}).then((returnedData)=>{
-			if(returnedData) {
-				return this.dataServiceProvider.updateData(location, returnedData._id);
+				return this.saveDataAndSetReferenceAtLocation(data[fieldName], location);
 			} else if(fieldConfig && fieldConfig.getFieldType() === 'object') {
 				return this.saveObjectField(location, fieldConfig, data[fieldName]);
 			} else {
 				return this.dataServiceProvider.updateData(location, data[fieldName]);
 			}
 		});
+	}
+
+	private saveDataAndSetReferenceAtLocation(data, location) {
+		if(data.constructor === Array) {
+			var objectToSetAtLocation = {};
+			var promises = [];
+			data.forEach((dataObjectInArray)=>{
+				promises.push(this.saveData(dataObjectInArray).then((returnedData)=>{
+					objectToSetAtLocation[returnedData._id] = true;
+				}));
+			});
+			return Promise.all(promises).then(()=>{
+				return this.dataServiceProvider.updateData(location, objectToSetAtLocation);
+			});
+		} else {
+			return this.saveData(data).then((returnedData)=>{
+				return this.dataServiceProvider.updateData(location, returnedData._id);
+			});
+		}
 	}
 
 	private saveObjectField(location:string, fieldConfig: LeTypeFieldConfig, data:any): Promise<any>{

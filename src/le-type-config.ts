@@ -27,7 +27,7 @@ export class LeTypeConfig {
    *
    * @returns LeTypeFieldConfig -  the config object to configure the new field
    */
-  addField(filedConfig: LeTypeFieldConfig): LeTypeFieldConfig;
+  addField(fieldConfig: LeTypeFieldConfig): LeTypeFieldConfig;
   addField(fieldName: string, type: string): LeTypeFieldConfig;
   addField(argument1, argument2?) {
     var fieldConfigToAdd: LeTypeFieldConfig;
