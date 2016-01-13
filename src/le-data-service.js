@@ -1,6 +1,7 @@
 var ts_promise_1 = require("ts-promise");
 var le_type_config_1 = require("./le-type-config");
 var le_type_field_config_1 = require("./le-type-field-config");
+var le_data_query_1 = require("./le-data-query");
 var configObjectIndex = '_leTypeConfigs/';
 var LeDataService = (function () {
     function LeDataService(provider) {
@@ -106,8 +107,8 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
             _this.fetchTypeConfig(data._type).then(function (typeConfig) {
                 var locationToReturn = data._type;
-                if (typeConfig.saveAt) {
-                    locationToReturn = typeConfig.saveAt;
+                if (typeConfig.saveLocation) {
+                    locationToReturn = typeConfig.saveLocation;
                 }
                 if (data._id) {
                     locationToReturn += '/' + data._id;
@@ -142,16 +143,218 @@ var LeDataService = (function () {
     LeDataService.prototype.unsync = function (query) {
     };
     LeDataService.prototype.search = function (query) {
-        return new ts_promise_1.default(function (resolve, reject) { });
+        var _this = this;
+        return this.validateQuery(query).then(function () {
+            return _this.fetchQuery(query);
+        });
+    };
+    LeDataService.prototype.fetchQuery = function (query) {
+        var _this = this;
+        var queryObject = query.queryObject;
+        var data;
+        var typeConfig;
+        return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
+            return _this.fetchDataWithQueryObjectAndTypeConfig(queryObject, typeConfig);
+        });
+    };
+    LeDataService.prototype.fetchDataWithQueryObjectAndTypeConfig = function (queryObject, typeConfig) {
+        var dataType = queryObject.type;
+        var dataID = queryObject.id;
+        var location = typeConfig.saveLocation;
+        if (dataID) {
+            location += '/' + dataID;
+        }
+        var dataService = this;
+        return this.dataServiceProvider.fetchData(location).then(function (rawQueryRoot) {
+            var fieldConfigs;
+            if (typeConfig) {
+                fieldConfigs = typeConfig.getFieldConfigs();
+            }
+            else {
+                fieldConfigs = [];
+            }
+            if (dataID) {
+                return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject);
+            }
+            else {
+                return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject);
+            }
+        });
+    };
+    LeDataService.prototype.addFieldsToRawDataObjects = function (rawDataObject, fieldConfigs, queryObject) {
+        var promises = [];
+        var objectsToReturn = [];
+        for (var objectID in rawDataObject) {
+            if (rawDataObject.hasOwnProperty(objectID)) {
+                promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject).then(function (data) {
+                    objectsToReturn.push(data);
+                }));
+            }
+        }
+        return ts_promise_1.default.all(promises).then(function () {
+            return objectsToReturn;
+        });
+    };
+    LeDataService.prototype.addFieldsToRawDataObject = function (rawDataObject, fieldConfigs, queryObject) {
+        if (!queryObject) {
+            queryObject = {};
+        }
+        if (!queryObject.includedFields) {
+            queryObject.includedFields = {};
+        }
+        var data = {};
+        var fieldConfigsByLocation = this.fieldConfigsByLocation(fieldConfigs);
+        var promises = [];
+        this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data);
+        return ts_promise_1.default.all(promises).then(function () {
+            return data;
+        });
+    };
+    LeDataService.prototype.addFetchFieldPromises = function (rawDataObject, fieldConfigsByLocation, queryObject, promises, data) {
+        for (var rawFieldName in rawDataObject) {
+            if (rawDataObject.hasOwnProperty(rawFieldName)) {
+                var fieldConfig = fieldConfigsByLocation[rawFieldName];
+                if (fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
+                    this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data);
+                }
+                else {
+                    var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
+                    var innerQueryObject = queryObject.includedFields[fieldName];
+                    promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName).then(function (fieldInfo) {
+                        data[fieldInfo.name] = fieldInfo.data;
+                    }));
+                }
+            }
+        }
+    };
+    LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName) {
+        if (!fieldQueryObject) {
+            fieldQueryObject = {};
+        }
+        if (!fieldQueryObject.includedFields) {
+            fieldQueryObject.includedFields = {};
+        }
+        var fieldInfo = { name: fieldName };
+        if (!fieldConfig) {
+            fieldInfo.data = rawValue;
+            return ts_promise_1.default.resolve(fieldInfo);
+        }
+        else if (fieldConfig.getFieldType() === 'Date') {
+            fieldInfo.data = new Date(rawValue);
+            return ts_promise_1.default.resolve(fieldInfo);
+        }
+        else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+            var promises = [];
+            var objectsForArrayField = [];
+            for (var fieldDataID in rawValue) {
+                if (rawValue.hasOwnProperty(fieldDataID)) {
+                    promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject));
+                }
+            }
+            return ts_promise_1.default.all(promises).then(function () {
+                fieldInfo.data = objectsForArrayField;
+                return fieldInfo;
+            });
+        }
+        else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
+            return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject);
+        }
+        else {
+            fieldInfo.data = rawValue;
+            return ts_promise_1.default.resolve(fieldInfo);
+        }
+    };
+    LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject) {
+        var queryForField = new le_data_query_1.default(type, id);
+        queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        return this.search(queryForField).then(function (data) {
+            data._type = type;
+            data._id = id;
+            fieldInfo.data = data;
+            return fieldInfo;
+        });
+    };
+    LeDataService.prototype.fieldConfigsByLocation = function (fieldConfigs) {
+        var fieldConfigsByLocation = {};
+        if (fieldConfigs) {
+            fieldConfigs.forEach(function (fieldConfig) {
+                if (fieldConfig.saveLocation) {
+                    var saveLocationArray = fieldConfig.saveLocation.split('/');
+                    var currentScope = fieldConfigsByLocation;
+                    saveLocationArray.forEach(function (subscope, index) {
+                        if (!currentScope[subscope]) {
+                            currentScope[subscope] = {};
+                        }
+                        if (index + 1 === saveLocationArray.length) {
+                            currentScope[subscope] = fieldConfig;
+                        }
+                        currentScope = currentScope[subscope];
+                    });
+                }
+                else {
+                    fieldConfigsByLocation[fieldConfig.getFieldName()] = fieldConfig;
+                }
+            });
+        }
+        return fieldConfigsByLocation;
+    };
+    LeDataService.prototype.validateQuery = function (query) {
+        var _this = this;
+        var queryObject = query.queryObject;
+        return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
+            var includedFields = queryObject.includedFields;
+            var promises = [];
+            for (var fieldName in includedFields) {
+                if (includedFields.hasOwnProperty(fieldName)) {
+                    var fieldConfig = typeConfig.getFieldConfig(fieldName);
+                    if (!fieldConfig) {
+                        var errorMessage = 'invalid field included in query, invalid field: ' + fieldName;
+                        promises.push(ts_promise_1.default.reject(new Error(errorMessage)));
+                    }
+                    else {
+                        promises.push(_this.validateQueryObject(includedFields[fieldName], fieldConfig));
+                    }
+                }
+            }
+            return ts_promise_1.default.all(promises);
+        });
+    };
+    LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject) {
+        var queryForField = new le_data_query_1.default(type, id);
+        queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        return this.search(queryForField).then(function (data) {
+            data._id = id;
+            data._type = type;
+            objectsForArrayField.push(data);
+        });
+    };
+    LeDataService.prototype.validateQueryObject = function (queryObject, fieldConfig) {
+        var _this = this;
+        return this.fetchTypeConfig(this.singularVersionOfType(fieldConfig)).then(function (typeConfig) {
+            var includedFields = queryObject.includedFields;
+            var promises = [];
+            for (var fieldName in includedFields) {
+                if (includedFields.hasOwnProperty(fieldName)) {
+                    var fieldConfig = typeConfig.getFieldConfig(fieldName);
+                    if (!fieldConfig) {
+                        var errorMessage = 'invalid field included in query, invalid field: ' + fieldName;
+                        promises.push(ts_promise_1.default.reject(new Error(errorMessage)));
+                    }
+                    else {
+                        promises.push(_this.validateQueryObject(includedFields[fieldName], fieldConfig));
+                    }
+                }
+            }
+            return ts_promise_1.default.all(promises);
+        });
     };
     LeDataService.prototype.configureType = function (config) {
         var _this = this;
         return new ts_promise_1.default(function (resolve, reject) {
             var configObjectToSave = {};
             configObjectToSave.type = config.getType();
-            configObjectToSave.saveAt = config.saveAt;
+            configObjectToSave.saveLocation = config.saveLocation;
             var location = configObjectIndex + configObjectToSave.type;
-            configObjectToSave.fieldConfigObjects = {};
             var fieldConfigs = config.getFieldConfigs();
             var promises = [];
             for (var i = 0; i < fieldConfigs.length; i += 1) {
@@ -185,6 +388,7 @@ var LeDataService = (function () {
         fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
         fieldConfigObject.required = fieldConfig.required;
         fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
+        fieldConfigObject.saveLocation = fieldConfig.saveLocation;
         var promises = [];
         var innerFieldConfigs = fieldConfig.getFieldConfigs();
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -218,6 +422,7 @@ var LeDataService = (function () {
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
+            fieldConfig.saveLocation = fieldConfigObject.saveLocation;
             for (var i = 0; i < innerFieldConfigs.length; i += 1) {
                 var innerFieldConfig = innerFieldConfigs[i];
                 fieldConfig.addField(innerFieldConfig);
@@ -420,7 +625,6 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
             var location = configObjectIndex + type;
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
-                var typeConfig = new le_type_config_1.default(returnedConfigObject.type);
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {
                 resolve(typeConfig);
@@ -441,6 +645,7 @@ var LeDataService = (function () {
         var _this = this;
         return new ts_promise_1.default(function (resolve, reject) {
             var typeConfig = new le_type_config_1.default(typeConfigObject.type);
+            typeConfig.saveAt(typeConfigObject.saveLocation);
             var promises = [];
             for (var fieldConfigID in typeConfigObject.fieldConfigs) {
                 if (typeConfigObject.fieldConfigs.hasOwnProperty(fieldConfigID)) {
@@ -495,12 +700,12 @@ var LeDataService = (function () {
         return this.fetchTypeConfig(data._type).then(function (typeConfig) {
             fieldConfig = typeConfig.getFieldConfig(fieldName);
             location = data._type;
-            if (typeConfig.saveAt) {
-                location = typeConfig.saveAt;
+            if (typeConfig.saveLocation) {
+                location = typeConfig.saveLocation;
             }
             location += '/' + data._id;
-            if (fieldConfig && fieldConfig.saveAt) {
-                location += '/' + fieldConfig.saveAt;
+            if (fieldConfig && fieldConfig.saveLocation) {
+                location += '/' + fieldConfig.saveLocation;
             }
             else {
                 location += '/' + fieldName;
@@ -542,8 +747,8 @@ var LeDataService = (function () {
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
             var innerFieldConfig = innerFieldConfigs[i];
             var innerLocation;
-            if (innerFieldConfig.saveAt) {
-                innerLocation = location + innerFieldConfig.saveAt;
+            if (innerFieldConfig.saveLocation) {
+                innerLocation = location + innerFieldConfig.saveLocation;
             }
             else {
                 innerLocation = location + innerFieldConfig.getFieldName();
@@ -570,14 +775,6 @@ var LeDataService = (function () {
         }).then(function (returnedData) {
             data._id = returnedData._id;
         });
-    };
-    LeDataService.prototype.saveTypeConfig = function (config) {
-        return new ts_promise_1.default(function () { });
-    };
-    LeDataService.prototype.syncData = function (type, id, callback, errorCallback) {
-    };
-    LeDataService.prototype.fetchData = function (type, id) {
-        return new ts_promise_1.default(function () { });
     };
     return LeDataService;
 })();

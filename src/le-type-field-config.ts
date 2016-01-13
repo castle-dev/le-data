@@ -42,8 +42,10 @@ export class LeTypeFieldConfig {
    */
   convertToLocalTimeZone: boolean;
 
-  saveAt: string;
-
+  saveLocation: string;
+  saveAt(location):void {
+    this.saveLocation = location;
+  }
   /**
    * @function addField - adds a field to the current field if it's of type 'object'
    *

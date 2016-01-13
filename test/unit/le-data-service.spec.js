@@ -2,6 +2,7 @@ var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
 var le_type_config_1 = require("../../src/le-type-config");
+var le_data_query_1 = require("../../src/le-data-query");
 var mock_le_data_service_provider_1 = require("../mock-le-data-service-provider/mock-le-data-service-provider");
 var expect = chai.expect;
 describe('LeDataService', function () {
@@ -218,6 +219,196 @@ describe('LeDataService', function () {
             done();
         }, function (err) {
             console.log(err);
+        });
+    });
+    describe('queries', function () {
+        beforeEach(function (done) {
+            var ownerConfig = new le_type_config_1.default('Owner');
+            ownerConfig.saveAt('owners');
+            ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
+            ownerConfig.addField('bankAccount', 'BankAccount').saveAt('bankAccount_id');
+            ownerConfig.addField('createdAt', 'Date').saveAt('_times/createdAt');
+            var propertyConfig = new le_type_config_1.default('Property');
+            propertyConfig.saveAt('properties');
+            propertyConfig.addField('tenants', 'Tenant[]').saveAt('tenant_ids');
+            propertyConfig.addField('units', 'Unit[]').saveAt('unit_ids');
+            var tenantConfig = new le_type_config_1.default('Tenant');
+            tenantConfig.saveAt('tenants');
+            var unitConfig = new le_type_config_1.default('Unit');
+            unitConfig.saveAt('units');
+            var bankAccountConfig = new le_type_config_1.default('BankAccount');
+            bankAccountConfig.saveAt('bankAccounts');
+            mockProvider.remoteStoredData = {
+                owners: {
+                    owner_id1: {
+                        _times: {
+                            createdAt: 1452575643030
+                        },
+                        firstName: 'Joe',
+                        lastName: 'Black',
+                        bankAccount_id: 'bankAccount_id1',
+                        property_ids: {
+                            property_id1A: true,
+                            property_id1B: true,
+                        }
+                    },
+                    owner_id2: {
+                        firstName: 'owner2FirstName',
+                        lastName: 'owner2LastName',
+                        bankAccount_id: 'bankAccount_id2',
+                        property_ids: {
+                            property_id2A: true,
+                            property_id2B: true,
+                        }
+                    }
+                },
+                bankAccounts: {
+                    bankAccount_id1: {
+                        bankName: 'BankOfAmerica'
+                    },
+                    bankAccount_id2: {
+                        bankName: 'Chase'
+                    }
+                },
+                properties: {
+                    property_id1A: {
+                        propertyName: 'p1A',
+                        unit_ids: {
+                            unit_id1Aa: true,
+                            unit_id1Ab: true
+                        },
+                        tenant_ids: {
+                            tenant_id1Aa: true,
+                            tenant_id1Ab: true
+                        }
+                    },
+                    property_id1B: {
+                        propertyName: 'p1B',
+                        unit_ids: {
+                            unit_id1Ba: true,
+                            unit_id1Bb: true
+                        },
+                        tenant_ids: {
+                            tenant_id1Ba: true,
+                            tenant_id1Bb: true
+                        }
+                    },
+                    property_id2A: {
+                        propertyName: 'p2A',
+                        unit_ids: {
+                            unit_id2Aa: true,
+                            unit_id2Ab: true
+                        },
+                        tenant_ids: {
+                            tenant_id2Aa: true,
+                            tenant_id2Ab: true
+                        }
+                    },
+                    property_id2B: {
+                        propertyName: 'p1B',
+                        unit_ids: {
+                            unit_id1Ba: true,
+                            unit_id1Bb: true
+                        },
+                        tenant_ids: {
+                            tenant_id1Ba: true,
+                            tenant_id1Bb: true
+                        }
+                    }
+                },
+                units: {
+                    unit_id1Aa: {
+                        unitName: 'u1Aa'
+                    },
+                    unit_id1Ab: {
+                        unitName: 'u1Ab'
+                    },
+                    unit_id1Ba: {
+                        unitName: 'u1Ba'
+                    },
+                    unit_id1Bb: {
+                        unitName: 'u1Bb'
+                    },
+                    unit_id2Aa: {
+                        unitName: 'u2Aa'
+                    },
+                    unit_id2Ab: {
+                        unitName: 'u2Ab'
+                    },
+                    unit_id2Ba: {
+                        unitName: 'u2Ba'
+                    },
+                    unit_id2Bb: {
+                        unitName: 'u2Bb'
+                    }
+                },
+                tenants: {
+                    tenant_id1Aa: {
+                        tenantName: 't1Aa'
+                    },
+                    tenant_id1Ab: {
+                        tenantName: 't1Ab'
+                    },
+                    tenant_id1Ba: {
+                        tenantName: 't1Ba'
+                    },
+                    tenant_id1Bb: {
+                        tenantName: 't1Bb'
+                    },
+                    tenant_id2Aa: {
+                        tenantName: 't2Aa'
+                    },
+                    tenant_id2Ab: {
+                        tenantName: 't2Ab'
+                    },
+                    tenant_id2Ba: {
+                        tenantName: 't2Ba'
+                    },
+                    tenant_id2Bb: {
+                        tenantName: 't2Bb'
+                    }
+                }
+            };
+            var promises = [];
+            promises.push(dataService.configureType(ownerConfig));
+            promises.push(dataService.configureType(propertyConfig));
+            promises.push(dataService.configureType(tenantConfig));
+            promises.push(dataService.configureType(unitConfig));
+            promises.push(dataService.configureType(bankAccountConfig));
+            ts_promise_1.default.all(promises).then(function () {
+                done();
+            });
+        });
+        it('should error if invalid', function (done) {
+            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            myQuery.include('bankAccount');
+            var propertySubQuery = myQuery.include('properties');
+            propertySubQuery.include('dfj');
+            dataService.search(myQuery).then(undefined, function (err) {
+                done();
+            });
+        });
+        it('should fetch the data correctly', function (done) {
+            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            myQuery.include('bankAccount');
+            var propertySubQuery = myQuery.include('properties');
+            propertySubQuery.include('units');
+            dataService.search(myQuery).then(function (ownerObject) {
+                expect(ownerObject.createdAt instanceof Date).to.be.true;
+                expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
+                expect(ownerObject.firstName).to.equal('Joe');
+                expect(ownerObject.lastName).to.equal('Black');
+                expect(ownerObject.bankAccount._type).to.equal('BankAccount');
+                expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
+                expect(ownerObject.properties.length).to.equal(2);
+                expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
+                expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
+                expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+                done();
+            }, function (err) {
+                console.log(err);
+                console.log(err.stack);
+            });
         });
     });
 });

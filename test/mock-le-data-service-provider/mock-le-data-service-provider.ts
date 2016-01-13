@@ -28,7 +28,7 @@ export class MockLeDataServiceProvider implements LeDataServiceProvider {
       if (dataToReturn[sublocation]) {
         dataToReturn = dataToReturn[sublocation];
       } else {
-        return Promise.reject(new Error('data did not exist remotely'));
+        return Promise.reject(new Error('data did not exist remotely, location:' + location));
       }
     }
     return Promise.resolve(dataToReturn);

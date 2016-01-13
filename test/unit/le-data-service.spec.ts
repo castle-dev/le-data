@@ -9,6 +9,7 @@ import data = require("../../src/le-data-service");
 
 import LeTypeConfig from "../../src/le-type-config";
 import LeTypeFieldConfig from "../../src/le-type-field-config";
+import LeDataQuery from "../../src/le-data-query";
 
 import MockLeDataServiceProvider from "../mock-le-data-service-provider/mock-le-data-service-provider";
 
@@ -231,6 +232,198 @@ describe('LeDataService', ()=>{
         done();
       }, (err)=>{
         console.log(err);
+      });
+    });
+    describe('queries', ()=>{
+      beforeEach((done)=>{
+        var ownerConfig = new LeTypeConfig('Owner');
+        ownerConfig.saveAt('owners');
+        ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
+        ownerConfig.addField('bankAccount', 'BankAccount').saveAt('bankAccount_id');
+        ownerConfig.addField('createdAt', 'Date').saveAt('_times/createdAt');
+        var propertyConfig = new LeTypeConfig('Property');
+        propertyConfig.saveAt('properties');
+        propertyConfig.addField('tenants', 'Tenant[]').saveAt('tenant_ids');
+        propertyConfig.addField('units', 'Unit[]').saveAt('unit_ids');
+        var tenantConfig = new LeTypeConfig('Tenant');
+        tenantConfig.saveAt('tenants');
+        var unitConfig = new LeTypeConfig('Unit');
+        unitConfig.saveAt('units');
+        var bankAccountConfig = new LeTypeConfig('BankAccount');
+        bankAccountConfig.saveAt('bankAccounts');
+        mockProvider.remoteStoredData = {
+          owners: {
+            owner_id1: {
+              _times: {
+                createdAt: 1452575643030
+              },
+              firstName: 'Joe',
+              lastName: 'Black',
+              bankAccount_id: 'bankAccount_id1',
+              property_ids: {
+                property_id1A: true,
+                property_id1B: true,
+              }
+            },
+            owner_id2: {
+              firstName: 'owner2FirstName',
+              lastName: 'owner2LastName',
+              bankAccount_id: 'bankAccount_id2',
+              property_ids: {
+                property_id2A: true,
+                property_id2B: true,
+              }
+            }
+          },
+          bankAccounts: {
+            bankAccount_id1: {
+              bankName: 'BankOfAmerica'
+            },
+            bankAccount_id2: {
+              bankName: 'Chase'
+            }
+          },
+          properties: {
+            property_id1A: {
+              propertyName:'p1A',
+              unit_ids: {
+                unit_id1Aa: true,
+                unit_id1Ab: true
+              },
+              tenant_ids: {
+                tenant_id1Aa:true,
+                tenant_id1Ab:true
+              }
+            },
+            property_id1B: {
+              propertyName:'p1B',
+              unit_ids: {
+                unit_id1Ba: true,
+                unit_id1Bb: true
+              },
+              tenant_ids: {
+                tenant_id1Ba:true,
+                tenant_id1Bb:true
+              }
+            },
+            property_id2A: {
+              propertyName:'p2A',
+              unit_ids: {
+                unit_id2Aa: true,
+                unit_id2Ab: true
+              },
+              tenant_ids: {
+                tenant_id2Aa:true,
+                tenant_id2Ab:true
+              }
+            },
+            property_id2B: {
+              propertyName:'p1B',
+              unit_ids: {
+                unit_id1Ba: true,
+                unit_id1Bb: true
+              },
+              tenant_ids: {
+                tenant_id1Ba:true,
+                tenant_id1Bb:true
+              }
+            }
+          },
+          units: {
+            unit_id1Aa: {
+              unitName:'u1Aa'
+            },
+            unit_id1Ab: {
+              unitName:'u1Ab'
+            },
+            unit_id1Ba: {
+              unitName:'u1Ba'
+            },
+            unit_id1Bb: {
+              unitName:'u1Bb'
+            },
+            unit_id2Aa: {
+              unitName:'u2Aa'
+            },
+            unit_id2Ab: {
+              unitName:'u2Ab'
+            },
+            unit_id2Ba: {
+              unitName:'u2Ba'
+            },
+            unit_id2Bb: {
+              unitName:'u2Bb'
+            }
+          },
+          tenants: {
+            tenant_id1Aa: {
+              tenantName:'t1Aa'
+            },
+            tenant_id1Ab: {
+              tenantName:'t1Ab'
+            },
+            tenant_id1Ba: {
+              tenantName:'t1Ba'
+            },
+            tenant_id1Bb: {
+              tenantName:'t1Bb'
+            },
+            tenant_id2Aa: {
+              tenantName:'t2Aa'
+            },
+            tenant_id2Ab: {
+              tenantName:'t2Ab'
+            },
+            tenant_id2Ba: {
+              tenantName:'t2Ba'
+            },
+            tenant_id2Bb: {
+              tenantName:'t2Bb'
+            }
+          }
+        };
+
+        var promises:Promise<any>[] = [];
+        promises.push(dataService.configureType(ownerConfig));
+        promises.push(dataService.configureType(propertyConfig));
+        promises.push(dataService.configureType(tenantConfig));
+        promises.push(dataService.configureType(unitConfig));
+        promises.push(dataService.configureType(bankAccountConfig));
+        Promise.all(promises).then(()=>{
+          done();
+        });
+      });
+      it('should error if invalid', (done)=>{
+        var myQuery = new LeDataQuery('Owner', 'owner_id1');
+        myQuery.include('bankAccount');
+        var propertySubQuery = myQuery.include('properties');
+        propertySubQuery.include('dfj');
+        dataService.search(myQuery).then(undefined, (err)=>{
+          done();
+        });
+      });
+      it('should fetch the data correctly', (done)=>{
+        var myQuery = new LeDataQuery('Owner', 'owner_id1');
+        myQuery.include('bankAccount');
+        var propertySubQuery = myQuery.include('properties');
+        propertySubQuery.include('units');
+        dataService.search(myQuery).then((ownerObject)=>{
+          //{"bankAccount":{"bankName":"BankOfAmerica","_type":"BankAccount","_id":"bankAccount_id1"},"properties":[{"propertyName":"p1A","units":[{"unitName":"u1Aa","_id":"unit_id1Aa","_type":"Unit"},{"unitName":"u1Ab","_id":"unit_id1Ab","_type":"Unit"}],"tenants":[{"tenantName":"u1Aa","_id":"tenant_id1Aa","_type":"Tenant"},{"tenantName":"u1Ab","_id":"tenant_id1Ab","_type":"Tenant"}],"_id":"property_id1A","_type":"Property"},{"propertyName":"p1B","units":[{"unitName":"u1Ba","_id":"unit_id1Ba","_type":"Unit"},{"unitName":"u1Bb","_id":"unit_id1Bb","_type":"Unit"}],"tenants":[{"tenantName":"u1Ba","_id":"tenant_id1Ba","_type":"Tenant"},{"tenantName":"u1Bb","_id":"tenant_id1Bb","_type":"Tenant"}],"_id":"property_id1B","_type":"Property"}]}'
+          expect(ownerObject.createdAt instanceof Date).to.be.true;
+          expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
+          expect(ownerObject.firstName).to.equal('Joe');
+          expect(ownerObject.lastName).to.equal('Black');
+          expect(ownerObject.bankAccount._type).to.equal('BankAccount');
+          expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
+          expect(ownerObject.properties.length).to.equal(2);
+          expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
+          expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
+          expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+          done();
+        }, (err)=> {
+          console.log(err);
+          console.log(err.stack);
+        });
       });
     });
 });

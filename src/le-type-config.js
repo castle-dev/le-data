@@ -31,6 +31,9 @@ var LeTypeConfig = (function () {
     LeTypeConfig.prototype.getFieldConfig = function (fieldName) {
         return this.fieldConfigsObject[fieldName];
     };
+    LeTypeConfig.prototype.saveAt = function (location) {
+        this.saveLocation = location;
+    };
     LeTypeConfig.prototype.getType = function () {
         return this.type;
     };

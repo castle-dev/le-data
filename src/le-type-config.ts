@@ -68,8 +68,10 @@ export class LeTypeConfig {
     return this.fieldConfigsObject[fieldName];
   }
 
-  saveAt: string;
-
+  saveLocation: string;
+  saveAt(location):void {
+    this.saveLocation = location;
+  }
   getType(): string {
     return this.type;
   }
