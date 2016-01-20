@@ -1,3 +1,4 @@
+import LeIDGenerator from "./le-id-generator";
 /**
  * The object used to configure a type of data
  *
@@ -9,9 +10,14 @@
 export class LeDataQuery {
 	constructor(type?:string, id?: string) {
 		this.queryObject = {};
+		this.queryObject.queryID = LeIDGenerator.generateID();
 		this.queryObject.type = type;
 		this.queryObject.id = id;
 		this.queryObject.includedFields = {};
+	}
+
+	getQueryID():string {
+		return this.queryObject.queryID;
 	}
 
 	/**

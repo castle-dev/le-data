@@ -408,7 +408,6 @@ describe('LeDataService', ()=>{
         var propertySubQuery = myQuery.include('properties');
         propertySubQuery.include('units');
         dataService.search(myQuery).then((ownerObject)=>{
-          //{"bankAccount":{"bankName":"BankOfAmerica","_type":"BankAccount","_id":"bankAccount_id1"},"properties":[{"propertyName":"p1A","units":[{"unitName":"u1Aa","_id":"unit_id1Aa","_type":"Unit"},{"unitName":"u1Ab","_id":"unit_id1Ab","_type":"Unit"}],"tenants":[{"tenantName":"u1Aa","_id":"tenant_id1Aa","_type":"Tenant"},{"tenantName":"u1Ab","_id":"tenant_id1Ab","_type":"Tenant"}],"_id":"property_id1A","_type":"Property"},{"propertyName":"p1B","units":[{"unitName":"u1Ba","_id":"unit_id1Ba","_type":"Unit"},{"unitName":"u1Bb","_id":"unit_id1Bb","_type":"Unit"}],"tenants":[{"tenantName":"u1Ba","_id":"tenant_id1Ba","_type":"Tenant"},{"tenantName":"u1Bb","_id":"tenant_id1Bb","_type":"Tenant"}],"_id":"property_id1B","_type":"Property"}]}'
           expect(ownerObject.createdAt instanceof Date).to.be.true;
           expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
           expect(ownerObject.firstName).to.equal('Joe');
@@ -433,7 +432,6 @@ describe('LeDataService', ()=>{
         dataService.search(myQuery).then((ownerObjects)=>{
           expect(ownerObjects.length).to.equal(2);
           var ownerObject = ownerObjects[0];
-          //{"bankAccount":{"bankName":"BankOfAmerica","_type":"BankAccount","_id":"bankAccount_id1"},"properties":[{"propertyName":"p1A","units":[{"unitName":"u1Aa","_id":"unit_id1Aa","_type":"Unit"},{"unitName":"u1Ab","_id":"unit_id1Ab","_type":"Unit"}],"tenants":[{"tenantName":"u1Aa","_id":"tenant_id1Aa","_type":"Tenant"},{"tenantName":"u1Ab","_id":"tenant_id1Ab","_type":"Tenant"}],"_id":"property_id1A","_type":"Property"},{"propertyName":"p1B","units":[{"unitName":"u1Ba","_id":"unit_id1Ba","_type":"Unit"},{"unitName":"u1Bb","_id":"unit_id1Bb","_type":"Unit"}],"tenants":[{"tenantName":"u1Ba","_id":"tenant_id1Ba","_type":"Tenant"},{"tenantName":"u1Bb","_id":"tenant_id1Bb","_type":"Tenant"}],"_id":"property_id1B","_type":"Property"}]}'
           expect(ownerObject.createdAt instanceof Date).to.be.true;
           expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
           expect(ownerObject.firstName).to.equal('Joe');
@@ -446,6 +444,29 @@ describe('LeDataService', ()=>{
           expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
           done();
         }, (err)=> {
+          console.log(err);
+          console.log(err.stack);
+        });
+      });
+      it('should sync the data correctly starting with a record', (done)=>{
+        var myQuery = new LeDataQuery('Owner', 'owner_id1');
+        myQuery.include('bankAccount');
+        var propertySubQuery = myQuery.include('properties');
+        propertySubQuery.include('units');
+        dataService.sync(myQuery, (data)=>{
+          var ownerObject = data;
+          expect(ownerObject.createdAt instanceof Date).to.be.true;
+          expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
+          expect(ownerObject.firstName).to.equal('Joe');
+          expect(ownerObject.lastName).to.equal('Black');
+          expect(ownerObject.bankAccount._type).to.equal('BankAccount');
+          expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
+          expect(ownerObject.properties.length).to.equal(2);
+          expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
+          expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
+          expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+          done();
+        }, (err)=>{
           console.log(err);
           console.log(err.stack);
         });

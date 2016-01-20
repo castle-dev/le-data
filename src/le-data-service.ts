@@ -19,9 +19,12 @@ var configObjectIndex = '_leTypeConfigs/';
  *
  */
 export class LeDataService {
+
 	private dataServiceProvider: LeDataServiceProvider;
+	private queryDictionary: any;
 	constructor(provider: LeDataServiceProvider) {
 		this.dataServiceProvider = provider;
+		this.queryDictionary = {};
 	}
 
   /**
@@ -204,7 +207,17 @@ export class LeDataService {
 	 *					such as not having access to the requested data.
 	 */
 	sync(query: LeDataQuery, callback:(data: LeData) => void, errorCallback:(error:Error)=>void): void {
-
+		this.validateQuery(query).then(()=>{
+			return  this.fetchQuery(query, true, undefined, callback, errorCallback);
+		}).then((data)=>{
+			if(callback) {
+				callback(data);
+			}
+		},(err)=>{
+			if(errorCallback){
+				errorCallback(err);
+			}
+		});
 	}
 
 	/**
@@ -232,21 +245,20 @@ export class LeDataService {
 	 */
 	search(query: LeDataQuery): Promise<LeData> {
 		return this.validateQuery(query).then(()=>{
-			return this.fetchQuery(query);
+			return this.fetchQuery(query, false, undefined, undefined, undefined);
 		});
 	}
 
-	fetchQuery(query:LeDataQuery): Promise<LeData> {
+	private fetchQuery(query:LeDataQuery, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<LeData> {
 		var queryObject = query.queryObject;
-		var data: LeData;
-		var typeConfig: LeTypeConfig;
 
 		return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
-			return this.fetchDataWithQueryObjectAndTypeConfig(queryObject, typeConfig);
+			return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback);
 		});
 	}
 
-	fetchDataWithQueryObjectAndTypeConfig(queryObject, typeConfig): Promise<LeData> {
+	fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<LeData> {
+		var queryObject = query.queryObject;
 		var dataType = queryObject.type;
 		var dataID = queryObject.id;
 		var location = typeConfig.saveLocation;
@@ -254,6 +266,13 @@ export class LeDataService {
 			location += '/' + dataID;
 		}
 		var dataService = this;
+		if(shouldSync && !syncDictionary) {
+			syncDictionary = {};
+			this.queryDictionary[queryObject.queryID] = syncDictionary;
+		}
+		if(shouldSync) {
+			this.syncLocation(location, query, syncDictionary, callback, errorCallback);
+		}
 		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
 			var fieldConfigs;
 			if(typeConfig) {
@@ -262,18 +281,35 @@ export class LeDataService {
 				fieldConfigs = [];
 			}
 			if(dataID) {
-				return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject);
+				return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
 			} else {
-				return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject);
+				return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
 			}
 		});
 	}
-	addFieldsToRawDataObjects(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any): Promise<any> {
+	private syncLocation(location:string, query: LeDataQuery, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void):void {
+		if(!syncDictionary[location]) {
+			function providerCallBack() {
+				if(callback) {
+					this.search(query).then((data)=>{
+						callback(data);
+					});
+				}
+			}
+			function providerErrorCallBack(err) {
+				if(errorCallback) {
+					errorCallback(err);
+				}
+			}
+			syncDictionary[location] = this.dataServiceProvider.sync(location, providerCallBack, providerErrorCallBack);
+		}
+	}
+	addFieldsToRawDataObjects(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<any> {
 		var promises = [];
 		var objectsToReturn = [];
 		for(var objectID in rawDataObject) {
 			if(rawDataObject.hasOwnProperty(objectID)) {
-				promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject).then((data)=>{
+				promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
 					objectsToReturn.push(data);
 				}));
 			}
@@ -282,7 +318,7 @@ export class LeDataService {
 			return objectsToReturn;
 		});
 	}
-	addFieldsToRawDataObject(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any): Promise<any> {
+	addFieldsToRawDataObject(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<any> {
 		if(!queryObject) {
 			queryObject = {};
 		}
@@ -292,30 +328,30 @@ export class LeDataService {
 		var data = {};
 		var fieldConfigsByLocation = this.fieldConfigsByLocation(fieldConfigs);
 		var promises = [];
-		this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data);
+		this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
 
 		return Promise.all(promises).then(()=>{
 			return data;
 		});
 	}
-	addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data):void {
+	addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback):void {
 		for (var rawFieldName in rawDataObject) {
 			if(rawDataObject.hasOwnProperty(rawFieldName)) {
 				var fieldConfig = fieldConfigsByLocation[rawFieldName];
 				if(fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
-					this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data);
+					this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
 				} else {
 					var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
 
 					var innerQueryObject = queryObject.includedFields[fieldName];
-					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName).then((fieldInfo)=>{
+					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback).then((fieldInfo)=>{
 						data[fieldInfo.name] = fieldInfo.data;
 					}));
 				}
 			}
 		}
 	}
-	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName): any {
+	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback): any {
 		if(!fieldQueryObject) {
 			fieldQueryObject = {};
 		}
@@ -334,7 +370,7 @@ export class LeDataService {
 			var objectsForArrayField = [];
 			for(var fieldDataID in rawValue) {
 				if(rawValue.hasOwnProperty(fieldDataID)){
-					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject));
+					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback));
 				}
 			}
 			return Promise.all(promises).then(()=>{
@@ -342,17 +378,17 @@ export class LeDataService {
 				return fieldInfo;
 			});
 		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
-			return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject);
+			return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback);
 
 		} else {
 			fieldInfo.data = rawValue;
 			return Promise.resolve(fieldInfo);
 		}
 	}
-	setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject):Promise<any> {
+	setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback):Promise<any> {
 		var queryForField = new LeDataQuery(type, id);
 		queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
-		return this.search(queryForField).then((data)=>{
+		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
 			data._type = type;
 			data._id = id;
 			fieldInfo.data = data;
@@ -402,10 +438,11 @@ export class LeDataService {
 			return Promise.all(promises);
 		});
 	}
-	setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject): Promise<any> {
+	setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback): Promise<any> {
 		var queryForField = new LeDataQuery(type, id);
 		queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
-		return this.search(queryForField).then((data)=>{
+
+		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
 			data._id = id;
 			data._type = type;
 			objectsForArrayField.push(data);

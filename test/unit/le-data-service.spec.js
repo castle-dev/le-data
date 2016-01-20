@@ -434,6 +434,29 @@ describe('LeDataService', function () {
                 console.log(err.stack);
             });
         });
+        it('should sync the data correctly starting with a record', function (done) {
+            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            myQuery.include('bankAccount');
+            var propertySubQuery = myQuery.include('properties');
+            propertySubQuery.include('units');
+            dataService.sync(myQuery, function (data) {
+                var ownerObject = data;
+                expect(ownerObject.createdAt instanceof Date).to.be.true;
+                expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
+                expect(ownerObject.firstName).to.equal('Joe');
+                expect(ownerObject.lastName).to.equal('Black');
+                expect(ownerObject.bankAccount._type).to.equal('BankAccount');
+                expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
+                expect(ownerObject.properties.length).to.equal(2);
+                expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
+                expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
+                expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+                done();
+            }, function (err) {
+                console.log(err);
+                console.log(err.stack);
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map

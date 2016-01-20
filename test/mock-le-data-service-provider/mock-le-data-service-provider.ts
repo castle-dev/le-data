@@ -86,6 +86,10 @@ export class MockLeDataServiceProvider implements LeDataServiceProvider {
     delete locationToDeleteAt[fieldToDelete];
     return Promise.resolve();
   }
+  sync(location, callback, errorCallback): any {
+    // console.log('synced Location', location);
+    return true;
+  }
 }
 
 export default MockLeDataServiceProvider;

@@ -77,6 +77,9 @@ var MockLeDataServiceProvider = (function () {
         delete locationToDeleteAt[fieldToDelete];
         return ts_promise_1.default.resolve();
     };
+    MockLeDataServiceProvider.prototype.sync = function (location, callback, errorCallback) {
+        return true;
+    };
     return MockLeDataServiceProvider;
 })();
 exports.MockLeDataServiceProvider = MockLeDataServiceProvider;
