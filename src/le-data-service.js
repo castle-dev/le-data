@@ -159,7 +159,7 @@ var LeDataService = (function () {
         if (innerQueryObject) {
             for (var location in innerQueryObject) {
                 if (innerQueryObject.hasOwnProperty(location)) {
-                    this.dataServiceProvider.unsync(innerQueryObject[location]);
+                    this.dataServiceProvider.unsync(location, innerQueryObject[location]);
                 }
             }
             delete this.queryDictionary[queryID];
