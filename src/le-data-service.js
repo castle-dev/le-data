@@ -154,6 +154,16 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.unsync = function (query) {
+        var queryID = query.queryObject.queryID;
+        var innerQueryObject = this.queryDictionary[queryID];
+        if (innerQueryObject) {
+            for (var location in innerQueryObject) {
+                if (innerQueryObject.hasOwnProperty(location)) {
+                    this.dataServiceProvider.unsync(innerQueryObject[location]);
+                }
+            }
+            delete this.queryDictionary[queryID];
+        }
     };
     LeDataService.prototype.search = function (query) {
         var _this = this;
@@ -258,6 +268,8 @@ var LeDataService = (function () {
                     var innerQueryObject = queryObject.includedFields[fieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback).then(function (fieldInfo) {
                         data[fieldInfo.name] = fieldInfo.data;
+                    }, function (err) {
+                        console.warn(err);
                     }));
                 }
             }

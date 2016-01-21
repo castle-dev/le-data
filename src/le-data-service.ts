@@ -229,7 +229,16 @@ export class LeDataService {
 	 * @param query LeDataQuery - The query used in the origional sync. It must have the same id as the query used to sync. This insures that only the syncs used for that query object are removed.
 	 */
 	unsync(query: LeDataQuery): void {
-
+		var queryID = query.queryObject.queryID;
+		var innerQueryObject = this.queryDictionary[queryID];
+		if(innerQueryObject) {
+			for (var location in innerQueryObject) {
+				if(innerQueryObject.hasOwnProperty(location)){
+					this.dataServiceProvider.unsync(innerQueryObject[location]);
+				}
+			}
+			delete this.queryDictionary[queryID];
+		}
 	}
 
 	/**
@@ -346,6 +355,8 @@ export class LeDataService {
 					var innerQueryObject = queryObject.includedFields[fieldName];
 					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback).then((fieldInfo)=>{
 						data[fieldInfo.name] = fieldInfo.data;
+					}, (err)=>{
+						console.warn(err);
 					}));
 				}
 			}
