@@ -142,7 +142,7 @@ var LeDataService = (function () {
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
         var _this = this;
         this.validateQuery(query).then(function () {
-            return _this.fetchQuery(query, true, undefined, callback, errorCallback);
+            return _this.fetchQuery(query, true, undefined, callback, errorCallback, undefined);
         }).then(function (data) {
             if (callback) {
                 callback(data);
@@ -168,7 +168,7 @@ var LeDataService = (function () {
     LeDataService.prototype.search = function (query) {
         var _this = this;
         return this.validateQuery(query).then(function () {
-            return _this.fetchQuery(query, false, undefined, undefined, undefined);
+            return _this.fetchQuery(query, false, undefined, undefined, undefined, undefined);
         });
     };
     LeDataService.prototype.fetchQuery = function (query, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
@@ -198,6 +198,9 @@ var LeDataService = (function () {
             this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
         }
         return this.dataServiceProvider.fetchData(location).then(function (rawQueryRoot) {
+            if (dataID) {
+                rawQueryRoot._id = dataID;
+            }
             var fieldConfigs;
             if (typeConfig) {
                 fieldConfigs = typeConfig.getFieldConfigs();

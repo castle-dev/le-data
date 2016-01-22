@@ -208,7 +208,7 @@ export class LeDataService {
 	 */
 	sync(query: LeDataQuery, callback:(data: LeData) => void, errorCallback:(error:Error)=>void): void {
 		this.validateQuery(query).then(()=>{
-			return  this.fetchQuery(query, true, undefined, callback, errorCallback);
+			return  this.fetchQuery(query, true, undefined, callback, errorCallback, undefined);
 		}).then((data)=>{
 			if(callback) {
 				callback(data);
@@ -254,7 +254,7 @@ export class LeDataService {
 	 */
 	search(query: LeDataQuery): Promise<LeData> {
 		return this.validateQuery(query).then(()=>{
-			return this.fetchQuery(query, false, undefined, undefined, undefined);
+			return this.fetchQuery(query, false, undefined, undefined, undefined, undefined);
 		});
 	}
 
@@ -286,6 +286,9 @@ export class LeDataService {
 			this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
 		}
 		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
+			if(dataID) {
+				rawQueryRoot._id = dataID;
+			}
 			var fieldConfigs;
 			if(typeConfig) {
 				fieldConfigs = typeConfig.getFieldConfigs();

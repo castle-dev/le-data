@@ -2,7 +2,6 @@
 
 var gulp = require('gulp');
 var util = require('gulp-util');
-var jsdoc = require('gulp-jsdoc');
 var clean = require('gulp-clean');
 var runSequence = require('run-sequence');
 var mocha = require('gulp-mocha');
@@ -16,11 +15,6 @@ gulp.task('clean', function () {
   return gulp.src(['docs', 'dist'], { read : false })
   .pipe(clean());
 })
-
-gulp.task('docs', function () {
-  return gulp.src(['README.md', 'src/**/*.js'])
-  .pipe(jsdoc('./docs', { path: 'ink-docstrap', theme: 'cyborg' }));
-});
 
 gulp.task('test:unit', function () {
   return gulp.src('test/unit/**/*.js', {read: false})
