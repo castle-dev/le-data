@@ -258,15 +258,15 @@ export class LeDataService {
 		});
 	}
 
-	private fetchQuery(query:LeDataQuery, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<LeData> {
+	private fetchQuery(query:LeDataQuery, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void, outerMostQuery: LeDataQuery): Promise<LeData> {
 		var queryObject = query.queryObject;
 
 		return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
-			return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback);
+			return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 		});
 	}
 
-	fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<LeData> {
+	fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void, outerMostQuery: LeDataQuery): Promise<LeData> {
 		var queryObject = query.queryObject;
 		var dataType = queryObject.type;
 		var dataID = queryObject.id;
@@ -279,8 +279,11 @@ export class LeDataService {
 			syncDictionary = {};
 			this.queryDictionary[queryObject.queryID] = syncDictionary;
 		}
+		if(!outerMostQuery) {
+			outerMostQuery = query;
+		}
 		if(shouldSync) {
-			this.syncLocation(location, query, syncDictionary, callback, errorCallback);
+			this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
 		}
 		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
 			var fieldConfigs;
@@ -290,17 +293,23 @@ export class LeDataService {
 				fieldConfigs = [];
 			}
 			if(dataID) {
-				return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
+				return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 			} else {
-				return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
+				return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 			}
 		});
 	}
 	private syncLocation(location:string, query: LeDataQuery, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void):void {
+		var dataService = this;
 		if(!syncDictionary[location]) {
+			var isFirstCallBack = true;
 			function providerCallBack() {
+				if(isFirstCallBack) {
+					isFirstCallBack = false;
+					return;
+				}
 				if(callback) {
-					this.search(query).then((data)=>{
+					dataService.search(query).then((data)=>{
 						callback(data);
 					});
 				}
@@ -313,12 +322,12 @@ export class LeDataService {
 			syncDictionary[location] = this.dataServiceProvider.sync(location, providerCallBack, providerErrorCallBack);
 		}
 	}
-	addFieldsToRawDataObjects(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<any> {
+	addFieldsToRawDataObjects(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void, outerMostQuery: LeDataQuery): Promise<any> {
 		var promises = [];
 		var objectsToReturn = [];
 		for(var objectID in rawDataObject) {
 			if(rawDataObject.hasOwnProperty(objectID)) {
-				promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
+				promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
 					objectsToReturn.push(data);
 				}));
 			}
@@ -327,7 +336,7 @@ export class LeDataService {
 			return objectsToReturn;
 		});
 	}
-	addFieldsToRawDataObject(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void): Promise<any> {
+	addFieldsToRawDataObject(rawDataObject:any, fieldConfigs: LeTypeFieldConfig[], queryObject:any, shouldSync:boolean, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void, outerMostQuery: LeDataQuery): Promise<any> {
 		if(!queryObject) {
 			queryObject = {};
 		}
@@ -337,23 +346,23 @@ export class LeDataService {
 		var data = {};
 		var fieldConfigsByLocation = this.fieldConfigsByLocation(fieldConfigs);
 		var promises = [];
-		this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
+		this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 
 		return Promise.all(promises).then(()=>{
 			return data;
 		});
 	}
-	addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback):void {
+	addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):void {
 		for (var rawFieldName in rawDataObject) {
 			if(rawDataObject.hasOwnProperty(rawFieldName)) {
 				var fieldConfig = fieldConfigsByLocation[rawFieldName];
 				if(fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
-					this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
+					this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 				} else {
 					var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
 
 					var innerQueryObject = queryObject.includedFields[fieldName];
-					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback).then((fieldInfo)=>{
+					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
 						data[fieldInfo.name] = fieldInfo.data;
 					}, (err)=>{
 						console.warn(err);
@@ -362,7 +371,7 @@ export class LeDataService {
 			}
 		}
 	}
-	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback): any {
+	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
 		if(!fieldQueryObject) {
 			fieldQueryObject = {};
 		}
@@ -381,7 +390,7 @@ export class LeDataService {
 			var objectsForArrayField = [];
 			for(var fieldDataID in rawValue) {
 				if(rawValue.hasOwnProperty(fieldDataID)){
-					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback));
+					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
 				}
 			}
 			return Promise.all(promises).then(()=>{
@@ -389,17 +398,17 @@ export class LeDataService {
 				return fieldInfo;
 			});
 		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
-			return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback);
+			return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 
 		} else {
 			fieldInfo.data = rawValue;
 			return Promise.resolve(fieldInfo);
 		}
 	}
-	setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback):Promise<any> {
+	setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):Promise<any> {
 		var queryForField = new LeDataQuery(type, id);
 		queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
-		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
+		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
 			data._type = type;
 			data._id = id;
 			fieldInfo.data = data;
@@ -449,11 +458,11 @@ export class LeDataService {
 			return Promise.all(promises);
 		});
 	}
-	setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback): Promise<any> {
+	setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): Promise<any> {
 		var queryForField = new LeDataQuery(type, id);
 		queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
 
-		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then((data)=>{
+		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
 			data._id = id;
 			data._type = type;
 			objectsForArrayField.push(data);

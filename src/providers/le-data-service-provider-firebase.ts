@@ -26,13 +26,16 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     return deferred.promise;
   }
   createData(location:string, data:LeData): Promise<LeData> {
+    removeUndefinedFeilds(data);
     var deferred = Promise.defer<LeData>();
     if(!data._id) {
-      var newID = this.firebaseRef.child(location).push(data, function(err){
+      var newFieldRef = this.firebaseRef.child(location).push(data, function(err){
         if(err) {
           deferred.reject(err);
           return;
         }
+        var newFieldLocationArray = newFieldRef.toString().split('/');
+        var newID = newFieldLocationArray[newFieldLocationArray.length - 1];
         data._id = newID;
         deferred.resolve(data);
       });
@@ -49,8 +52,9 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     return deferred.promise;
   }
   updateData(location:string, data:any): Promise<any> {
+    removeUndefinedFeilds(data);
     var deferred = Promise.defer<any>();
-    this.firebaseRef.child(location).child(location).set(data, function(err){
+    this.firebaseRef.child(location).set(data, function(err){
       if(err) {
         deferred.reject(err);
         return;
@@ -81,5 +85,13 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     this.firebaseRef.child(location).off('value', unsyncObject);
   }
 }
-
+function removeUndefinedFeilds(data) {
+  for(var key in data) {
+    if(data.hasOwnProperty(key)) {
+      if(data[key] === undefined) {
+        delete data[key];
+      }
+    }
+  }
+}
 export default LeDataServiceProviderFirebase;

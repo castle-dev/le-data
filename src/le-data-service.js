@@ -171,14 +171,14 @@ var LeDataService = (function () {
             return _this.fetchQuery(query, false, undefined, undefined, undefined);
         });
     };
-    LeDataService.prototype.fetchQuery = function (query, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.fetchQuery = function (query, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var _this = this;
         var queryObject = query.queryObject;
         return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
-            return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback);
+            return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         });
     };
-    LeDataService.prototype.fetchDataWithQueryObjectAndTypeConfig = function (query, typeConfig, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.fetchDataWithQueryObjectAndTypeConfig = function (query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryObject = query.queryObject;
         var dataType = queryObject.type;
         var dataID = queryObject.id;
@@ -191,8 +191,11 @@ var LeDataService = (function () {
             syncDictionary = {};
             this.queryDictionary[queryObject.queryID] = syncDictionary;
         }
+        if (!outerMostQuery) {
+            outerMostQuery = query;
+        }
         if (shouldSync) {
-            this.syncLocation(location, query, syncDictionary, callback, errorCallback);
+            this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
         }
         return this.dataServiceProvider.fetchData(location).then(function (rawQueryRoot) {
             var fieldConfigs;
@@ -203,18 +206,24 @@ var LeDataService = (function () {
                 fieldConfigs = [];
             }
             if (dataID) {
-                return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
+                return dataService.addFieldsToRawDataObject(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
             }
             else {
-                return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback);
+                return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
             }
         });
     };
     LeDataService.prototype.syncLocation = function (location, query, syncDictionary, callback, errorCallback) {
+        var dataService = this;
         if (!syncDictionary[location]) {
+            var isFirstCallBack = true;
             function providerCallBack() {
+                if (isFirstCallBack) {
+                    isFirstCallBack = false;
+                    return;
+                }
                 if (callback) {
-                    this.search(query).then(function (data) {
+                    dataService.search(query).then(function (data) {
                         callback(data);
                     });
                 }
@@ -227,12 +236,12 @@ var LeDataService = (function () {
             syncDictionary[location] = this.dataServiceProvider.sync(location, providerCallBack, providerErrorCallBack);
         }
     };
-    LeDataService.prototype.addFieldsToRawDataObjects = function (rawDataObject, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.addFieldsToRawDataObjects = function (rawDataObject, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var promises = [];
         var objectsToReturn = [];
         for (var objectID in rawDataObject) {
             if (rawDataObject.hasOwnProperty(objectID)) {
-                promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback).then(function (data) {
+                promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
                     objectsToReturn.push(data);
                 }));
             }
@@ -241,7 +250,7 @@ var LeDataService = (function () {
             return objectsToReturn;
         });
     };
-    LeDataService.prototype.addFieldsToRawDataObject = function (rawDataObject, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.addFieldsToRawDataObject = function (rawDataObject, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         if (!queryObject) {
             queryObject = {};
         }
@@ -251,22 +260,22 @@ var LeDataService = (function () {
         var data = {};
         var fieldConfigsByLocation = this.fieldConfigsByLocation(fieldConfigs);
         var promises = [];
-        this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
+        this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         return ts_promise_1.default.all(promises).then(function () {
             return data;
         });
     };
-    LeDataService.prototype.addFetchFieldPromises = function (rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.addFetchFieldPromises = function (rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         for (var rawFieldName in rawDataObject) {
             if (rawDataObject.hasOwnProperty(rawFieldName)) {
                 var fieldConfig = fieldConfigsByLocation[rawFieldName];
                 if (fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
-                    this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback);
+                    this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
                 }
                 else {
                     var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
                     var innerQueryObject = queryObject.includedFields[fieldName];
-                    promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback).then(function (fieldInfo) {
+                    promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
                         data[fieldInfo.name] = fieldInfo.data;
                     }, function (err) {
                         console.warn(err);
@@ -275,7 +284,7 @@ var LeDataService = (function () {
             }
         }
     };
-    LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         if (!fieldQueryObject) {
             fieldQueryObject = {};
         }
@@ -296,7 +305,7 @@ var LeDataService = (function () {
             var objectsForArrayField = [];
             for (var fieldDataID in rawValue) {
                 if (rawValue.hasOwnProperty(fieldDataID)) {
-                    promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback));
+                    promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
                 }
             }
             return ts_promise_1.default.all(promises).then(function () {
@@ -305,17 +314,17 @@ var LeDataService = (function () {
             });
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
-            return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback);
+            return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }
         else {
             fieldInfo.data = rawValue;
             return ts_promise_1.default.resolve(fieldInfo);
         }
     };
-    LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1.default(type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
-        return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then(function (data) {
+        return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             data._type = type;
             data._id = id;
             fieldInfo.data = data;
@@ -367,10 +376,10 @@ var LeDataService = (function () {
             return ts_promise_1.default.all(promises);
         });
     };
-    LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback) {
+    LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1.default(type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
-        return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback).then(function (data) {
+        return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             data._id = id;
             data._type = type;
             objectsForArrayField.push(data);

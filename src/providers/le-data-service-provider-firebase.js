@@ -22,13 +22,16 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.createData = function (location, data) {
+        removeUndefinedFeilds(data);
         var deferred = ts_promise_1.default.defer();
         if (!data._id) {
-            var newID = this.firebaseRef.child(location).push(data, function (err) {
+            var newFieldRef = this.firebaseRef.child(location).push(data, function (err) {
                 if (err) {
                     deferred.reject(err);
                     return;
                 }
+                var newFieldLocationArray = newFieldRef.toString().split('/');
+                var newID = newFieldLocationArray[newFieldLocationArray.length - 1];
                 data._id = newID;
                 deferred.resolve(data);
             });
@@ -45,8 +48,9 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.updateData = function (location, data) {
+        removeUndefinedFeilds(data);
         var deferred = ts_promise_1.default.defer();
-        this.firebaseRef.child(location).child(location).set(data, function (err) {
+        this.firebaseRef.child(location).set(data, function (err) {
             if (err) {
                 deferred.reject(err);
                 return;
@@ -79,6 +83,15 @@ var LeDataServiceProviderFirebase = (function () {
     return LeDataServiceProviderFirebase;
 })();
 exports.LeDataServiceProviderFirebase = LeDataServiceProviderFirebase;
+function removeUndefinedFeilds(data) {
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            if (data[key] === undefined) {
+                delete data[key];
+            }
+        }
+    }
+}
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = LeDataServiceProviderFirebase;
 //# sourceMappingURL=le-data-service-provider-firebase.js.map

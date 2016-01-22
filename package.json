@@ -1,5 +1,5 @@
 {
-  "name": "le-data-service",
+  "name": "le-data",
   "version": "0.0.0",
   "description": "Send and receive arbirary JSON data to and from a remote storage provider.",
   "main": "src/index.js",
