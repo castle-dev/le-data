@@ -416,8 +416,7 @@ describe('LeDataService', ()=>{
           expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
           expect(ownerObject.properties.length).to.equal(2);
           expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
-          expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
-          expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+          expect(ownerObject.properties[0].tenants).to.equal(undefined);
           done();
         }, (err)=> {
           console.log(err);
@@ -440,8 +439,7 @@ describe('LeDataService', ()=>{
           expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
           expect(ownerObject.properties.length).to.equal(2);
           expect(ownerObject.properties[0].units[0]._id).to.equal('unit_id1Aa');
-          expect(ownerObject.properties[1].tenants[1]._id).to.equal('tenant_id1Bb');
-          expect(ownerObject.properties[1].tenants[1].tenantName).to.equal('t1Bb');
+          expect(ownerObject.properties[1].tenants).to.equal(undefined);
           done();
         }, (err)=> {
           console.log(err);
@@ -453,6 +451,7 @@ describe('LeDataService', ()=>{
         myQuery.include('bankAccount');
         var propertySubQuery = myQuery.include('properties');
         propertySubQuery.include('units');
+        propertySubQuery.include('tenants');
         dataService.sync(myQuery, (data)=>{
           var ownerObject = data;
           expect(ownerObject.createdAt instanceof Date).to.be.true;

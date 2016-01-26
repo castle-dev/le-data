@@ -7,6 +7,8 @@ var LeDataService = (function () {
     function LeDataService(provider) {
         this.dataServiceProvider = provider;
         this.queryDictionary = {};
+        this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
+        this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
     }
     LeDataService.prototype.createData = function (data) {
         var _this = this;

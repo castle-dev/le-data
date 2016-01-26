@@ -25,6 +25,8 @@ export class LeDataService {
 	constructor(provider: LeDataServiceProvider) {
 		this.dataServiceProvider = provider;
 		this.queryDictionary = {};
+		this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
+		this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});		
 	}
 
   /**
