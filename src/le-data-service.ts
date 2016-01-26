@@ -366,7 +366,9 @@ export class LeDataService {
 
 					var innerQueryObject = queryObject.includedFields[fieldName];
 					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
-						data[fieldInfo.name] = fieldInfo.data;
+						if(fieldInfo){
+							data[fieldInfo.name] = fieldInfo.data;
+						}
 					}, (err)=>{
 						console.warn(err);
 					}));
@@ -375,6 +377,9 @@ export class LeDataService {
 		}
 	}
 	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
+		if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
+			return Promise.resolve();
+		}
 		if(!fieldQueryObject) {
 			fieldQueryObject = {};
 		}

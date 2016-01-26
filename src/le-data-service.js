@@ -279,7 +279,9 @@ var LeDataService = (function () {
                     var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
                     var innerQueryObject = queryObject.includedFields[fieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
-                        data[fieldInfo.name] = fieldInfo.data;
+                        if (fieldInfo) {
+                            data[fieldInfo.name] = fieldInfo.data;
+                        }
                     }, function (err) {
                         console.warn(err);
                     }));
@@ -288,6 +290,9 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
+            return ts_promise_1.default.resolve();
+        }
         if (!fieldQueryObject) {
             fieldQueryObject = {};
         }
