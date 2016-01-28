@@ -311,7 +311,6 @@ export class LeDataService {
 	private syncLocation(location:string, query: LeDataQuery, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void):void {
 		var dataService = this;
 		if(!syncDictionary[location]) {
-			console.log(location, 'sync');
 			var isFirstCallBack = true;
 			function providerCallBack() {
 				if(isFirstCallBack) {

@@ -226,7 +226,6 @@ var LeDataService = (function () {
     LeDataService.prototype.syncLocation = function (location, query, syncDictionary, callback, errorCallback) {
         var dataService = this;
         if (!syncDictionary[location]) {
-            console.log(location, 'sync');
             var isFirstCallBack = true;
             function providerCallBack() {
                 if (isFirstCallBack) {
