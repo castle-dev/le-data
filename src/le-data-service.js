@@ -190,8 +190,13 @@ var LeDataService = (function () {
         }
         var dataService = this;
         if (shouldSync && !syncDictionary) {
-            syncDictionary = {};
-            this.queryDictionary[queryObject.queryID] = syncDictionary;
+            if (this.queryDictionary[queryObject.queryID]) {
+                syncDictionary = this.queryDictionary[queryObject.queryID];
+            }
+            else {
+                syncDictionary = {};
+                this.queryDictionary[queryObject.queryID] = syncDictionary;
+            }
         }
         if (!outerMostQuery) {
             outerMostQuery = query;
@@ -221,6 +226,7 @@ var LeDataService = (function () {
     LeDataService.prototype.syncLocation = function (location, query, syncDictionary, callback, errorCallback) {
         var dataService = this;
         if (!syncDictionary[location]) {
+            console.log(location, 'sync');
             var isFirstCallBack = true;
             function providerCallBack() {
                 if (isFirstCallBack) {
@@ -228,9 +234,7 @@ var LeDataService = (function () {
                     return;
                 }
                 if (callback) {
-                    dataService.search(query).then(function (data) {
-                        callback(data);
-                    });
+                    dataService.sync(query, callback, errorCallback);
                 }
             }
             function providerErrorCallBack(err) {
