@@ -1,11 +1,11 @@
-le-data-service
+le-data
 =========
 
-**Send and receive arbirary JSON data to and from a remote storage provider.**
+**Send and receive arbitrary JSON data to and from a remote storage provider.**
 
 ## Installation
 
-  `npm install le-data-service`
+  `npm install le-data`
 
 ## Usage
 
@@ -21,7 +21,7 @@ le-data-service
 
 ## Contributing
 
-Please follow the project's [conventions](https://github.com/castle-dev/le-data-service/blob/develop/CONTRIBUTING.md) or your changes will not be accepted
+Please follow the project's [conventions](https://github.com/castle-dev/le-data/blob/develop/CONTRIBUTING.md) or your changes will not be accepted
 
 ## Release History
 
