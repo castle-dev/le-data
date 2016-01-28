@@ -25,6 +25,8 @@ export class LeDataService {
 	constructor(provider: LeDataServiceProvider) {
 		this.dataServiceProvider = provider;
 		this.queryDictionary = {};
+		this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
+		this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});
 	}
 
   /**
@@ -276,8 +278,12 @@ export class LeDataService {
 		}
 		var dataService = this;
 		if(shouldSync && !syncDictionary) {
-			syncDictionary = {};
-			this.queryDictionary[queryObject.queryID] = syncDictionary;
+			if(this.queryDictionary[queryObject.queryID]) {
+				syncDictionary = this.queryDictionary[queryObject.queryID];
+			} else {
+				syncDictionary = {};
+				this.queryDictionary[queryObject.queryID] = syncDictionary;
+			}
 		}
 		if(!outerMostQuery) {
 			outerMostQuery = query;
@@ -312,9 +318,7 @@ export class LeDataService {
 					return;
 				}
 				if(callback) {
-					dataService.search(query).then((data)=>{
-						callback(data);
-					});
+					dataService.sync(query, callback, errorCallback);
 				}
 			}
 			function providerErrorCallBack(err) {
@@ -366,7 +370,9 @@ export class LeDataService {
 
 					var innerQueryObject = queryObject.includedFields[fieldName];
 					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
-						data[fieldInfo.name] = fieldInfo.data;
+						if(fieldInfo){
+							data[fieldInfo.name] = fieldInfo.data;
+						}
 					}, (err)=>{
 						console.warn(err);
 					}));
@@ -375,6 +381,9 @@ export class LeDataService {
 		}
 	}
 	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
+		if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
+			return Promise.resolve();
+		}
 		if(!fieldQueryObject) {
 			fieldQueryObject = {};
 		}

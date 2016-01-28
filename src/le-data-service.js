@@ -7,6 +7,8 @@ var LeDataService = (function () {
     function LeDataService(provider) {
         this.dataServiceProvider = provider;
         this.queryDictionary = {};
+        this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
+        this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
     }
     LeDataService.prototype.createData = function (data) {
         var _this = this;
@@ -188,8 +190,13 @@ var LeDataService = (function () {
         }
         var dataService = this;
         if (shouldSync && !syncDictionary) {
-            syncDictionary = {};
-            this.queryDictionary[queryObject.queryID] = syncDictionary;
+            if (this.queryDictionary[queryObject.queryID]) {
+                syncDictionary = this.queryDictionary[queryObject.queryID];
+            }
+            else {
+                syncDictionary = {};
+                this.queryDictionary[queryObject.queryID] = syncDictionary;
+            }
         }
         if (!outerMostQuery) {
             outerMostQuery = query;
@@ -226,9 +233,7 @@ var LeDataService = (function () {
                     return;
                 }
                 if (callback) {
-                    dataService.search(query).then(function (data) {
-                        callback(data);
-                    });
+                    dataService.sync(query, callback, errorCallback);
                 }
             }
             function providerErrorCallBack(err) {
@@ -279,7 +284,9 @@ var LeDataService = (function () {
                     var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
                     var innerQueryObject = queryObject.includedFields[fieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
-                        data[fieldInfo.name] = fieldInfo.data;
+                        if (fieldInfo) {
+                            data[fieldInfo.name] = fieldInfo.data;
+                        }
                     }, function (err) {
                         console.warn(err);
                     }));
@@ -288,6 +295,9 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
+            return ts_promise_1.default.resolve();
+        }
         if (!fieldQueryObject) {
             fieldQueryObject = {};
         }
