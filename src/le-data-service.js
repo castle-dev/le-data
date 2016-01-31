@@ -207,6 +207,15 @@ var LeDataService = (function () {
         return this.dataServiceProvider.fetchData(location).then(function (rawQueryRoot) {
             if (dataID) {
                 rawQueryRoot._id = dataID;
+                rawQueryRoot._type = dataType;
+            }
+            else {
+                for (var idAsKey in rawQueryRoot) {
+                    if (rawQueryRoot.hasOwnProperty(idAsKey)) {
+                        rawQueryRoot[idAsKey]._id = idAsKey;
+                        rawQueryRoot[idAsKey]._type = dataType;
+                    }
+                }
             }
             var fieldConfigs;
             if (typeConfig) {
