@@ -344,7 +344,7 @@ export class LeDataService {
 			if(rawDataObject.hasOwnProperty(objectID)) {
 				promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
 					objectsToReturn.push(data);
-				}));
+				}, (err)=>{}));
 			}
 		}
 		return Promise.all(promises).then(()=>{
@@ -381,9 +381,7 @@ export class LeDataService {
 						if(fieldInfo){
 							data[fieldInfo.name] = fieldInfo.data;
 						}
-					}, (err)=>{
-						console.warn(err);
-					}));
+					}, ()=>{}));
 				}
 			}
 		}
@@ -410,7 +408,7 @@ export class LeDataService {
 			var objectsForArrayField = [];
 			for(var fieldDataID in rawValue) {
 				if(rawValue.hasOwnProperty(fieldDataID)){
-					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+					promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{}));
 				}
 			}
 			return Promise.all(promises).then(()=>{

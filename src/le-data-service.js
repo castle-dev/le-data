@@ -260,7 +260,7 @@ var LeDataService = (function () {
             if (rawDataObject.hasOwnProperty(objectID)) {
                 promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
                     objectsToReturn.push(data);
-                }));
+                }, function (err) { }));
             }
         }
         return ts_promise_1.default.all(promises).then(function () {
@@ -296,9 +296,7 @@ var LeDataService = (function () {
                         if (fieldInfo) {
                             data[fieldInfo.name] = fieldInfo.data;
                         }
-                    }, function (err) {
-                        console.warn(err);
-                    }));
+                    }, function () { }));
                 }
             }
         }
@@ -327,7 +325,7 @@ var LeDataService = (function () {
             var objectsForArrayField = [];
             for (var fieldDataID in rawValue) {
                 if (rawValue.hasOwnProperty(fieldDataID)) {
-                    promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+                    promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(function () { }));
                 }
             }
             return ts_promise_1.default.all(promises).then(function () {
