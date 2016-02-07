@@ -1,5 +1,17 @@
 {
   "compilerOptions": {
-    "sourceMap": true
-  }
+    "sourceMap": true,
+    "declaration": true,
+    "module": "commonjs"
+  },
+  "files": [
+    "src/le-data-query.ts",
+    "src/le-data-service-provider.ts",
+    "src/le-data-service.ts",
+    "src/le-data.ts",
+    "src/le-id-generator.ts",
+    "src/le-type-config.ts",
+    "src/le-type-field-config.ts",
+    "src/providers/le-data-service-provider-firebase.ts"
+  ]
 }
