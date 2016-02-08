@@ -60,6 +60,14 @@ var LeDataService = (function () {
             });
         }
     };
+    LeDataService.prototype.checkExistence = function (type, id) {
+        var _this = this;
+        return this.fetchTypeConfig(type).then(function (typeConfig) {
+            var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.dataExists(location);
+        });
+    };
     LeDataService.prototype.updateData = function (data) {
         var _this = this;
         if (!data) {
