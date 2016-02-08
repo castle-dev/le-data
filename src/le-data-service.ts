@@ -88,6 +88,24 @@ export class LeDataService {
 		}
 	}
 
+	/**
+   * Checks of the data with the specified type and id exists remotely.
+   *
+   * @function checkExistence
+   * @memberof LeDataService
+   * @instance
+   * @param type string - The type of the data.
+	 * @param id string - The id for the data.
+   * @returns Promise<boolean> resolves true if the data exists and false if it does not.
+   */
+	checkExistence(type:string, id:string): Promise<boolean> {
+		return this.fetchTypeConfig(type).then((typeConfig)=>{
+			var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+			location += '/' + id;
+			return this.dataServiceProvider.dataExists(location);
+		});
+	}
+
   /**
    * Updates the data in the database. This only removes data from the database if the field is specified
    * If a LeData object is removed from a field that is configured to cascade deletes, the data will be soft deleted.
