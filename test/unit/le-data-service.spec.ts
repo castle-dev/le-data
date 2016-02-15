@@ -184,6 +184,7 @@ describe('LeDataService', ()=>{
         expect(typeof mockProvider.remoteStoredData.Dog[returnedData._id].testingDates === 'number').to.be.true;
         expect(typeof returnedData._id === 'string').to.be.true;
         expect(returnedData._createdAt instanceof Date).to.be.true;
+        expect(typeof mockProvider.remoteStoredData.Dog[returnedData._id]._createdAt === 'number').to.be.true;
         expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
         expect(returnedData.testingDates instanceof Date).to.be.true;
         expect(returnedData._type === 'Dog').to.be.true;

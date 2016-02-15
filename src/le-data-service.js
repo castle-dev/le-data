@@ -5,10 +5,17 @@ var le_data_query_1 = require("./le-data-query");
 var configObjectIndex = '_leTypeConfigs/';
 var LeDataService = (function () {
     function LeDataService(provider) {
+        var _this = this;
         this.dataServiceProvider = provider;
         this.queryDictionary = {};
         this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
+        this.dataServiceProvider.sync('_leServiceConfig', function (serviceConfigObject) {
+            _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+        }, function (err) {
+            console.error(err);
+        });
+        this.updateServiceConfigVariablesWithServiceConfigObject(undefined);
     }
     LeDataService.prototype.createData = function (data) {
         var _this = this;
@@ -239,6 +246,19 @@ var LeDataService = (function () {
                 return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
             }
         });
+    };
+    LeDataService.prototype.updateServiceConfigVariablesWithServiceConfigObject = function (serviceConfigObject) {
+        if (!serviceConfigObject) {
+            serviceConfigObject = {};
+        }
+        this.createdAtFieldName = serviceConfigObject.createdAtFieldName ? serviceConfigObject.createdAtFieldName : '_createdAt';
+        this.createdAtSaveLocation = serviceConfigObject.createdAtSaveLocation ? serviceConfigObject.createdAtSaveLocation : '_createdAt';
+        this.lastUpdatedAtFieldName = serviceConfigObject.lastUpdatedAtFieldName ? serviceConfigObject.lastUpdatedAtFieldName : '_lastUpdatedAt';
+        this.lastUpdatedAtSaveLocation = serviceConfigObject.lastUpdatedAtSaveLocation ? serviceConfigObject.lastUpdatedAtSaveLocation : '_lastUpdatedAt';
+        this.deletedAtFieldName = serviceConfigObject.deletedAtFieldName ? serviceConfigObject.deletedAtFieldName : '_deletedAt';
+        this.deletedAtSaveLocation = serviceConfigObject.deletedAtSaveLocation ? serviceConfigObject.deletedAtSaveLocation : '_deletedAt';
+        this.archiveLocation = serviceConfigObject.archiveLocation ? serviceConfigObject.archiveLocation : '_archive';
+        this.archiveDeletedData = serviceConfigObject.hasOwnProperty('archiveDeletedData') ? serviceConfigObject.archiveDeletedData : true;
     };
     LeDataService.prototype.syncLocation = function (location, query, syncDictionary, callback, errorCallback) {
         var dataService = this;
@@ -712,6 +732,9 @@ var LeDataService = (function () {
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {
+                typeConfig.addField(_this.createdAtFieldName, 'Date').saveAt(_this.createdAtSaveLocation);
+                typeConfig.addField(_this.lastUpdatedAtFieldName, 'Date').saveAt(_this.lastUpdatedAtSaveLocation);
+                typeConfig.addField(_this.deletedAtFieldName, 'Date').saveAt(_this.deletedAtSaveLocation);
                 resolve(typeConfig);
             }, function (err) {
                 reject(err);
@@ -749,19 +772,19 @@ var LeDataService = (function () {
         return this.locationForData(data).then(function (location) {
             var updateCreatedAtPropmise;
             if (!data._id) {
-                data._createdAt = new Date();
+                data[_this.createdAtFieldName] = new Date();
                 updateCreatedAtPropmise = ts_promise_1.default.resolve();
             }
             else {
                 updateCreatedAtPropmise = _this.dataServiceProvider.dataExists(location).then(function (doesExist) {
                     if (!doesExist) {
-                        data._createdAt = new Date();
+                        data[_this.createdAtFieldName] = new Date();
                     }
                 });
             }
             return updateCreatedAtPropmise;
         }).then(function () {
-            data._lastUpdatedAt = new Date();
+            data[_this.lastUpdatedAtFieldName] = new Date();
             if (!data._id) {
                 return _this.saveToCreateID(data);
             }

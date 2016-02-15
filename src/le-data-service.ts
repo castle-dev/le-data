@@ -22,11 +22,26 @@ export class LeDataService {
 
 	private dataServiceProvider: LeDataServiceProvider;
 	private queryDictionary: any;
+	private createdAtSaveLocation: string;
+	private createdAtFieldName: string;
+	private lastUpdatedAtSaveLocation: string;
+	private lastUpdatedAtFieldName: string;
+	private deletedAtFieldName: string;
+	private deletedAtSaveLocation: string;
+	private archiveDeletedData: boolean;
+	private archiveLocation: string;
+
 	constructor(provider: LeDataServiceProvider) {
 		this.dataServiceProvider = provider;
 		this.queryDictionary = {};
 		this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
 		this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});
+		this.dataServiceProvider.sync('_leServiceConfig', (serviceConfigObject)=>{
+			this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+		}, (err)=>{
+			console.error(err);
+		});
+		this.updateServiceConfigVariablesWithServiceConfigObject(undefined);
 	}
 
   /**
@@ -333,6 +348,19 @@ export class LeDataService {
 				return dataService.addFieldsToRawDataObjects(rawQueryRoot, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 			}
 		});
+	}
+	private updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject): void {
+		if(!serviceConfigObject) {
+			serviceConfigObject = {};
+		}
+		this.createdAtFieldName = serviceConfigObject.createdAtFieldName ? serviceConfigObject.createdAtFieldName : '_createdAt';
+		this.createdAtSaveLocation = serviceConfigObject.createdAtSaveLocation ? serviceConfigObject.createdAtSaveLocation : '_createdAt';
+		this.lastUpdatedAtFieldName = serviceConfigObject.lastUpdatedAtFieldName ? serviceConfigObject.lastUpdatedAtFieldName : '_lastUpdatedAt';
+		this.lastUpdatedAtSaveLocation = serviceConfigObject.lastUpdatedAtSaveLocation ? serviceConfigObject.lastUpdatedAtSaveLocation : '_lastUpdatedAt';
+		this.deletedAtFieldName = serviceConfigObject.deletedAtFieldName ? serviceConfigObject.deletedAtFieldName : '_deletedAt';
+		this.deletedAtSaveLocation = serviceConfigObject.deletedAtSaveLocation ? serviceConfigObject.deletedAtSaveLocation : '_deletedAt';
+		this.archiveLocation = serviceConfigObject.archiveLocation ? serviceConfigObject.archiveLocation : '_archive';
+		this.archiveDeletedData = serviceConfigObject.hasOwnProperty('archiveDeletedData') ? serviceConfigObject.archiveDeletedData : true;
 	}
 	private syncLocation(location:string, query: LeDataQuery, syncDictionary:any, callback: (data)=>void, errorCallback: (err)=>void):void {
 		var dataService = this;
@@ -830,6 +858,9 @@ export class LeDataService {
 			this.dataServiceProvider.fetchData(location).then((returnedConfigObject)=>{
 				return this.typeConfigForTypeConfigObject(returnedConfigObject);
 			}).then((typeConfig)=>{
+				typeConfig.addField(this.createdAtFieldName, 'Date').saveAt(this.createdAtSaveLocation);
+				typeConfig.addField(this.lastUpdatedAtFieldName, 'Date').saveAt(this.lastUpdatedAtSaveLocation);
+				typeConfig.addField(this.deletedAtFieldName, 'Date').saveAt(this.deletedAtSaveLocation);
 				resolve(typeConfig);
 			}, (err)=>{
 				reject(err);
@@ -874,18 +905,18 @@ export class LeDataService {
 		return this.locationForData(data).then((location)=>{
 			var updateCreatedAtPropmise;
 			if(!data._id) {
-				data._createdAt = new Date();
+				data[this.createdAtFieldName] = new Date();
 				updateCreatedAtPropmise = Promise.resolve();
 			} else {
 				updateCreatedAtPropmise = this.dataServiceProvider.dataExists(location).then((doesExist)=>{
 					if(!doesExist) {
-						data._createdAt = new Date();
+						data[this.createdAtFieldName] = new Date();
 					}
 				});
 			}
 			return updateCreatedAtPropmise;
 		}).then(()=>{
-			data._lastUpdatedAt = new Date();
+			data[this.lastUpdatedAtFieldName] = new Date();
 			if(!data._id) {
 				return this.saveToCreateID(data);
 			}
