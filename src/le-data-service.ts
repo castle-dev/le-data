@@ -922,7 +922,13 @@ export class LeDataService {
 			} else if(fieldConfig && fieldConfig.getFieldType() === 'object') {
 				return this.saveObjectField(location, fieldConfig, data[fieldName]);
 			} else {
-				return this.dataServiceProvider.updateData(location, data[fieldName]);
+				var dataToSave;
+				if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
+					dataToSave = data[fieldName].getTime();
+				} else {
+					dataToSave = data[fieldName];
+				}
+				return this.dataServiceProvider.updateData(location, dataToSave);
 			}
 		});
 	}

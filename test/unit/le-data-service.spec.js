@@ -156,6 +156,33 @@ describe('LeDataService', function () {
             console.log(err);
         });
     });
+    it('should correctly save Dates', function (done) {
+        mockProvider.remoteStoredData = {};
+        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var goodFieldConfig = dogTypeConfig.addField('catField', 'Cat');
+        var dateFieldConfig = dogTypeConfig.addField('testingDates', 'Date');
+        dogTypeConfig.addField('_createdAt', 'Date');
+        dataService.configureType(dogTypeConfig).then(function () {
+            var catTypeConfig = new le_type_config_1.default('Cat');
+            return dataService.configureType(catTypeConfig);
+        }).then(function () {
+            return dataService.createData({ _type: 'Dog', catField: { _type: "Cat" }, testingDates: new Date() });
+        }).then(function (returnedData) {
+            expect(typeof mockProvider.remoteStoredData.Dog[returnedData._id].testingDates === 'number').to.be.true;
+            expect(typeof returnedData._id === 'string').to.be.true;
+            expect(returnedData._createdAt instanceof Date).to.be.true;
+            expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
+            expect(returnedData.testingDates instanceof Date).to.be.true;
+            expect(returnedData._type === 'Dog').to.be.true;
+            expect(returnedData.catField._type === 'Cat').to.be.true;
+            expect(typeof returnedData.catField._id === 'string').to.be.true;
+            expect(returnedData.catField._createdAt instanceof Date).to.be.true;
+            expect(returnedData.catField._lastUpdatedAt instanceof Date).to.be.true;
+            done();
+        }, function (err) {
+            console.log(err);
+        });
+    });
     it('should correctly configure and save object type fields', function (done) {
         var dogTypeConfig = new le_type_config_1.default('Dog');
         dogTypeConfig.addField('name', 'string');
