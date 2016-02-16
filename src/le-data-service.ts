@@ -30,6 +30,7 @@ export class LeDataService {
 	private deletedAtSaveLocation: string;
 	private archiveDeletedData: boolean;
 	private archiveLocation: string;
+	private hasLoadedServiceConfig: boolean;
 
 	constructor(provider: LeDataServiceProvider) {
 		this.dataServiceProvider = provider;
@@ -37,6 +38,7 @@ export class LeDataService {
 		this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
 		this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});
 		this.dataServiceProvider.sync('_leServiceConfig', (serviceConfigObject)=>{
+			this.hasLoadedServiceConfig = true;
 			this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
 		}, (err)=>{
 			console.error(err);
@@ -161,7 +163,7 @@ export class LeDataService {
 			return promise;
 		}
 		return new Promise<LeData>((resolve, reject) => {
-			this.dataExists(data._type, data._id).then((dataExists)=>{
+			this.checkExistence(data._type, data._id).then((dataExists)=>{
 				if(dataExists){
 					return this.validateData(data);
 				} else {
@@ -225,7 +227,72 @@ export class LeDataService {
 			});
 			return promise;
 		}
-		return this.deleteData(type, id);
+		var typeConfig;
+		var updateDeletedAtData = {_type:type, _id:id};
+		updateDeletedAtData[this.deletedAtFieldName] = new Date();
+		return this.updateData(updateDeletedAtData).then(()=>{
+			return this.fetchTypeConfig(type);
+		}).then((returnedTypeConfig)=>{
+			typeConfig = returnedTypeConfig;
+			return this.cascadeDeletes(typeConfig, id);
+		}).then(()=>{
+			var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+			location += '/' + id;
+			return this.dataServiceProvider.fetchData(location);
+		}).then((data)=>{
+			if(!this.archiveDeletedData) {
+				return Promise.resolve();
+			}
+			var location = this.archiveLocation + '/';
+			location += typeConfig.saveLocation ? typeConfig.saveLocation : type;
+			location += '/' + id;
+			return this.dataServiceProvider.updateData(location, data);
+		}).then(()=>{
+			var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+			location += '/' + id;
+			return this.dataServiceProvider.deleteData(location);
+		});
+	}
+
+	private cascadeDeletes(typeConfig: LeTypeConfig, id: string): Promise<any> {
+		var fieldConfigs = typeConfig.getFieldConfigs();
+		var promises = [];
+		fieldConfigs.forEach((fieldConfig)=>{
+			promises.push(this.handleCascadeDelete(typeConfig, fieldConfig, id));
+		});
+		return Promise.all(promises);
+	}
+
+	private handleCascadeDelete(typeConfig: LeTypeConfig, fieldConfig: LeTypeFieldConfig, id: string): Promise<any> {
+		if(!fieldConfig.cascadeDelete) {
+			return Promise.resolve();
+		}
+		var type = typeConfig.getType();
+		var fieldName = fieldConfig.getFieldName();
+		return this.checkExistence(type, id).then((doesExist)=>{
+			var promiseToReturn: Promise<any> = Promise.resolve();
+			if(doesExist) {
+				var query = new LeDataQuery(type, id);
+				query.include(fieldName);
+				promiseToReturn = this.search(query);
+			}
+			return promiseToReturn;
+		}).then((data)=>{
+			if(!data || !data[fieldName] || typeof data[fieldName] === 'string') {
+				return Promise.resolve();
+			}
+			if(data[fieldName] instanceof Array) {
+				var promises = [];
+				data[fieldName].forEach((objectToDelete)=>{
+					promises.push(this.deleteData(objectToDelete._type, objectToDelete._id))
+				});
+				return Promise.all(promises);
+			} else if (data[fieldName]._type && data[fieldName]._id) {
+				return this.deleteData(data[fieldName]._type, data[fieldName]._id);
+			} else {
+				return Promise.resolve();
+			}
+		});
 	}
 
 	/**
@@ -902,7 +969,17 @@ export class LeDataService {
 	 * @returns Promise<LeData>
 	 */
 	private saveData(data: LeData): Promise<LeData> {
-		return this.locationForData(data).then((location)=>{
+		var initialPromise: Promise<any>;
+		if(!this.hasLoadedServiceConfig) {
+			initialPromise = this.dataServiceProvider.fetchData('_leServiceConfig').then((serviceConfigObject)=>{
+				this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+			});
+		} else {
+			initialPromise = Promise.resolve();
+		}
+		return initialPromise.then(()=>{
+			return this.locationForData(data)
+		}).then((location)=>{
 			var updateCreatedAtPropmise;
 			if(!data._id) {
 				data[this.createdAtFieldName] = new Date();
@@ -936,6 +1013,9 @@ export class LeDataService {
 	private saveFieldForData(data:LeData, fieldName:string): Promise<any> {
 		var location;
 		var fieldConfig;
+		if(fieldName === '_id' || fieldName === '_type') {
+			return Promise.resolve();
+		}
 		return this.fetchTypeConfig(data._type).then((typeConfig)=>{
 			fieldConfig = typeConfig.getFieldConfig(fieldName);
 			location = data._type;

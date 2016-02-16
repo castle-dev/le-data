@@ -65,7 +65,7 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
   }
   deleteData(location:string): Promise<void> {
     var deferred = Promise.defer<void>();
-    this.firebaseRef.child(location).child(location).remove(function(err){
+    this.firebaseRef.child(location).remove(function(err){
       if(err) {
         deferred.reject(err);
         return;
@@ -74,9 +74,9 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     });
     return deferred.promise;
   }
-  sync(location:string, callback:()=>void, errorCallback:(error)=>void): any {
-    return this.firebaseRef.child(location).on('value', function(){
-      callback();
+  sync(location:string, callback:(data)=>void, errorCallback:(error)=>void): any {
+    return this.firebaseRef.child(location).on('value', function(snapshot){
+      callback(snapshot.val());
     }, function(err){
       errorCallback(err);
     });

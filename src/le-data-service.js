@@ -11,6 +11,7 @@ var LeDataService = (function () {
         this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leServiceConfig', function (serviceConfigObject) {
+            _this.hasLoadedServiceConfig = true;
             _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
         }, function (err) {
             console.error(err);
@@ -102,7 +103,7 @@ var LeDataService = (function () {
             return promise;
         }
         return new ts_promise_1.default(function (resolve, reject) {
-            _this.dataExists(data._type, data._id).then(function (dataExists) {
+            _this.checkExistence(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
                     return _this.validateData(data);
                 }
@@ -138,6 +139,7 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.deleteData = function (type, id) {
+        var _this = this;
         if (!type) {
             var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
             var error = new Error(errorMessage);
@@ -154,7 +156,74 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        return this.deleteData(type, id);
+        var typeConfig;
+        var updateDeletedAtData = { _type: type, _id: id };
+        updateDeletedAtData[this.deletedAtFieldName] = new Date();
+        return this.updateData(updateDeletedAtData).then(function () {
+            return _this.fetchTypeConfig(type);
+        }).then(function (returnedTypeConfig) {
+            typeConfig = returnedTypeConfig;
+            return _this.cascadeDeletes(typeConfig, id);
+        }).then(function () {
+            var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.fetchData(location);
+        }).then(function (data) {
+            if (!_this.archiveDeletedData) {
+                return ts_promise_1.default.resolve();
+            }
+            var location = _this.archiveLocation + '/';
+            location += typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.updateData(location, data);
+        }).then(function () {
+            var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.deleteData(location);
+        });
+    };
+    LeDataService.prototype.cascadeDeletes = function (typeConfig, id) {
+        var _this = this;
+        var fieldConfigs = typeConfig.getFieldConfigs();
+        var promises = [];
+        fieldConfigs.forEach(function (fieldConfig) {
+            promises.push(_this.handleCascadeDelete(typeConfig, fieldConfig, id));
+        });
+        return ts_promise_1.default.all(promises);
+    };
+    LeDataService.prototype.handleCascadeDelete = function (typeConfig, fieldConfig, id) {
+        var _this = this;
+        if (!fieldConfig.cascadeDelete) {
+            return ts_promise_1.default.resolve();
+        }
+        var type = typeConfig.getType();
+        var fieldName = fieldConfig.getFieldName();
+        return this.checkExistence(type, id).then(function (doesExist) {
+            var promiseToReturn = ts_promise_1.default.resolve();
+            if (doesExist) {
+                var query = new le_data_query_1.default(type, id);
+                query.include(fieldName);
+                promiseToReturn = _this.search(query);
+            }
+            return promiseToReturn;
+        }).then(function (data) {
+            if (!data || !data[fieldName] || typeof data[fieldName] === 'string') {
+                return ts_promise_1.default.resolve();
+            }
+            if (data[fieldName] instanceof Array) {
+                var promises = [];
+                data[fieldName].forEach(function (objectToDelete) {
+                    promises.push(_this.deleteData(objectToDelete._type, objectToDelete._id));
+                });
+                return ts_promise_1.default.all(promises);
+            }
+            else if (data[fieldName]._type && data[fieldName]._id) {
+                return _this.deleteData(data[fieldName]._type, data[fieldName]._id);
+            }
+            else {
+                return ts_promise_1.default.resolve();
+            }
+        });
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
         var _this = this;
@@ -769,7 +838,18 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveData = function (data) {
         var _this = this;
-        return this.locationForData(data).then(function (location) {
+        var initialPromise;
+        if (!this.hasLoadedServiceConfig) {
+            initialPromise = this.dataServiceProvider.fetchData('_leServiceConfig').then(function (serviceConfigObject) {
+                _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+            });
+        }
+        else {
+            initialPromise = ts_promise_1.default.resolve();
+        }
+        return initialPromise.then(function () {
+            return _this.locationForData(data);
+        }).then(function (location) {
             var updateCreatedAtPropmise;
             if (!data._id) {
                 data[_this.createdAtFieldName] = new Date();
@@ -805,6 +885,9 @@ var LeDataService = (function () {
         var _this = this;
         var location;
         var fieldConfig;
+        if (fieldName === '_id' || fieldName === '_type') {
+            return ts_promise_1.default.resolve();
+        }
         return this.fetchTypeConfig(data._type).then(function (typeConfig) {
             fieldConfig = typeConfig.getFieldConfig(fieldName);
             location = data._type;

@@ -61,7 +61,7 @@ var LeDataServiceProviderFirebase = (function () {
     };
     LeDataServiceProviderFirebase.prototype.deleteData = function (location) {
         var deferred = ts_promise_1.default.defer();
-        this.firebaseRef.child(location).child(location).remove(function (err) {
+        this.firebaseRef.child(location).remove(function (err) {
             if (err) {
                 deferred.reject(err);
                 return;
@@ -71,8 +71,8 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.sync = function (location, callback, errorCallback) {
-        return this.firebaseRef.child(location).on('value', function () {
-            callback();
+        return this.firebaseRef.child(location).on('value', function (snapshot) {
+            callback(snapshot.val());
         }, function (err) {
             errorCallback(err);
         });
