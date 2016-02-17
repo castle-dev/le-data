@@ -391,7 +391,13 @@ var LeDataService = (function () {
                     var innerQueryObject = queryObject.includedFields[fieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
                         if (fieldInfo) {
+                            if (rawFieldName !== fieldInfo.name) {
+                                delete data[rawFieldName];
+                            }
                             data[fieldInfo.name] = fieldInfo.data;
+                        }
+                        else {
+                            delete data[rawFieldName];
                         }
                     }, function () { }));
                 }
@@ -840,7 +846,12 @@ var LeDataService = (function () {
         var _this = this;
         var initialPromise;
         if (!this.hasLoadedServiceConfig) {
-            initialPromise = this.dataServiceProvider.fetchData('_leServiceConfig').then(function (serviceConfigObject) {
+            initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then(function (doesExist) {
+                if (doesExist) {
+                    return _this.dataServiceProvider.fetchData('_leServiceConfig');
+                }
+            }).then(function (serviceConfigObject) {
+                _this.hasLoadedServiceConfig = true;
                 _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
             });
         }

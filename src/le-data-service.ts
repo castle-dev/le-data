@@ -492,7 +492,12 @@ export class LeDataService {
 					var innerQueryObject = queryObject.includedFields[fieldName];
 					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
 						if(fieldInfo){
+							if(rawFieldName !== fieldInfo.name) {
+								delete data[rawFieldName];
+							}
 							data[fieldInfo.name] = fieldInfo.data;
+						} else {
+							delete data[rawFieldName];
 						}
 					}, ()=>{}));
 				}
@@ -971,7 +976,12 @@ export class LeDataService {
 	private saveData(data: LeData): Promise<LeData> {
 		var initialPromise: Promise<any>;
 		if(!this.hasLoadedServiceConfig) {
-			initialPromise = this.dataServiceProvider.fetchData('_leServiceConfig').then((serviceConfigObject)=>{
+			initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then((doesExist)=>{
+				if(doesExist) {
+					return this.dataServiceProvider.fetchData('_leServiceConfig');
+				}
+			}).then((serviceConfigObject)=>{
+				this.hasLoadedServiceConfig = true;
 				this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
 			});
 		} else {
