@@ -82,7 +82,7 @@ export class LeDataService {
 						var error = new Error(errorMessage);
 						reject(error);
 					} else {
-						return this.validateData(data);
+						return this.validateData(data, false);
 					}
 				}).then(()=>{
 					return this.saveData(data);
@@ -94,7 +94,7 @@ export class LeDataService {
 			});
 		} else {
 			return new Promise<LeData>((resolve, reject)=>{
-				this.validateData(data).then(()=>{
+				this.validateData(data, false).then(()=>{
 					return this.saveData(data);
 				}).then((returnedData)=>{
 					resolve(returnedData);
@@ -165,7 +165,7 @@ export class LeDataService {
 		return new Promise<LeData>((resolve, reject) => {
 			this.checkExistence(data._type, data._id).then((dataExists)=>{
 				if(dataExists){
-					return this.validateData(data);
+					return this.validateData(data, true);
 				} else {
 					var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
 					var error = new Error(errorMessage);
@@ -715,7 +715,7 @@ export class LeDataService {
 			return fieldConfig;
 		});
 	}
-	private validateData(data:LeData): Promise<void> {
+	private validateData(data:LeData, isUpdate: boolean): Promise<void> {
 		if(!data) {
 			var errorMessage = 'Invalid LeData object - cannot be undefined';
 			var error = new Error(errorMessage);
@@ -748,7 +748,7 @@ export class LeDataService {
 				validateFieldPromises = [];
 				for(var i = 0; i < fieldConfigs.length; i += 1) {
 					var fieldConfig = fieldConfigs[i];
-					validateFieldPromises.push(this.validateField(fieldConfig, data));
+					validateFieldPromises.push(this.validateField(fieldConfig, data, isUpdate));
 				}
 				validateFieldPromises.push(this.validateNoExtraFields(typeConfig, data));
 				return Promise.all(validateFieldPromises).then(()=>{
@@ -786,28 +786,28 @@ export class LeDataService {
 		return Promise.resolve();
 	}
 
-	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<any> {
+	private validateField(fieldConfig: LeTypeFieldConfig, data: LeData, isUpdate): Promise<any> {
 		var validationPromises: Promise<any>[] = [];
-		var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
-		var typePromise = this.validateTypeOnField(fieldConfig, data);
+		var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data, isUpdate);
+		var typePromise = this.validateTypeOnField(fieldConfig, data, isUpdate);
 		validationPromises.push(requiredPromise);
 		validationPromises.push(typePromise);
 		return Promise.all(validationPromises);
 	}
 
-	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<any> {
+	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData, isUpdate: boolean): Promise<any> {
 		var type = fieldConfig.getFieldType();
 		var fieldName = fieldConfig.getFieldName();
 		if (!data[fieldName]) {
 			return Promise.resolve();
 		} else if (type === 'object'){
-			return this.validateObjectTypeOnField(fieldConfig, data);
+			return this.validateObjectTypeOnField(fieldConfig, data, isUpdate);
 		} else if (typeof data[fieldName] === type) {
 			return Promise.resolve();
 		} else if (type === 'Date' && data[fieldName] instanceof Date) {
 			return Promise.resolve();
 		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
-			return this.validateData(data[fieldName]);
+			return this.validateData(data[fieldName], isUpdate);
 		} else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
 			var fieldData = data[fieldName];
 			if(fieldData.constructor === Array) {
@@ -818,7 +818,7 @@ export class LeDataService {
 						isValid = false;
 						break;
 					} else {
-						arrayObjectValidationPromises.push(this.validateData(fieldData[i]));
+						arrayObjectValidationPromises.push(this.validateData(fieldData[i], isUpdate));
 					}
 				}
 				if (isValid) {
@@ -845,13 +845,13 @@ export class LeDataService {
 			return fieldType;
 		}
 	}
-	private validateObjectTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+	private validateObjectTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData, isUpdate: boolean): Promise<void> {
 		var innerFieldConfigs = fieldConfig.getFieldConfigs();
 		var objectUnderValidation = data[fieldConfig.getFieldName()];
 		var promises: Promise<void>[] = [];
 		for(var i = 0; i < innerFieldConfigs.length; i += 1) {
 			var innerFieldConfig = innerFieldConfigs[i];
-			promises.push(this.validateField(innerFieldConfig, objectUnderValidation));
+			promises.push(this.validateField(innerFieldConfig, objectUnderValidation, isUpdate));
 		}
 		promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
 		return new Promise<void>((resolve, reject)=>{
@@ -863,13 +863,13 @@ export class LeDataService {
 		});
 	}
 
-	private validateRequiredPropertyOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+	private validateRequiredPropertyOnField(fieldConfig: LeTypeFieldConfig, data: LeData, isUpdate: boolean): Promise<void> {
 		var fieldName = fieldConfig.getFieldName();
 		if(fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
-			var errorMessage = fieldConfig.getFieldName() +' is required but was not set to undefined on the LeData object, data: '  + JSON.stringify(data);
+			var errorMessage = fieldConfig.getFieldName() +' is required but was set to undefined on the LeData object, data: '  + JSON.stringify(data);
 			var error = new Error(errorMessage);
 			return Promise.reject(error);
-		} else if(fieldConfig.required && !data[fieldName]) {
+		} else if(fieldConfig.required && !data[fieldName] && !isUpdate) {
 			return new Promise<void>((resolve, reject)=>{
 				if(data._id) {
 					this.dataExists(data._type, data._id).then((doesExist)=>{

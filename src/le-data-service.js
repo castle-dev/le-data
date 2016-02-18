@@ -45,7 +45,7 @@ var LeDataService = (function () {
                         reject(error);
                     }
                     else {
-                        return _this.validateData(data);
+                        return _this.validateData(data, false);
                     }
                 }).then(function () {
                     return _this.saveData(data);
@@ -58,7 +58,7 @@ var LeDataService = (function () {
         }
         else {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.validateData(data).then(function () {
+                _this.validateData(data, false).then(function () {
                     return _this.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
@@ -105,7 +105,7 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
             _this.checkExistence(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
-                    return _this.validateData(data);
+                    return _this.validateData(data, true);
                 }
                 else {
                     var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
@@ -605,7 +605,7 @@ var LeDataService = (function () {
             return fieldConfig;
         });
     };
-    LeDataService.prototype.validateData = function (data) {
+    LeDataService.prototype.validateData = function (data, isUpdate) {
         var _this = this;
         if (!data) {
             var errorMessage = 'Invalid LeData object - cannot be undefined';
@@ -640,7 +640,7 @@ var LeDataService = (function () {
                 validateFieldPromises = [];
                 for (var i = 0; i < fieldConfigs.length; i += 1) {
                     var fieldConfig = fieldConfigs[i];
-                    validateFieldPromises.push(_this.validateField(fieldConfig, data));
+                    validateFieldPromises.push(_this.validateField(fieldConfig, data, isUpdate));
                 }
                 validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
                 return ts_promise_1.default.all(validateFieldPromises).then(function () {
@@ -675,22 +675,22 @@ var LeDataService = (function () {
         }
         return ts_promise_1.default.resolve();
     };
-    LeDataService.prototype.validateField = function (fieldConfig, data) {
+    LeDataService.prototype.validateField = function (fieldConfig, data, isUpdate) {
         var validationPromises = [];
-        var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
-        var typePromise = this.validateTypeOnField(fieldConfig, data);
+        var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data, isUpdate);
+        var typePromise = this.validateTypeOnField(fieldConfig, data, isUpdate);
         validationPromises.push(requiredPromise);
         validationPromises.push(typePromise);
         return ts_promise_1.default.all(validationPromises);
     };
-    LeDataService.prototype.validateTypeOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateTypeOnField = function (fieldConfig, data, isUpdate) {
         var type = fieldConfig.getFieldType();
         var fieldName = fieldConfig.getFieldName();
         if (!data[fieldName]) {
             return ts_promise_1.default.resolve();
         }
         else if (type === 'object') {
-            return this.validateObjectTypeOnField(fieldConfig, data);
+            return this.validateObjectTypeOnField(fieldConfig, data, isUpdate);
         }
         else if (typeof data[fieldName] === type) {
             return ts_promise_1.default.resolve();
@@ -699,7 +699,7 @@ var LeDataService = (function () {
             return ts_promise_1.default.resolve();
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
-            return this.validateData(data[fieldName]);
+            return this.validateData(data[fieldName], isUpdate);
         }
         else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
             var fieldData = data[fieldName];
@@ -712,7 +712,7 @@ var LeDataService = (function () {
                         break;
                     }
                     else {
-                        arrayObjectValidationPromises.push(this.validateData(fieldData[i]));
+                        arrayObjectValidationPromises.push(this.validateData(fieldData[i], isUpdate));
                     }
                 }
                 if (isValid) {
@@ -740,13 +740,13 @@ var LeDataService = (function () {
             return fieldType;
         }
     };
-    LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data, isUpdate) {
         var innerFieldConfigs = fieldConfig.getFieldConfigs();
         var objectUnderValidation = data[fieldConfig.getFieldName()];
         var promises = [];
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
             var innerFieldConfig = innerFieldConfigs[i];
-            promises.push(this.validateField(innerFieldConfig, objectUnderValidation));
+            promises.push(this.validateField(innerFieldConfig, objectUnderValidation, isUpdate));
         }
         promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
         return new ts_promise_1.default(function (resolve, reject) {
@@ -757,15 +757,15 @@ var LeDataService = (function () {
             });
         });
     };
-    LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data, isUpdate) {
         var _this = this;
         var fieldName = fieldConfig.getFieldName();
         if (fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
-            var errorMessage = fieldConfig.getFieldName() + ' is required but was not set to undefined on the LeData object, data: ' + JSON.stringify(data);
+            var errorMessage = fieldConfig.getFieldName() + ' is required but was set to undefined on the LeData object, data: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
             return ts_promise_1.default.reject(error);
         }
-        else if (fieldConfig.required && !data[fieldName]) {
+        else if (fieldConfig.required && !data[fieldName] && !isUpdate) {
             return new ts_promise_1.default(function (resolve, reject) {
                 if (data._id) {
                     _this.dataExists(data._type, data._id).then(function (doesExist) {
