@@ -1,4 +1,14 @@
 {
+  '_leServiceConfig': {
+    archiveDeletedData: boolean,
+    archiveLocation: string,
+    deletedAtFieldName: string,
+    deletedAtSaveLocation: string,
+    createdAtFieldName: string,
+    createdAtSaveLocation: string,
+    lastUpdatedAtFieldName: string,
+    lastUpdatedAtSaveLocation: string
+  },
   '_leTypeConfigs': {
     'type': string,
     'saveAt': string,

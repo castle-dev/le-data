@@ -5,10 +5,18 @@ var le_data_query_1 = require("./le-data-query");
 var configObjectIndex = '_leTypeConfigs/';
 var LeDataService = (function () {
     function LeDataService(provider) {
+        var _this = this;
         this.dataServiceProvider = provider;
         this.queryDictionary = {};
         this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
+        this.dataServiceProvider.sync('_leServiceConfig', function (serviceConfigObject) {
+            _this.hasLoadedServiceConfig = true;
+            _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+        }, function (err) {
+            console.error(err);
+        });
+        this.updateServiceConfigVariablesWithServiceConfigObject(undefined);
     }
     LeDataService.prototype.createData = function (data) {
         var _this = this;
@@ -37,7 +45,7 @@ var LeDataService = (function () {
                         reject(error);
                     }
                     else {
-                        return _this.validateData(data);
+                        return _this.validateData(data, false);
                     }
                 }).then(function () {
                     return _this.saveData(data);
@@ -50,7 +58,7 @@ var LeDataService = (function () {
         }
         else {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.validateData(data).then(function () {
+                _this.validateData(data, false).then(function () {
                     return _this.saveData(data);
                 }).then(function (returnedData) {
                     resolve(returnedData);
@@ -95,9 +103,9 @@ var LeDataService = (function () {
             return promise;
         }
         return new ts_promise_1.default(function (resolve, reject) {
-            _this.dataExists(data._type, data._id).then(function (dataExists) {
+            _this.checkExistence(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
-                    return _this.validateData(data);
+                    return _this.validateData(data, true);
                 }
                 else {
                     var errorMessage = 'Attempted to update data that does not exist, object:' + JSON.stringify(data);
@@ -131,6 +139,7 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.deleteData = function (type, id) {
+        var _this = this;
         if (!type) {
             var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
             var error = new Error(errorMessage);
@@ -147,7 +156,74 @@ var LeDataService = (function () {
             });
             return promise;
         }
-        return this.deleteData(type, id);
+        var typeConfig;
+        var updateDeletedAtData = { _type: type, _id: id };
+        updateDeletedAtData[this.deletedAtFieldName] = new Date();
+        return this.updateData(updateDeletedAtData).then(function () {
+            return _this.fetchTypeConfig(type);
+        }).then(function (returnedTypeConfig) {
+            typeConfig = returnedTypeConfig;
+            return _this.cascadeDeletes(typeConfig, id);
+        }).then(function () {
+            var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.fetchData(location);
+        }).then(function (data) {
+            if (!_this.archiveDeletedData) {
+                return ts_promise_1.default.resolve();
+            }
+            var location = _this.archiveLocation + '/';
+            location += typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.updateData(location, data);
+        }).then(function () {
+            var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+            location += '/' + id;
+            return _this.dataServiceProvider.deleteData(location);
+        });
+    };
+    LeDataService.prototype.cascadeDeletes = function (typeConfig, id) {
+        var _this = this;
+        var fieldConfigs = typeConfig.getFieldConfigs();
+        var promises = [];
+        fieldConfigs.forEach(function (fieldConfig) {
+            promises.push(_this.handleCascadeDelete(typeConfig, fieldConfig, id));
+        });
+        return ts_promise_1.default.all(promises);
+    };
+    LeDataService.prototype.handleCascadeDelete = function (typeConfig, fieldConfig, id) {
+        var _this = this;
+        if (!fieldConfig.cascadeDelete) {
+            return ts_promise_1.default.resolve();
+        }
+        var type = typeConfig.getType();
+        var fieldName = fieldConfig.getFieldName();
+        return this.checkExistence(type, id).then(function (doesExist) {
+            var promiseToReturn = ts_promise_1.default.resolve();
+            if (doesExist) {
+                var query = new le_data_query_1.default(type, id);
+                query.include(fieldName);
+                promiseToReturn = _this.search(query);
+            }
+            return promiseToReturn;
+        }).then(function (data) {
+            if (!data || !data[fieldName] || typeof data[fieldName] === 'string') {
+                return ts_promise_1.default.resolve();
+            }
+            if (data[fieldName] instanceof Array) {
+                var promises = [];
+                data[fieldName].forEach(function (objectToDelete) {
+                    promises.push(_this.deleteData(objectToDelete._type, objectToDelete._id));
+                });
+                return ts_promise_1.default.all(promises);
+            }
+            else if (data[fieldName]._type && data[fieldName]._id) {
+                return _this.deleteData(data[fieldName]._type, data[fieldName]._id);
+            }
+            else {
+                return ts_promise_1.default.resolve();
+            }
+        });
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
         var _this = this;
@@ -240,6 +316,19 @@ var LeDataService = (function () {
             }
         });
     };
+    LeDataService.prototype.updateServiceConfigVariablesWithServiceConfigObject = function (serviceConfigObject) {
+        if (!serviceConfigObject) {
+            serviceConfigObject = {};
+        }
+        this.createdAtFieldName = serviceConfigObject.createdAtFieldName ? serviceConfigObject.createdAtFieldName : '_createdAt';
+        this.createdAtSaveLocation = serviceConfigObject.createdAtSaveLocation ? serviceConfigObject.createdAtSaveLocation : '_createdAt';
+        this.lastUpdatedAtFieldName = serviceConfigObject.lastUpdatedAtFieldName ? serviceConfigObject.lastUpdatedAtFieldName : '_lastUpdatedAt';
+        this.lastUpdatedAtSaveLocation = serviceConfigObject.lastUpdatedAtSaveLocation ? serviceConfigObject.lastUpdatedAtSaveLocation : '_lastUpdatedAt';
+        this.deletedAtFieldName = serviceConfigObject.deletedAtFieldName ? serviceConfigObject.deletedAtFieldName : '_deletedAt';
+        this.deletedAtSaveLocation = serviceConfigObject.deletedAtSaveLocation ? serviceConfigObject.deletedAtSaveLocation : '_deletedAt';
+        this.archiveLocation = serviceConfigObject.archiveLocation ? serviceConfigObject.archiveLocation : '_archive';
+        this.archiveDeletedData = serviceConfigObject.hasOwnProperty('archiveDeletedData') ? serviceConfigObject.archiveDeletedData : true;
+    };
     LeDataService.prototype.syncLocation = function (location, query, syncDictionary, callback, errorCallback) {
         var dataService = this;
         if (!syncDictionary[location]) {
@@ -300,6 +389,7 @@ var LeDataService = (function () {
                 else {
                     var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
                     var innerQueryObject = queryObject.includedFields[fieldName];
+                    delete data[rawFieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
                         if (fieldInfo) {
                             data[fieldInfo.name] = fieldInfo.data;
@@ -457,6 +547,8 @@ var LeDataService = (function () {
                 }, function (err) {
                     reject(err);
                 });
+            }, function (err) {
+                reject(err);
             });
         });
     };
@@ -515,7 +607,7 @@ var LeDataService = (function () {
             return fieldConfig;
         });
     };
-    LeDataService.prototype.validateData = function (data) {
+    LeDataService.prototype.validateData = function (data, isUpdate) {
         var _this = this;
         if (!data) {
             var errorMessage = 'Invalid LeData object - cannot be undefined';
@@ -550,7 +642,7 @@ var LeDataService = (function () {
                 validateFieldPromises = [];
                 for (var i = 0; i < fieldConfigs.length; i += 1) {
                     var fieldConfig = fieldConfigs[i];
-                    validateFieldPromises.push(_this.validateField(fieldConfig, data));
+                    validateFieldPromises.push(_this.validateField(fieldConfig, data, isUpdate));
                 }
                 validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
                 return ts_promise_1.default.all(validateFieldPromises).then(function () {
@@ -585,22 +677,22 @@ var LeDataService = (function () {
         }
         return ts_promise_1.default.resolve();
     };
-    LeDataService.prototype.validateField = function (fieldConfig, data) {
+    LeDataService.prototype.validateField = function (fieldConfig, data, isUpdate) {
         var validationPromises = [];
-        var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data);
-        var typePromise = this.validateTypeOnField(fieldConfig, data);
+        var requiredPromise = this.validateRequiredPropertyOnField(fieldConfig, data, isUpdate);
+        var typePromise = this.validateTypeOnField(fieldConfig, data, isUpdate);
         validationPromises.push(requiredPromise);
         validationPromises.push(typePromise);
         return ts_promise_1.default.all(validationPromises);
     };
-    LeDataService.prototype.validateTypeOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateTypeOnField = function (fieldConfig, data, isUpdate) {
         var type = fieldConfig.getFieldType();
         var fieldName = fieldConfig.getFieldName();
         if (!data[fieldName]) {
             return ts_promise_1.default.resolve();
         }
         else if (type === 'object') {
-            return this.validateObjectTypeOnField(fieldConfig, data);
+            return this.validateObjectTypeOnField(fieldConfig, data, isUpdate);
         }
         else if (typeof data[fieldName] === type) {
             return ts_promise_1.default.resolve();
@@ -609,20 +701,24 @@ var LeDataService = (function () {
             return ts_promise_1.default.resolve();
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
-            return ts_promise_1.default.resolve();
+            return this.validateData(data[fieldName], isUpdate);
         }
         else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
             var fieldData = data[fieldName];
             if (fieldData.constructor === Array) {
                 var isValid = true;
+                var arrayObjectValidationPromises = [];
                 for (var i = 0; i < fieldData.length; i += 1) {
                     if (fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
                         isValid = false;
                         break;
                     }
+                    else {
+                        arrayObjectValidationPromises.push(this.validateData(fieldData[i], isUpdate));
+                    }
                 }
                 if (isValid) {
-                    return ts_promise_1.default.resolve();
+                    return ts_promise_1.default.all(arrayObjectValidationPromises);
                 }
             }
         }
@@ -646,13 +742,13 @@ var LeDataService = (function () {
             return fieldType;
         }
     };
-    LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateObjectTypeOnField = function (fieldConfig, data, isUpdate) {
         var innerFieldConfigs = fieldConfig.getFieldConfigs();
         var objectUnderValidation = data[fieldConfig.getFieldName()];
         var promises = [];
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
             var innerFieldConfig = innerFieldConfigs[i];
-            promises.push(this.validateField(innerFieldConfig, objectUnderValidation));
+            promises.push(this.validateField(innerFieldConfig, objectUnderValidation, isUpdate));
         }
         promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
         return new ts_promise_1.default(function (resolve, reject) {
@@ -663,15 +759,15 @@ var LeDataService = (function () {
             });
         });
     };
-    LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data) {
+    LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data, isUpdate) {
         var _this = this;
         var fieldName = fieldConfig.getFieldName();
         if (fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
-            var errorMessage = fieldConfig.getFieldName() + ' is required but was not set to undefined on the LeData object, data: ' + JSON.stringify(data);
+            var errorMessage = fieldConfig.getFieldName() + ' is required but was set to undefined on the LeData object, data: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
             return ts_promise_1.default.reject(error);
         }
-        else if (fieldConfig.required && !data[fieldName]) {
+        else if (fieldConfig.required && !data[fieldName] && !isUpdate) {
             return new ts_promise_1.default(function (resolve, reject) {
                 if (data._id) {
                     _this.dataExists(data._type, data._id).then(function (doesExist) {
@@ -712,6 +808,9 @@ var LeDataService = (function () {
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {
+                typeConfig.addField(_this.createdAtFieldName, 'Date').saveAt(_this.createdAtSaveLocation);
+                typeConfig.addField(_this.lastUpdatedAtFieldName, 'Date').saveAt(_this.lastUpdatedAtSaveLocation);
+                typeConfig.addField(_this.deletedAtFieldName, 'Date').saveAt(_this.deletedAtSaveLocation);
                 resolve(typeConfig);
             }, function (err) {
                 reject(err);
@@ -746,22 +845,38 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveData = function (data) {
         var _this = this;
-        return this.locationForData(data).then(function (location) {
+        var initialPromise;
+        if (!this.hasLoadedServiceConfig) {
+            initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then(function (doesExist) {
+                if (doesExist) {
+                    return _this.dataServiceProvider.fetchData('_leServiceConfig');
+                }
+            }).then(function (serviceConfigObject) {
+                _this.hasLoadedServiceConfig = true;
+                _this.updateServiceConfigVariablesWithServiceConfigObject(serviceConfigObject);
+            });
+        }
+        else {
+            initialPromise = ts_promise_1.default.resolve();
+        }
+        return initialPromise.then(function () {
+            return _this.locationForData(data);
+        }).then(function (location) {
             var updateCreatedAtPropmise;
             if (!data._id) {
-                data._createdAt = new Date();
+                data[_this.createdAtFieldName] = new Date();
                 updateCreatedAtPropmise = ts_promise_1.default.resolve();
             }
             else {
                 updateCreatedAtPropmise = _this.dataServiceProvider.dataExists(location).then(function (doesExist) {
                     if (!doesExist) {
-                        data._createdAt = new Date();
+                        data[_this.createdAtFieldName] = new Date();
                     }
                 });
             }
             return updateCreatedAtPropmise;
         }).then(function () {
-            data._lastUpdatedAt = new Date();
+            data[_this.lastUpdatedAtFieldName] = new Date();
             if (!data._id) {
                 return _this.saveToCreateID(data);
             }
@@ -782,6 +897,9 @@ var LeDataService = (function () {
         var _this = this;
         var location;
         var fieldConfig;
+        if (fieldName === '_id' || fieldName === '_type') {
+            return ts_promise_1.default.resolve();
+        }
         return this.fetchTypeConfig(data._type).then(function (typeConfig) {
             fieldConfig = typeConfig.getFieldConfig(fieldName);
             location = data._type;
@@ -802,7 +920,14 @@ var LeDataService = (function () {
                 return _this.saveObjectField(location, fieldConfig, data[fieldName]);
             }
             else {
-                return _this.dataServiceProvider.updateData(location, data[fieldName]);
+                var dataToSave;
+                if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
+                    dataToSave = data[fieldName].getTime();
+                }
+                else {
+                    dataToSave = data[fieldName];
+                }
+                return _this.dataServiceProvider.updateData(location, dataToSave);
             }
         });
     };
