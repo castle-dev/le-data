@@ -393,7 +393,6 @@ export class LeDataService {
 		}
 		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
 			if(dataID) {
-				// console.log(dataID, dataType);
 				rawQueryRoot._id = dataID;
 				rawQueryRoot._type = dataType;
 			} else {
@@ -655,6 +654,8 @@ export class LeDataService {
 				}, (err)=>{
 					reject(err);
 				});
+			}, function(err) {
+				reject(err);
 			});
 		});
 	}

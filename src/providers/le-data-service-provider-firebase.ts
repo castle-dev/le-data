@@ -35,7 +35,11 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     removeUndefinedFeilds(data);
     var deferred = Promise.defer<LeData>();
     var provider = this;
-    if(!data._id) {
+    var dataID = data._id;
+    var dataType = data._type;
+    delete data._id;
+    delete data._type;
+    if(!dataID) {
       var newFieldRef = this.firebaseRef.child(location).push(data, function(err){
         if(err) {
           deferred.reject(err);
@@ -43,17 +47,24 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
         }
         var newFieldLocationArray = newFieldRef.toString().split('/');
         var newID = newFieldLocationArray[newFieldLocationArray.length - 1];
-        data._id = newID;
         provider.updateStoreForLocation(location, data);
+        data._id = newID;
+        if(dataType) {
+          data._type = dataType;
+        }
         deferred.resolve(data);
       });
     } else {
-      this.firebaseRef.child(location).child(data._id).set(data, function(err){
+      this.firebaseRef.child(location).child(dataID).set(data, function(err){
         if(err) {
           deferred.reject(err);
           return;
         }
         provider.updateStoreForLocation(location, data);
+        data._id = dataID;
+        if(dataType) {
+          data._type = dataType;
+        }
         deferred.resolve(data);
       });
     }
@@ -66,7 +77,7 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
       var innerUpdatePromises = [];
       for (var key in data) {
         if(data.hasOwnProperty(key)) {
-          var innerLocation = location += '/' + key;
+          var innerLocation = location + '/' + key;
           innerUpdatePromises.push(this.updateData(innerLocation, data[key]));
         }
       }
@@ -111,6 +122,9 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     this.firebaseRef.child(location).off('value', unsyncObject);
   }
   updateStore(store: any, key:string, value) {
+    if(typeof store !== 'object') {
+      return;
+    }
     if(typeof value === 'object') {
       for(var innerKey in value) {
         if(value.hasOwnProperty(innerKey)) {
@@ -154,11 +168,12 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
       if(!sublocation.length) {
         break;
       }
+
       if(!lastSublocation) {
         lastSublocation = sublocation;
       } else {
-        if(!currentStore[lastSublocation]) {
-          currentStore[lastSublocation] = {};
+        if(typeof currentStore[lastSublocation] !== 'object') {
+          return undefined;
         }
         currentStore = currentStore[lastSublocation];
         lastSublocation = sublocation;

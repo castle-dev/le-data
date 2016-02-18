@@ -30,7 +30,11 @@ var LeDataServiceProviderFirebase = (function () {
         removeUndefinedFeilds(data);
         var deferred = ts_promise_1.default.defer();
         var provider = this;
-        if (!data._id) {
+        var dataID = data._id;
+        var dataType = data._type;
+        delete data._id;
+        delete data._type;
+        if (!dataID) {
             var newFieldRef = this.firebaseRef.child(location).push(data, function (err) {
                 if (err) {
                     deferred.reject(err);
@@ -38,18 +42,25 @@ var LeDataServiceProviderFirebase = (function () {
                 }
                 var newFieldLocationArray = newFieldRef.toString().split('/');
                 var newID = newFieldLocationArray[newFieldLocationArray.length - 1];
-                data._id = newID;
                 provider.updateStoreForLocation(location, data);
+                data._id = newID;
+                if (dataType) {
+                    data._type = dataType;
+                }
                 deferred.resolve(data);
             });
         }
         else {
-            this.firebaseRef.child(location).child(data._id).set(data, function (err) {
+            this.firebaseRef.child(location).child(dataID).set(data, function (err) {
                 if (err) {
                     deferred.reject(err);
                     return;
                 }
                 provider.updateStoreForLocation(location, data);
+                data._id = dataID;
+                if (dataType) {
+                    data._type = dataType;
+                }
                 deferred.resolve(data);
             });
         }
@@ -61,7 +72,7 @@ var LeDataServiceProviderFirebase = (function () {
             var innerUpdatePromises = [];
             for (var key in data) {
                 if (data.hasOwnProperty(key)) {
-                    var innerLocation = location += '/' + key;
+                    var innerLocation = location + '/' + key;
                     innerUpdatePromises.push(this.updateData(innerLocation, data[key]));
                 }
             }
@@ -106,6 +117,9 @@ var LeDataServiceProviderFirebase = (function () {
         this.firebaseRef.child(location).off('value', unsyncObject);
     };
     LeDataServiceProviderFirebase.prototype.updateStore = function (store, key, value) {
+        if (typeof store !== 'object') {
+            return;
+        }
         if (typeof value === 'object') {
             for (var innerKey in value) {
                 if (value.hasOwnProperty(innerKey)) {
@@ -155,8 +169,8 @@ var LeDataServiceProviderFirebase = (function () {
                 lastSublocation = sublocation;
             }
             else {
-                if (!currentStore[lastSublocation]) {
-                    currentStore[lastSublocation] = {};
+                if (typeof currentStore[lastSublocation] !== 'object') {
+                    return undefined;
                 }
                 currentStore = currentStore[lastSublocation];
                 lastSublocation = sublocation;

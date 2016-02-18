@@ -547,6 +547,8 @@ var LeDataService = (function () {
                 }, function (err) {
                     reject(err);
                 });
+            }, function (err) {
+                reject(err);
             });
         });
     };
