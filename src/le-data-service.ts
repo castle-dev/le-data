@@ -393,6 +393,7 @@ export class LeDataService {
 		}
 		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
 			if(dataID) {
+				// console.log(dataID, dataType);
 				rawQueryRoot._id = dataID;
 				rawQueryRoot._type = dataType;
 			} else {
@@ -490,14 +491,10 @@ export class LeDataService {
 					var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
 
 					var innerQueryObject = queryObject.includedFields[fieldName];
+					delete data[rawFieldName];
 					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
 						if(fieldInfo){
-							if(rawFieldName !== fieldInfo.name) {
-								delete data[rawFieldName];
-							}
 							data[fieldInfo.name] = fieldInfo.data;
-						} else {
-							delete data[rawFieldName];
 						}
 					}, ()=>{}));
 				}
@@ -798,7 +795,7 @@ export class LeDataService {
 		return Promise.all(validationPromises);
 	}
 
-	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<void> {
+	private validateTypeOnField(fieldConfig: LeTypeFieldConfig, data: LeData): Promise<any> {
 		var type = fieldConfig.getFieldType();
 		var fieldName = fieldConfig.getFieldName();
 		if (!data[fieldName]) {
@@ -810,19 +807,22 @@ export class LeDataService {
 		} else if (type === 'Date' && data[fieldName] instanceof Date) {
 			return Promise.resolve();
 		} else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
-			return Promise.resolve();
+			return this.validateData(data[fieldName]);
 		} else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
 			var fieldData = data[fieldName];
 			if(fieldData.constructor === Array) {
 				var isValid = true;
+				var arrayObjectValidationPromises = [];
 				for(var i = 0; i < fieldData.length; i += 1) {
 					if(fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
 						isValid = false;
 						break;
+					} else {
+						arrayObjectValidationPromises.push(this.validateData(fieldData[i]));
 					}
 				}
 				if (isValid) {
-					return Promise.resolve();
+					return Promise.all(arrayObjectValidationPromises);
 				}
 			}
 		}

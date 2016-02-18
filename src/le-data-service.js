@@ -389,15 +389,10 @@ var LeDataService = (function () {
                 else {
                     var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
                     var innerQueryObject = queryObject.includedFields[fieldName];
+                    delete data[rawFieldName];
                     promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
                         if (fieldInfo) {
-                            if (rawFieldName !== fieldInfo.name) {
-                                delete data[rawFieldName];
-                            }
                             data[fieldInfo.name] = fieldInfo.data;
-                        }
-                        else {
-                            delete data[rawFieldName];
                         }
                     }, function () { }));
                 }
@@ -704,20 +699,24 @@ var LeDataService = (function () {
             return ts_promise_1.default.resolve();
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
-            return ts_promise_1.default.resolve();
+            return this.validateData(data[fieldName]);
         }
         else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
             var fieldData = data[fieldName];
             if (fieldData.constructor === Array) {
                 var isValid = true;
+                var arrayObjectValidationPromises = [];
                 for (var i = 0; i < fieldData.length; i += 1) {
                     if (fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
                         isValid = false;
                         break;
                     }
+                    else {
+                        arrayObjectValidationPromises.push(this.validateData(fieldData[i]));
+                    }
                 }
                 if (isValid) {
-                    return ts_promise_1.default.resolve();
+                    return ts_promise_1.default.all(arrayObjectValidationPromises);
                 }
             }
         }
