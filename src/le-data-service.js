@@ -418,7 +418,7 @@ var LeDataService = (function () {
             fieldInfo.data = new Date(rawValue);
             return ts_promise_1.default.resolve(fieldInfo);
         }
-        else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+        else if (this.isFieldConfigTypeAnArray(fieldConfig) && this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
             var promises = [];
             var objectsForArrayField = [];
             for (var fieldDataID in rawValue) {
@@ -709,7 +709,13 @@ var LeDataService = (function () {
                 var isValid = true;
                 var arrayObjectValidationPromises = [];
                 for (var i = 0; i < fieldData.length; i += 1) {
-                    if (fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
+                    var isMatchingCustom = this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && this.singularVersionOfType(fieldConfig) === fieldData[i]._type;
+                    var isMatchingPrimative = typeof fieldData[i] === this.singularVersionOfType(fieldConfig);
+                    var isMatchingDate = (fieldData[i] instanceof Date) && this.singularVersionOfType(fieldConfig) === 'Date';
+                    if (isMatchingDate || isMatchingPrimative) {
+                        continue;
+                    }
+                    else if (!isMatchingCustom) {
                         isValid = false;
                         break;
                     }
@@ -795,7 +801,7 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.fieldConfigTypeIsACustomLeDataType = function (fieldConfig) {
-        var type = fieldConfig.getFieldType();
+        var type = this.singularVersionOfType(fieldConfig);
         return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
     };
     LeDataService.prototype.dataExists = function (type, id) {
@@ -913,7 +919,7 @@ var LeDataService = (function () {
             else {
                 location += '/' + fieldName;
             }
-            if (fieldConfig && fieldConfig.isCustomeType()) {
+            if (fieldConfig && _this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
                 return _this.saveDataAndSetReferenceAtLocation(data[fieldName], location);
             }
             else if (fieldConfig && fieldConfig.getFieldType() === 'object') {
@@ -969,7 +975,7 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveField = function (location, fieldConfig, fieldData) {
         var _this = this;
-        if (fieldConfig.isCustomeType()) {
+        if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
             return this.saveData(fieldData).then(function (returnedData) {
                 return _this.dataServiceProvider.updateData(location, returnedData._id);
             });
