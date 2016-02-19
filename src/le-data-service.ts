@@ -517,7 +517,7 @@ export class LeDataService {
 		} else if (fieldConfig.getFieldType() === 'Date') {
 			fieldInfo.data = new Date(rawValue);
 			return Promise.resolve(fieldInfo);
-		} else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+		} else if (this.isFieldConfigTypeAnArray(fieldConfig) && this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
 			var promises = [];
 			var objectsForArrayField = [];
 			for(var fieldDataID in rawValue) {
@@ -815,7 +815,12 @@ export class LeDataService {
 				var isValid = true;
 				var arrayObjectValidationPromises = [];
 				for(var i = 0; i < fieldData.length; i += 1) {
-					if(fieldData[i]._type !== this.singularVersionOfType(fieldConfig)) {
+					var isMatchingCustom = this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && this.singularVersionOfType(fieldConfig) === fieldData[i]._type;
+					var isMatchingPrimative = typeof fieldData[i] === this.singularVersionOfType(fieldConfig);
+					var isMatchingDate = (fieldData[i] instanceof Date) && this.singularVersionOfType(fieldConfig) === 'Date';
+					if (isMatchingDate || isMatchingPrimative) {
+						continue;
+					} else if (!isMatchingCustom) {
 						isValid = false;
 						break;
 					} else {
@@ -895,7 +900,7 @@ export class LeDataService {
 		}
 	}
 	private fieldConfigTypeIsACustomLeDataType(fieldConfig:LeTypeFieldConfig):boolean {
-		var type = fieldConfig.getFieldType();
+		var type = this.singularVersionOfType(fieldConfig);
 		return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
 	}
 
@@ -1039,7 +1044,7 @@ export class LeDataService {
 			} else {
 				location += '/' + fieldName;
 			}
-			if(fieldConfig && fieldConfig.isCustomeType()){
+			if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
 				return this.saveDataAndSetReferenceAtLocation(data[fieldName], location);
 			} else if(fieldConfig && fieldConfig.getFieldType() === 'object') {
 				return this.saveObjectField(location, fieldConfig, data[fieldName]);
@@ -1091,7 +1096,7 @@ export class LeDataService {
 	}
 
 	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any):Promise<any>{
-		if(fieldConfig.isCustomeType()){
+		if(this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
 			return this.saveData(fieldData).then((returnedData)=>{
 				return this.dataServiceProvider.updateData(location, returnedData._id);
 			});

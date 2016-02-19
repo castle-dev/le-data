@@ -72,7 +72,6 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     return deferred.promise;
   }
   updateData(location:string, data:any): Promise<any> {
-    removeUndefinedFeilds(data);
     if(typeof data === 'object') {
       var innerUpdatePromises = [];
       for (var key in data) {
@@ -85,6 +84,9 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     }
     if(data === this.storedValueForLocation(location)) {
       return Promise.resolve();
+    }
+    if(data === undefined) {
+      return this.deleteData(location);
     }
     var deferred = Promise.defer<any>();
     this.firebaseRef.child(location).set(data, function(err){

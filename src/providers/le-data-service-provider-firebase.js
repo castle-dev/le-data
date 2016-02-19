@@ -67,7 +67,6 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.updateData = function (location, data) {
-        removeUndefinedFeilds(data);
         if (typeof data === 'object') {
             var innerUpdatePromises = [];
             for (var key in data) {
@@ -80,6 +79,9 @@ var LeDataServiceProviderFirebase = (function () {
         }
         if (data === this.storedValueForLocation(location)) {
             return ts_promise_1.default.resolve();
+        }
+        if (data === undefined) {
+            return this.deleteData(location);
         }
         var deferred = ts_promise_1.default.defer();
         this.firebaseRef.child(location).set(data, function (err) {
