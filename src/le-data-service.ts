@@ -1011,7 +1011,7 @@ export class LeDataService {
 		}).then(()=>{
 			data[this.lastUpdatedAtFieldName] = new Date();
 			if(!data._id) {
-				return this.saveToCreateID(data);
+				data._id = this.dataServiceProvider.generateID();
 			}
 		}).then(()=>{
 			var promises = [];
@@ -1103,12 +1103,5 @@ export class LeDataService {
 		} else if(fieldConfig.getFieldType() === 'object') {
 			return this.saveObjectField(location, fieldConfig, fieldData);
 		}
-	}
-	private saveToCreateID(data:LeData): Promise<any> {
-		return this.locationForData(data).then((location)=>{
-				return this.dataServiceProvider.createData(location, {_type:data._type});
-			}).then((returnedData)=>{
-				data._id = returnedData._id;
-			});
 	}
 }

@@ -884,7 +884,7 @@ var LeDataService = (function () {
         }).then(function () {
             data[_this.lastUpdatedAtFieldName] = new Date();
             if (!data._id) {
-                return _this.saveToCreateID(data);
+                data._id = _this.dataServiceProvider.generateID();
             }
         }).then(function () {
             var promises = [];
@@ -983,14 +983,6 @@ var LeDataService = (function () {
         else if (fieldConfig.getFieldType() === 'object') {
             return this.saveObjectField(location, fieldConfig, fieldData);
         }
-    };
-    LeDataService.prototype.saveToCreateID = function (data) {
-        var _this = this;
-        return this.locationForData(data).then(function (location) {
-            return _this.dataServiceProvider.createData(location, { _type: data._type });
-        }).then(function (returnedData) {
-            data._id = returnedData._id;
-        });
     };
     return LeDataService;
 })();

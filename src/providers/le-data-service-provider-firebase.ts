@@ -123,6 +123,9 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
   unsync(location:string, unsyncObject:any):void {
     this.firebaseRef.child(location).off('value', unsyncObject);
   }
+  generateID(): string {
+    return this.firebaseRef.push().key();
+  }
   updateStore(store: any, key:string, value) {
     if(typeof store !== 'object') {
       return;

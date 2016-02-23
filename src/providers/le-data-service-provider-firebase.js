@@ -118,6 +118,9 @@ var LeDataServiceProviderFirebase = (function () {
     LeDataServiceProviderFirebase.prototype.unsync = function (location, unsyncObject) {
         this.firebaseRef.child(location).off('value', unsyncObject);
     };
+    LeDataServiceProviderFirebase.prototype.generateID = function () {
+        return this.firebaseRef.push().key();
+    };
     LeDataServiceProviderFirebase.prototype.updateStore = function (store, key, value) {
         if (typeof store !== 'object') {
             return;
