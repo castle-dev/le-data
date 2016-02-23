@@ -9,6 +9,7 @@ export interface LeDataServiceProvider {
   deleteData(location:string): Promise<void>;
   sync(location:string, callback:(data)=>void, errorCallback:(error)=>void): any;
   unsync(location:string, unsyncObject:any):void;
+  generateID(): string;
 }
 
 export default LeDataServiceProvider;
