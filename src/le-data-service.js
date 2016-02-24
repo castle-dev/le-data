@@ -928,7 +928,7 @@ var LeDataService = (function () {
             else {
                 var dataToSave;
                 if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
-                    dataToSave = data[fieldName].getTime();
+                    dataToSave = data[fieldName] && data[fieldName].getTime();
                 }
                 else {
                     dataToSave = data[fieldName];
