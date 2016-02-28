@@ -1086,11 +1086,13 @@ export class LeDataService {
 			var innerFieldConfig = innerFieldConfigs[i];
 			var innerLocation;
 			if(innerFieldConfig.saveLocation) {
-				innerLocation = location + innerFieldConfig.saveLocation;
+				innerLocation = location + '/' + innerFieldConfig.saveLocation;
 			} else {
-				innerLocation = location + innerFieldConfig.getFieldName();
+				innerLocation = location + '/' + innerFieldConfig.getFieldName();
 			}
-			promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()]));
+			if(data.hasOwnProperty(innerFieldConfig.getFieldName())) {
+				promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()]));
+			}
 		}
 		return Promise.all(promises);
 	}
