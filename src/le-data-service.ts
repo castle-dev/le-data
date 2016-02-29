@@ -365,6 +365,11 @@ export class LeDataService {
 
 		return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
 			return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+		}).then((data)=>{
+			if(!data || data[this.deletedAtFieldName]) {
+				return Promise.reject(new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id));
+			}
+			return data;
 		});
 	}
 
@@ -541,6 +546,9 @@ export class LeDataService {
 		var queryForField = new LeDataQuery(type, id);
 		queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
 		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
+			if(!data) {
+				return;
+			}
 			data._type = type;
 			data._id = id;
 			fieldInfo.data = data;
@@ -595,6 +603,9 @@ export class LeDataService {
 		queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
 
 		return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
+			if(!data) {
+				return;
+			}
 			data._id = id;
 			data._type = type;
 			objectsForArrayField.push(data);
