@@ -38,7 +38,7 @@ var LeDataService = (function () {
         }
         if (data._id) {
             return new ts_promise_1.default(function (resolve, reject) {
-                _this.dataExists(data._type, data._id).then(function (dataExists) {
+                _this.checkExistence(data._type, data._id).then(function (dataExists) {
                     if (dataExists) {
                         var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
                         var error = new Error(errorMessage);
@@ -787,7 +787,7 @@ var LeDataService = (function () {
         else if (fieldConfig.required && !data[fieldName] && !isUpdate) {
             return new ts_promise_1.default(function (resolve, reject) {
                 if (data._id) {
-                    _this.dataExists(data._type, data._id).then(function (doesExist) {
+                    _this.checkExistence(data._type, data._id).then(function (doesExist) {
                         if (doesExist) {
                             resolve(undefined);
                         }
@@ -814,9 +814,6 @@ var LeDataService = (function () {
     LeDataService.prototype.fieldConfigTypeIsACustomLeDataType = function (fieldConfig) {
         var type = this.singularVersionOfType(fieldConfig);
         return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
-    };
-    LeDataService.prototype.dataExists = function (type, id) {
-        return new ts_promise_1.default(function (resolve, reject) { });
     };
     LeDataService.prototype.fetchTypeConfig = function (type) {
         var _this = this;

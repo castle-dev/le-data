@@ -76,7 +76,7 @@ export class LeDataService {
 		}
 		if(data._id) {
 			return new Promise<LeData>((resolve, reject)=>{
-				this.dataExists(data._type, data._id).then((dataExists)=>{
+				this.checkExistence(data._type, data._id).then((dataExists)=>{
 					if(dataExists){
 						var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
 						var error = new Error(errorMessage);
@@ -889,7 +889,7 @@ export class LeDataService {
 		} else if(fieldConfig.required && !data[fieldName] && !isUpdate) {
 			return new Promise<void>((resolve, reject)=>{
 				if(data._id) {
-					this.dataExists(data._type, data._id).then((doesExist)=>{
+					this.checkExistence(data._type, data._id).then((doesExist)=>{
 						if(doesExist){
 							resolve(undefined);
 						} else {
@@ -913,22 +913,6 @@ export class LeDataService {
 	private fieldConfigTypeIsACustomLeDataType(fieldConfig:LeTypeFieldConfig):boolean {
 		var type = this.singularVersionOfType(fieldConfig);
 		return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
-	}
-
-	/**
-	 * Checks if the data with the specified type and id exist remotely.
-	 * Fails if id is undefined.
-	 * Fails if type is undefined.
-	 * Fails if the type is not configured.
-	 *
-	 * @function dataExists
-	 * @memberof LeDataServiceProvider
-	 * @instance
-	 * @param type string - The type of the data we are checking.
-	 * @returns Promise<boolean> resolves with true if the data exists remotely.
-	 */
-	private dataExists(type: string, id: string): Promise<boolean> {
-		return new Promise<boolean>((resolve,reject)=>{});
 	}
 
 	/**
