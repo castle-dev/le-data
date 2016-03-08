@@ -985,10 +985,25 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveField = function (location, fieldConfig, fieldData) {
         var _this = this;
+        var dataService = this;
         if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
-            return this.saveData(fieldData).then(function (returnedData) {
-                return _this.dataServiceProvider.updateData(location, returnedData._id);
-            });
+            if (fieldData.constructor === Array) {
+                var objectToSetAtLocation = {};
+                var promises = [];
+                fieldData.forEach(function (dataObjectInArray) {
+                    promises.push(_this.saveData(dataObjectInArray).then(function (returnedData) {
+                        objectToSetAtLocation[returnedData._id] = true;
+                    }));
+                });
+                return ts_promise_1.default.all(promises).then(function () {
+                    return dataService.dataServiceProvider.updateData(location, objectToSetAtLocation);
+                });
+            }
+            else {
+                return this.saveData(fieldData).then(function (returnedData) {
+                    return _this.dataServiceProvider.updateData(location, returnedData._id);
+                });
+            }
         }
         else if (fieldConfig.getFieldType() === 'object') {
             return this.saveObjectField(location, fieldConfig, fieldData);
