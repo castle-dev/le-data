@@ -1093,10 +1093,24 @@ export class LeDataService {
 	}
 
 	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any):Promise<any>{
+		var dataService = this;
 		if(this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
+			if(fieldData.constructor === Array) {
+				var objectToSetAtLocation = {};
+				var promises = [];
+				fieldData.forEach((dataObjectInArray)=>{
+					promises.push(this.saveData(dataObjectInArray).then((returnedData)=>{
+						objectToSetAtLocation[returnedData._id] = true;
+					}));
+				});
+				return Promise.all(promises).then(()=>{
+					return dataService.dataServiceProvider.updateData(location, objectToSetAtLocation);
+				});
+		} else {
 			return this.saveData(fieldData).then((returnedData)=>{
 				return this.dataServiceProvider.updateData(location, returnedData._id);
 			});
+		}
 		} else if(fieldConfig.getFieldType() === 'object') {
 			return this.saveObjectField(location, fieldConfig, fieldData);
 		}
