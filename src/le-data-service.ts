@@ -254,6 +254,33 @@ export class LeDataService {
 		});
 	}
 
+	removeDataFromArray(type:string, id:string, fieldName:string, data:LeData) {
+		var dataService = this;
+		dataService.fetchTypeConfig(type).then((typeConfig)=>{
+			var fieldConfig =  typeConfig.getFieldConfig(fieldName);
+			var location;
+			if (typeConfig.saveLocation) {
+				location = typeConfig.saveLocation;
+			} else {
+				location = typeConfig.getType()
+			}
+			location += '/' + id + '/';
+			if(fieldConfig.saveLocation) {
+				location += fieldConfig.saveLocation;
+			} else {
+				location += fieldConfig.getFieldName();
+			}
+			if (dataService.isFieldConfigTypeAnArray(fieldConfig)) {
+				location += '/' + data._id;
+			} else {
+				var errorMessage = 'The specified field is not an array';
+				var error = new Error(errorMessage);
+				return Promise.reject(error);
+			}
+			return dataService.dataServiceProvider.updateData(location, undefined);
+		});
+	}
+
 	private cascadeDeletes(typeConfig: LeTypeConfig, id: string): Promise<any> {
 		var fieldConfigs = typeConfig.getFieldConfigs();
 		var promises = [];
