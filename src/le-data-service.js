@@ -68,6 +68,15 @@ var LeDataService = (function () {
             });
         }
     };
+    LeDataService.prototype.create = function (data) {
+        return this.createData(data);
+    };
+    LeDataService.prototype.update = function (data) {
+        return this.updateData(data);
+    };
+    LeDataService.prototype.delete = function (type, id) {
+        return this.deleteData(type, id);
+    };
     LeDataService.prototype.checkExistence = function (type, id) {
         var _this = this;
         return this.fetchTypeConfig(type).then(function (typeConfig) {

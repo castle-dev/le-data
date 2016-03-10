@@ -104,7 +104,15 @@ export class LeDataService {
 			});
 		}
 	}
-
+	create(data: LeData): Promise<LeData> {
+		return this.createData(data);
+	}
+	update(data: LeData): Promise<LeData> {
+		return this.updateData(data);
+	}
+	delete(type:string, id:string): Promise<void>{
+		return this.deleteData(type, id);
+	}
 	/**
    * Checks of the data with the specified type and id exists remotely.
    *
