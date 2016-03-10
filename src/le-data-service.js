@@ -68,6 +68,15 @@ var LeDataService = (function () {
             });
         }
     };
+    LeDataService.prototype.create = function (data) {
+        return this.createData(data);
+    };
+    LeDataService.prototype.update = function (data) {
+        return this.updateData(data);
+    };
+    LeDataService.prototype.delete = function (type, id) {
+        return this.deleteData(type, id);
+    };
     LeDataService.prototype.checkExistence = function (type, id) {
         var _this = this;
         return this.fetchTypeConfig(type).then(function (typeConfig) {
@@ -303,6 +312,9 @@ var LeDataService = (function () {
         var dataType = queryObject.type;
         var dataID = queryObject.id;
         var location = typeConfig.saveLocation;
+        if (!location) {
+            location = typeConfig.getType();
+        }
         if (dataID) {
             location += '/' + dataID;
         }
@@ -414,24 +426,36 @@ var LeDataService = (function () {
         });
     };
     LeDataService.prototype.addFetchFieldPromises = function (rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        var _this = this;
         for (var rawFieldName in rawDataObject) {
             if (rawDataObject.hasOwnProperty(rawFieldName)) {
-                var fieldConfig = fieldConfigsByLocation[rawFieldName];
-                if (fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
+                var fieldConfigs = fieldConfigsByLocation[rawFieldName];
+                if (fieldConfigs && fieldConfigs.constructor !== Array) {
                     this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
                 }
                 else {
-                    var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
-                    var innerQueryObject = queryObject.includedFields[fieldName];
-                    delete data[rawFieldName];
-                    promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
-                        if (fieldInfo) {
-                            data[fieldInfo.name] = fieldInfo.data;
-                        }
-                    }, function () { }));
+                    if (fieldConfigs && fieldConfigs.length) {
+                        fieldConfigs.forEach(function (fieldConfig) {
+                            var fieldName = fieldConfig.getFieldName();
+                            promises.push(_this.setFieldOnData(data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+                        });
+                    }
+                    else {
+                        var fieldName = rawFieldName;
+                        promises.push(this.setFieldOnData(data, fieldName, undefined, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+                    }
                 }
             }
         }
+    };
+    LeDataService.prototype.setFieldOnData = function (data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        var innerQueryObject = queryObject.includedFields[fieldName];
+        delete data[rawFieldName];
+        return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
+            if (fieldInfo) {
+                data[fieldInfo.name] = fieldInfo.data;
+            }
+        }, function () { });
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
@@ -494,17 +518,23 @@ var LeDataService = (function () {
                     var saveLocationArray = fieldConfig.saveLocation.split('/');
                     var currentScope = fieldConfigsByLocation;
                     saveLocationArray.forEach(function (subscope, index) {
-                        if (!currentScope[subscope]) {
+                        if (!currentScope[subscope] && index + 1 !== saveLocationArray.length) {
                             currentScope[subscope] = {};
                         }
                         if (index + 1 === saveLocationArray.length) {
-                            currentScope[subscope] = fieldConfig;
+                            if (!currentScope[subscope]) {
+                                currentScope[subscope] = [];
+                            }
+                            currentScope[subscope].push(fieldConfig);
                         }
                         currentScope = currentScope[subscope];
                     });
                 }
                 else {
-                    fieldConfigsByLocation[fieldConfig.getFieldName()] = fieldConfig;
+                    if (!fieldConfigsByLocation[fieldConfig.getFieldName()]) {
+                        fieldConfigsByLocation[fieldConfig.getFieldName()] = [];
+                    }
+                    fieldConfigsByLocation[fieldConfig.getFieldName()].push(fieldConfig);
                 }
             });
         }
@@ -919,16 +949,23 @@ var LeDataService = (function () {
             }
             return updateCreatedAtPropmise;
         }).then(function () {
-            data[_this.lastUpdatedAtFieldName] = new Date();
             if (!data._id) {
                 data._id = _this.dataServiceProvider.generateID();
             }
         }).then(function () {
             var promises = [];
+            var shouldUpdateLastUpdated = false;
             for (var key in data) {
+                if (key !== '_type' && key !== '_id') {
+                    shouldUpdateLastUpdated = true;
+                }
                 if (data.hasOwnProperty(key)) {
                     promises.push(_this.saveFieldForData(data, key));
                 }
+            }
+            if (shouldUpdateLastUpdated) {
+                data[_this.lastUpdatedAtFieldName] = new Date();
+                promises.push(_this.saveFieldForData(data, _this.lastUpdatedAtFieldName));
             }
             return ts_promise_1.default.all(promises);
         }).then(function () {
