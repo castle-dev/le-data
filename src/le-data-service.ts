@@ -405,6 +405,9 @@ export class LeDataService {
 		var dataType = queryObject.type;
 		var dataID = queryObject.id;
 		var location = typeConfig.saveLocation;
+		if (!location) {
+			location = typeConfig.getType();
+		}
 		if (dataID) {
 			location += '/' + dataID;
 		}
@@ -515,23 +518,34 @@ export class LeDataService {
 	addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):void {
 		for (var rawFieldName in rawDataObject) {
 			if(rawDataObject.hasOwnProperty(rawFieldName)) {
-				var fieldConfig = fieldConfigsByLocation[rawFieldName];
-				if(fieldConfig && !fieldConfig.hasOwnProperty('fieldName')) {
+				var fieldConfigs = fieldConfigsByLocation[rawFieldName];
+				if(fieldConfigs && fieldConfigs.constructor !== Array) {
 					this.addFetchFieldPromises(rawDataObject[rawFieldName], fieldConfigsByLocation[rawFieldName], queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 				} else {
-					var fieldName = fieldConfig ? fieldConfig.getFieldName() : rawFieldName;
-
-					var innerQueryObject = queryObject.includedFields[fieldName];
-					delete data[rawFieldName];
-					promises.push(this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
-						if(fieldInfo){
-							data[fieldInfo.name] = fieldInfo.data;
-						}
-					}, ()=>{}));
+					if(fieldConfigs && fieldConfigs.length) {
+						fieldConfigs.forEach((fieldConfig)=>{
+							var fieldName = fieldConfig.getFieldName();
+							promises.push(this.setFieldOnData(data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+						})
+					} else {
+						var fieldName = rawFieldName;
+						promises.push(this.setFieldOnData(data, fieldName, undefined, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery));
+					}
 				}
 			}
 		}
 	}
+
+	private setFieldOnData(data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery): Promise<any> {
+		var innerQueryObject = queryObject.includedFields[fieldName];
+		delete data[rawFieldName];
+		return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
+			if(fieldInfo){
+				data[fieldInfo.name] = fieldInfo.data;
+			}
+		}, ()=>{});
+	}
+
 	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
 		if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
 			return Promise.resolve();
@@ -590,16 +604,22 @@ export class LeDataService {
 					var saveLocationArray = fieldConfig.saveLocation.split('/');
 					var currentScope = fieldConfigsByLocation;
 					saveLocationArray.forEach((subscope, index)=>{
-						if(!currentScope[subscope]) {
+						if(!currentScope[subscope] && index + 1 !== saveLocationArray.length) {
 							currentScope[subscope] = {};
 						}
 						if(index + 1 === saveLocationArray.length) {
-							currentScope[subscope] = fieldConfig;
+							if(!currentScope[subscope]) {
+								currentScope[subscope] = [];
+							}
+							currentScope[subscope].push(fieldConfig);
 						}
 						currentScope = currentScope[subscope];
 					});
 				} else {
-					fieldConfigsByLocation[fieldConfig.getFieldName()] = fieldConfig;
+					if(!fieldConfigsByLocation[fieldConfig.getFieldName()]) {
+						fieldConfigsByLocation[fieldConfig.getFieldName()] = [];
+					}
+					fieldConfigsByLocation[fieldConfig.getFieldName()].push(fieldConfig);
 				}
 			});
 		}

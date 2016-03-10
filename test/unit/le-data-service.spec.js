@@ -249,6 +249,65 @@ describe('LeDataService', function () {
             console.log(err);
         });
     });
+    describe('overloaded raw fields', function () {
+        beforeEach(function (done) {
+            mockProvider.remoteStoredData = {
+                Unit: {
+                    unitID1: {
+                        ledger: 'ledgerID1'
+                    }
+                },
+                Ledger: {
+                    ledgerID1: {
+                        lineItems: 'exampleLineItems'
+                    }
+                },
+                LedgerCache: {
+                    ledgerID1: {
+                        total: 17
+                    }
+                }
+            };
+            var unitConfig = new le_type_config_1.default('Unit');
+            unitConfig.addField('ledger', 'Ledger');
+            unitConfig.addField('ledgerCache', 'LedgerCache').saveAt('ledger');
+            var ledgerConfig = new le_type_config_1.default('Ledger');
+            ledgerConfig.addField('lineItems', 'string');
+            var ledgerCacheConfig = new le_type_config_1.default('LedgerCache');
+            ledgerCacheConfig.addField('total', 'number');
+            var promises = [];
+            promises.push(dataService.configureType(unitConfig));
+            promises.push(dataService.configureType(ledgerConfig));
+            promises.push(dataService.configureType(ledgerCacheConfig));
+            ts_promise_1.default.all(promises).then(function () {
+                done();
+            });
+        });
+        it('should fetch multiple fields of different types that are configured to the same location', function (done) {
+            var unitQuery = new le_data_query_1.default('Unit', 'unitID1');
+            unitQuery.include('ledger');
+            unitQuery.include('ledgerCache');
+            dataService.search(unitQuery).then(function (unitData) {
+                expect(unitData.ledger.lineItems).to.equal('exampleLineItems');
+                expect(unitData.ledgerCache.total).to.equal(17);
+                done();
+            }, function (err) {
+                console.log(err);
+            });
+        });
+        it('should save multiple objects configured to the same raw location', function (done) {
+            dataService.createData({ _type: 'Unit',
+                ledger: { _type: 'Ledger', _id: '1234', lineItems: 'Testing123' },
+                ledgerCache: { _type: 'LedgerCache', _id: '1234', total: 21 }
+            }).then(function () {
+                expect(mockProvider.remoteStoredData.Ledger['1234'].lineItems).to.equal('Testing123');
+                expect(mockProvider.remoteStoredData.LedgerCache['1234'].total).to.equal(21);
+                done();
+            }, function (err) {
+                console.log(err);
+            });
+        });
+    });
     describe('queries', function () {
         beforeEach(function (done) {
             var ownerConfig = new le_type_config_1.default('Owner');

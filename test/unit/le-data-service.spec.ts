@@ -263,6 +263,65 @@ describe('LeDataService', ()=>{
         console.log(err);
       });
     });
+    describe('overloaded raw fields', ()=>{
+      beforeEach((done)=>{
+        mockProvider.remoteStoredData = {
+          Unit: {
+            unitID1: {
+              ledger: 'ledgerID1'
+            }
+          },
+          Ledger: {
+            ledgerID1: {
+              lineItems: 'exampleLineItems'
+            }
+          },
+          LedgerCache: {
+            ledgerID1: {
+              total: 17
+            }
+          }
+        };
+        var unitConfig = new LeTypeConfig('Unit');
+        unitConfig.addField('ledger', 'Ledger');
+        unitConfig.addField('ledgerCache', 'LedgerCache').saveAt('ledger');
+        var ledgerConfig = new LeTypeConfig('Ledger');
+        ledgerConfig.addField('lineItems', 'string');
+        var ledgerCacheConfig = new LeTypeConfig('LedgerCache');
+        ledgerCacheConfig.addField('total', 'number');
+        var promises = [];
+        promises.push(dataService.configureType(unitConfig));
+        promises.push(dataService.configureType(ledgerConfig));
+        promises.push(dataService.configureType(ledgerCacheConfig));
+        Promise.all(promises).then(()=>{
+          done();
+        });
+      });
+      it('should fetch multiple fields of different types that are configured to the same location',(done)=>{
+        var unitQuery = new LeDataQuery('Unit', 'unitID1');
+        unitQuery.include('ledger');
+        unitQuery.include('ledgerCache');
+        dataService.search(unitQuery).then((unitData)=>{
+          expect(unitData.ledger.lineItems).to.equal('exampleLineItems');
+          expect(unitData.ledgerCache.total).to.equal(17);
+          done();
+        }, function(err){
+          console.log(err);
+        });
+      });
+      it('should save multiple objects configured to the same raw location', (done)=>{
+        dataService.createData({_type:'Unit',
+                                ledger:{_type:'Ledger', _id:'1234', lineItems:'Testing123'},
+                                ledgerCache:{_type:'LedgerCache', _id:'1234', total:21}
+                              }).then(()=>{
+                                expect(mockProvider.remoteStoredData.Ledger['1234'].lineItems).to.equal('Testing123');
+                                expect(mockProvider.remoteStoredData.LedgerCache['1234'].total).to.equal(21);
+                                done();
+                              }, (err)=>{
+                                console.log(err);
+                              });
+      })
+    });
     describe('queries', ()=>{
       beforeEach((done)=>{
         var ownerConfig = new LeTypeConfig('Owner');
