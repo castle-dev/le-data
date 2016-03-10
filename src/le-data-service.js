@@ -919,16 +919,23 @@ var LeDataService = (function () {
             }
             return updateCreatedAtPropmise;
         }).then(function () {
-            data[_this.lastUpdatedAtFieldName] = new Date();
             if (!data._id) {
                 data._id = _this.dataServiceProvider.generateID();
             }
         }).then(function () {
             var promises = [];
+            var shouldUpdateLastUpdated = false;
             for (var key in data) {
+                if (key !== '_type' && key !== '_id') {
+                    shouldUpdateLastUpdated = true;
+                }
                 if (data.hasOwnProperty(key)) {
                     promises.push(_this.saveFieldForData(data, key));
                 }
+            }
+            if (shouldUpdateLastUpdated) {
+                data[_this.lastUpdatedAtFieldName] = new Date();
+                promises.push(_this.saveFieldForData(data, _this.lastUpdatedAtFieldName));
             }
             return ts_promise_1.default.all(promises);
         }).then(function () {

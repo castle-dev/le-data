@@ -1031,16 +1031,23 @@ export class LeDataService {
 			}
 			return updateCreatedAtPropmise;
 		}).then(()=>{
-			data[this.lastUpdatedAtFieldName] = new Date();
 			if(!data._id) {
 				data._id = this.dataServiceProvider.generateID();
 			}
 		}).then(()=>{
 			var promises = [];
+			var shouldUpdateLastUpdated = false;
 			for(var key in data) {
+				if(key !== '_type' && key !== '_id') {
+					shouldUpdateLastUpdated = true;
+				}
 				if(data.hasOwnProperty(key)) {
 					promises.push(this.saveFieldForData(data, key));
 				}
+			}
+			if(shouldUpdateLastUpdated) {
+				data[this.lastUpdatedAtFieldName] = new Date();
+				promises.push(this.saveFieldForData(data, this.lastUpdatedAtFieldName));
 			}
 			return Promise.all(promises);
 		}).then(()=>{
