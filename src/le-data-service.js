@@ -775,7 +775,7 @@ var LeDataService = (function () {
         }
         else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
             var fieldData = data[fieldName];
-            if (fieldData.constructor === Array) {
+            if (fieldData && fieldData.constructor === Array) {
                 var isValid = true;
                 var arrayObjectValidationPromises = [];
                 for (var i = 0; i < fieldData.length; i += 1) {
@@ -918,6 +918,9 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveData = function (data) {
         var _this = this;
+        if (!data) {
+            return ts_promise_1.default.resolve();
+        }
         var initialPromise;
         if (!this.hasLoadedServiceConfig) {
             initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then(function (doesExist) {
@@ -1013,7 +1016,7 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.saveDataAndSetReferenceAtLocation = function (data, location) {
         var _this = this;
-        if (data.constructor === Array) {
+        if (data && data.constructor === Array) {
             var objectToSetAtLocation = {};
             var promises = [];
             data.forEach(function (dataObjectInArray) {
@@ -1027,7 +1030,7 @@ var LeDataService = (function () {
         }
         else {
             return this.saveData(data).then(function (returnedData) {
-                return _this.dataServiceProvider.updateData(location, returnedData._id);
+                return _this.dataServiceProvider.updateData(location, returnedData && returnedData._id);
             });
         }
     };
@@ -1053,7 +1056,7 @@ var LeDataService = (function () {
         var _this = this;
         var dataService = this;
         if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
-            if (fieldData.constructor === Array) {
+            if (fieldData && fieldData.constructor === Array) {
                 var objectToSetAtLocation = {};
                 var promises = [];
                 fieldData.forEach(function (dataObjectInArray) {

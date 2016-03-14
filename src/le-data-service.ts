@@ -877,7 +877,7 @@ export class LeDataService {
 			return this.validateData(data[fieldName], isUpdate);
 		} else if (this.isFieldConfigTypeAnArray(fieldConfig)) {
 			var fieldData = data[fieldName];
-			if(fieldData.constructor === Array) {
+			if(fieldData && fieldData.constructor === Array) {
 				var isValid = true;
 				var arrayObjectValidationPromises = [];
 				for(var i = 0; i < fieldData.length; i += 1) {
@@ -1029,7 +1029,10 @@ export class LeDataService {
 	 * @param data LeData - The data to be saved.
 	 * @returns Promise<LeData>
 	 */
-	private saveData(data: LeData): Promise<LeData> {
+	private saveData(data: LeData): Promise<any> {
+		if(!data) {
+			return Promise.resolve();
+		}
 		var initialPromise: Promise<any>;
 		if(!this.hasLoadedServiceConfig) {
 			initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then((doesExist)=>{
@@ -1118,7 +1121,7 @@ export class LeDataService {
 	}
 
 	private saveDataAndSetReferenceAtLocation(data, location) {
-		if(data.constructor === Array) {
+		if(data && data.constructor === Array) {
 			var objectToSetAtLocation = {};
 			var promises = [];
 			data.forEach((dataObjectInArray)=>{
@@ -1157,7 +1160,7 @@ export class LeDataService {
 	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any):Promise<any>{
 		var dataService = this;
 		if(this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
-			if(fieldData.constructor === Array) {
+			if(fieldData && fieldData.constructor === Array) {
 				var objectToSetAtLocation = {};
 				var promises = [];
 				fieldData.forEach((dataObjectInArray)=>{
