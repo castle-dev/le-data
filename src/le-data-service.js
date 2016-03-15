@@ -1030,7 +1030,7 @@ var LeDataService = (function () {
         }
         else {
             return this.saveData(data).then(function (returnedData) {
-                return _this.dataServiceProvider.updateData(location, returnedData && returnedData._id);
+                return _this.dataServiceProvider.updateData(location, returnedData._id);
             });
         }
     };
@@ -1076,6 +1076,9 @@ var LeDataService = (function () {
         }
         else if (fieldConfig.getFieldType() === 'object') {
             return this.saveObjectField(location, fieldConfig, fieldData);
+        }
+        else {
+            return this.dataServiceProvider.updateData(location, fieldData);
         }
     };
     return LeDataService;

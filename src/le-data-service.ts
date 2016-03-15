@@ -1178,6 +1178,8 @@ export class LeDataService {
 		}
 		} else if(fieldConfig.getFieldType() === 'object') {
 			return this.saveObjectField(location, fieldConfig, fieldData);
+		} else {
+			return this.dataServiceProvider.updateData(location, fieldData);
 		}
 	}
 }
