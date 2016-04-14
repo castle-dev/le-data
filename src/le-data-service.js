@@ -334,7 +334,13 @@ var LeDataService = (function () {
         if (shouldSync) {
             this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
         }
-        return this.dataServiceProvider.fetchData(location).then(function (rawQueryRoot) {
+        var fetchDataOptions = {};
+        if (queryObject.hasOwnProperty('filterFieldName')) {
+            var filterFieldConfig = typeConfig.getFieldConfig(queryObject.filterFieldName);
+            fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
+            fetchDataOptions.filterValue = queryObject.filterValue;
+        }
+        return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function (rawQueryRoot) {
             if (dataID) {
                 rawQueryRoot._id = dataID;
                 rawQueryRoot._type = dataType;
@@ -558,8 +564,54 @@ var LeDataService = (function () {
                     }
                 }
             }
+            promises.push(_this.validateFilterOnQueryObject(queryObject, typeConfig));
             return ts_promise_1.default.all(promises);
         });
+    };
+    LeDataService.prototype.validateFilterOnQueryObject = function (queryObject, typeConfig) {
+        if (!queryObject.hasOwnProperty('filterFieldName')) {
+            return ts_promise_1.default.resolve();
+        }
+        if (queryObject.id) {
+            var errorMessage = 'The filter method cannot be called on a query that was created with an id.';
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        var filterFieldName = queryObject.filterFieldName;
+        var filterValue = queryObject.filterValue;
+        var fieldConfig = typeConfig.getFieldConfig(filterFieldName);
+        if (!fieldConfig) {
+            var errorMessage = 'Invalid filter field name. No field named "' + filterFieldName + '" exists on type ' + typeConfig.getType() + '.';
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        var type = fieldConfig.getFieldType();
+        if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+            var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName + '" is an array type.';
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        if (fieldConfig.getFieldType() === 'Date' || fieldConfig.getFieldType() === 'object') {
+            var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName + '" is of type' + fieldConfig.getFieldType() + '.';
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
+            if (typeof filterValue === 'string') {
+                return ts_promise_1.default.resolve();
+            }
+            else {
+                var errorMessage = 'Invalid filter value for the field "' + filterFieldName + '" on type ' + typeConfig.getType() + '. A value representing the _id for the data is expected, and a value of type ' + typeof filterValue + ' was given.';
+                var error = new Error(errorMessage);
+                return ts_promise_1.default.reject(error);
+            }
+        }
+        if (typeof filterValue !== type) {
+            var errorMessage = 'Invalid filter value for the field "' + filterFieldName + '" on type ' + typeConfig.getType() + '. A value of type ' + type + 'is expected, and a value of type ' + typeof filterValue + ' was given.';
+            var error = new Error(errorMessage);
+            return ts_promise_1.default.reject(error);
+        }
+        return ts_promise_1.default.resolve();
     };
     LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1.default(type, id);
@@ -590,6 +642,7 @@ var LeDataService = (function () {
                     }
                 }
             }
+            promises.push(_this.validateFilterOnQueryObject(queryObject, typeConfig));
             return ts_promise_1.default.all(promises);
         });
     };

@@ -15,10 +15,15 @@ var LeDataServiceProviderFirebase = (function () {
         });
         return deferred.promise;
     };
-    LeDataServiceProviderFirebase.prototype.fetchData = function (location) {
+    LeDataServiceProviderFirebase.prototype.fetchData = function (location, fetchDataOptions) {
         var deferred = ts_promise_1.default.defer();
         var provider = this;
-        this.firebaseRef.child(location).once('value', function (snapshot) {
+        var locationRef = this.firebaseRef.child(location);
+        if (fetchDataOptions && fetchDataOptions.hasOwnProperty('filterFieldName')) {
+            locationRef = locationRef.orderByChild(fetchDataOptions.filterFieldName);
+            locationRef = locationRef.equalTo(fetchDataOptions.filterValue);
+        }
+        locationRef.once('value', function (snapshot) {
             provider.updateStoreForLocation(location, snapshot.val());
             deferred.resolve(snapshot.val());
         }, function (err) {
