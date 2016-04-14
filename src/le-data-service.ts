@@ -2,7 +2,7 @@
 /// <reference path="../node_modules/ts-promise/dist/ts-promise.d.ts" />
 
 import Promise from "ts-promise";
-import LeDataServiceProvider from "./le-data-service-provider";
+import {LeDataServiceProvider, FetchDataOptions} from "./le-data-service-provider";
 import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 import LeDataQuery from "./le-data-query";
@@ -434,7 +434,13 @@ export class LeDataService {
 		if(shouldSync) {
 			this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
 		}
-		return this.dataServiceProvider.fetchData(location).then(function(rawQueryRoot){
+		var fetchDataOptions: FetchDataOptions = {};
+		if(queryObject.hasOwnProperty('filterFieldName')) {
+			var filterFieldConfig = typeConfig.getFieldConfig(queryObject.filterFieldName);
+			fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
+			fetchDataOptions.filterValue = queryObject.filterValue;
+		}
+		return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
 			if(dataID) {
 				rawQueryRoot._id = dataID;
 				rawQueryRoot._type = dataType;
@@ -650,8 +656,53 @@ export class LeDataService {
 					}
 				}
 			}
+			promises.push(this.validateFilterOnQueryObject(queryObject, typeConfig));
 			return Promise.all(promises);
 		});
+	}
+	private validateFilterOnQueryObject(queryObject: any, typeConfig: LeTypeConfig): Promise<void> {
+		if(!queryObject.hasOwnProperty('filterFieldName')) {
+			return Promise.resolve();
+		}
+		if(queryObject.id) {
+			var errorMessage = 'The filter method cannot be called on a query that was created with an id.';
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+		var filterFieldName = queryObject.filterFieldName;
+		var filterValue = queryObject.filterValue;
+		var fieldConfig = typeConfig.getFieldConfig(filterFieldName);
+		if(!fieldConfig) {
+			var errorMessage = 'Invalid filter field name. No field named "' + filterFieldName +'" exists on type ' + typeConfig.getType() + '.';
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+		var type = fieldConfig.getFieldType();
+		if (this.isFieldConfigTypeAnArray(fieldConfig)) {
+			var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName +'" is an array type.';
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+		if (fieldConfig.getFieldType() === 'Date' || fieldConfig.getFieldType() === 'object') {
+			var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName +'" is of type' + fieldConfig.getFieldType() + '.';
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+		if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
+			if (typeof filterValue === 'string') {
+				return Promise.resolve();
+			} else {
+				var errorMessage = 'Invalid filter value for the field "' + filterFieldName +'" on type ' + typeConfig.getType() + '. A value representing the _id for the data is expected, and a value of type ' + typeof filterValue + ' was given.';
+				var error = new Error(errorMessage);
+				return Promise.reject(error);
+			}
+		}
+		if (typeof filterValue !== type) {
+			var errorMessage = 'Invalid filter value for the field "' + filterFieldName +'" on type ' + typeConfig.getType() + '. A value of type ' + type + 'is expected, and a value of type ' + typeof filterValue + ' was given.';
+			var error = new Error(errorMessage);
+			return Promise.reject(error);
+		}
+		return Promise.resolve();
 	}
 	setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): Promise<any> {
 		var queryForField = new LeDataQuery(type, id);
@@ -682,6 +733,7 @@ export class LeDataService {
 					}
 				}
 			}
+			promises.push(this.validateFilterOnQueryObject(queryObject, typeConfig));
 			return Promise.all(promises);
 		});
 	}

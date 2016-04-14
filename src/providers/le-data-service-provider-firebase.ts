@@ -1,6 +1,6 @@
 /// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 import Promise from "ts-promise";
-import LeDataServiceProvider from "../le-data-service-provider";
+import {FetchDataOptions, LeDataServiceProvider} from "../le-data-service-provider";
 
 export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
   firebaseRef:any;
@@ -20,10 +20,15 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     });
     return deferred.promise;
   }
-  fetchData(location:string): Promise<any> {
+  fetchData(location:string, fetchDataOptions?: FetchDataOptions): Promise<any> {
     var deferred = Promise.defer<any>();
     var provider = this;
-    this.firebaseRef.child(location).once('value', function(snapshot){
+    var locationRef = this.firebaseRef.child(location);
+    if(fetchDataOptions && fetchDataOptions.hasOwnProperty('filterFieldName')) {
+      locationRef = locationRef.orderByChild(fetchDataOptions.filterFieldName);
+      locationRef = locationRef.equalTo(fetchDataOptions.filterValue);
+    }
+    locationRef.once('value', function(snapshot){
       provider.updateStoreForLocation(location, snapshot.val());
       deferred.resolve(snapshot.val());
     }, function(err){

@@ -6,6 +6,7 @@ var LeDataQuery = (function () {
         this.queryObject.type = type;
         this.queryObject.id = id;
         this.queryObject.includedFields = {};
+        this.hasCalledFilter = false;
     }
     LeDataQuery.prototype.getQueryID = function () {
         return this.queryObject.queryID;
@@ -14,6 +15,14 @@ var LeDataQuery = (function () {
         var newSubQuery = new LeDataQuery();
         this.queryObject.includedFields[fieldName] = newSubQuery.queryObject;
         return newSubQuery;
+    };
+    LeDataQuery.prototype.filter = function (fieldName, value) {
+        if (this.hasCalledFilter) {
+            throw new Error('The filter has already been called on the query, and can only be called once per query.');
+        }
+        this.hasCalledFilter = true;
+        this.queryObject.filterFieldName = fieldName;
+        this.queryObject.filterValue = value;
     };
     return LeDataQuery;
 })();
