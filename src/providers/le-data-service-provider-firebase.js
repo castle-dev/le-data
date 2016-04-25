@@ -123,6 +123,40 @@ var LeDataServiceProviderFirebase = (function () {
     LeDataServiceProviderFirebase.prototype.unsync = function (location, unsyncObject) {
         this.firebaseRef.child(location).off('value', unsyncObject);
     };
+    LeDataServiceProviderFirebase.prototype.lock = function (word) {
+        var deferred = ts_promise_1.default.defer();
+        this.firebaseRef.child('_leLocks').child(word).transaction(function (oldWordValue) {
+            if (oldWordValue === 'locked') {
+                return;
+            }
+            else {
+                return 'locked';
+            }
+        }, function (err, didLock) {
+            if (err) {
+                deferred.reject(err);
+            }
+            else if (!didLock) {
+                deferred.reject(new Error(word + 'is already locked.'));
+            }
+            else {
+                deferred.resolve(undefined);
+            }
+        });
+        return deferred.promise;
+    };
+    LeDataServiceProviderFirebase.prototype.unlock = function (word) {
+        var deferred = ts_promise_1.default.defer();
+        var provider = this;
+        this.firebaseRef.child('_leLocks').child(word).remove(function (err) {
+            if (err) {
+                deferred.reject(err);
+                return;
+            }
+            deferred.resolve(undefined);
+        });
+        return deferred.promise;
+    };
     LeDataServiceProviderFirebase.prototype.generateID = function () {
         return this.firebaseRef.push().key();
     };

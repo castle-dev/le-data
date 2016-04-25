@@ -128,6 +128,37 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
   unsync(location:string, unsyncObject:any):void {
     this.firebaseRef.child(location).off('value', unsyncObject);
   }
+  lock(word:string): Promise<void> {
+    let deferred = Promise.defer<void>();
+    this.firebaseRef.child('_leLocks').child(word).transaction(function(oldWordValue){
+      if(oldWordValue === 'locked') {
+        return;
+      } else {
+        return 'locked';
+      }
+    }, function(err, didLock) {
+      if(err){
+        deferred.reject(err);
+      } else if (!didLock) {
+        deferred.reject(new Error(word + 'is already locked.'));
+      } else {
+        deferred.resolve(undefined);
+      }
+    });
+    return deferred.promise;
+  }
+  unlock(word:string): Promise<void> {
+    var deferred = Promise.defer<void>();
+    var provider = this;
+    this.firebaseRef.child('_leLocks').child(word).remove(function(err){
+      if(err) {
+        deferred.reject(err);
+        return;
+      }
+      deferred.resolve(undefined);
+    });
+    return deferred.promise;
+  }
   generateID(): string {
     return this.firebaseRef.push().key();
   }

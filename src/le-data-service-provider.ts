@@ -12,6 +12,8 @@ export interface LeDataServiceProvider {
   createData(location:string, data:LeData): Promise<LeData>;
   updateData(location:string, data:any): Promise<any>;
   deleteData(location:string): Promise<void>;
+  lock(word:string): Promise<void>;
+  unlock(word:string): Promise<void>;
   sync(location:string, callback:(data)=>void, errorCallback:(error)=>void): any;
   unsync(location:string, unsyncObject:any):void;
   generateID(): string;

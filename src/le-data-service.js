@@ -85,6 +85,12 @@ var LeDataService = (function () {
             return _this.dataServiceProvider.dataExists(location);
         });
     };
+    LeDataService.prototype.lock = function (word) {
+        return this.dataServiceProvider.lock(word);
+    };
+    LeDataService.prototype.unlock = function (word) {
+        return this.dataServiceProvider.unlock(word);
+    };
     LeDataService.prototype.updateData = function (data) {
         var _this = this;
         if (!data) {
