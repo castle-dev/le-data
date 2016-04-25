@@ -131,6 +131,36 @@ export class LeDataService {
 		});
 	}
 
+	/**
+   * Locks the word so that you know no one else
+	 * is performing the action that word represents
+	 * at the same time as you. Make sure to use unlock
+	 * when you have completed the task.
+   *
+   * @function lock
+   * @memberof LeDataService
+   * @instance
+   * @param word string - The word you are locking.
+   * @returns Promise<void> resolves if the word was successfully lock. Rejects if the word is already locked.
+   */
+	lock(word:string): Promise<void> {
+		return this.dataServiceProvider.lock(word);
+	}
+
+	/**
+   * Unlocks the word that was locked earlier to allow
+	 * others to perform the action that word represents.
+   *
+   * @function unlock
+   * @memberof LeDataService
+   * @instance
+   * @param word string - The word you are unlocking.
+   * @returns Promise<void> resolves if the word was successfully unlocked. Rejects if the word is already unlocked.
+   */
+	unlock(word:string): Promise<void> {
+		return this.dataServiceProvider.unlock(word);
+	}
+
   /**
    * Updates the data in the database. This only removes data from the database if the field is specified
    * If a LeData object is removed from a field that is configured to cascade deletes, the data will be soft deleted.
