@@ -155,7 +155,7 @@ export class LeDataService {
    * @memberof LeDataService
    * @instance
    * @param word string - The word you are unlocking.
-   * @returns Promise<void> resolves if the word was successfully unlocked. Rejects if the word is already unlocked.
+   * @returns Promise<void> resolves if the word was successfully unlocked.
    */
 	unlock(word:string): Promise<void> {
 		return this.dataServiceProvider.unlock(word);

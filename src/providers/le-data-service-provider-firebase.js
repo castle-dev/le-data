@@ -124,48 +124,38 @@ var LeDataServiceProviderFirebase = (function () {
         this.firebaseRef.child(location).off('value', unsyncObject);
     };
     LeDataServiceProviderFirebase.prototype.lock = function (word) {
-        var didLock;
-        return this.firebaseRef.child('_leLocks').child(word).transaction(function (oldWordValue) {
-            if (oldWordValue === true) {
+        var deferred = ts_promise_1.default.defer();
+        this.firebaseRef.child('_leLocks').child(word).transaction(function (oldWordValue) {
+            if (oldWordValue === 'locked') {
                 return;
             }
             else {
-                didLock = true;
-                return true;
+                return 'locked';
             }
-        }).then(function (err) {
+        }, function (err, didLock) {
             if (err) {
-                return ts_promise_1.default.reject(err);
+                deferred.reject(err);
             }
-            if (!didLock) {
-                ts_promise_1.default.reject(new Error(word + 'is already locked.'));
+            else if (!didLock) {
+                deferred.reject(new Error(word + 'is already locked.'));
             }
             else {
-                return ts_promise_1.default.resolve();
+                deferred.resolve(undefined);
             }
         });
+        return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.unlock = function (word) {
-        var didUnlock;
-        return this.firebaseRef.child('_leLocks').child(word).transaction(function (oldWordValue) {
-            if (oldWordValue !== true) {
+        var deferred = ts_promise_1.default.defer();
+        var provider = this;
+        this.firebaseRef.child('_leLocks').child(word).remove(function (err) {
+            if (err) {
+                deferred.reject(err);
                 return;
             }
-            else {
-                didUnlock = true;
-                return false;
-            }
-        }).then(function (err) {
-            if (err) {
-                return ts_promise_1.default.reject(err);
-            }
-            if (!didUnlock) {
-                ts_promise_1.default.reject(new Error(word + 'is already unlocked.'));
-            }
-            else {
-                return ts_promise_1.default.resolve();
-            }
+            deferred.resolve(undefined);
         });
+        return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.generateID = function () {
         return this.firebaseRef.push().key();

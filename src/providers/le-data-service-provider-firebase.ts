@@ -129,44 +129,35 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     this.firebaseRef.child(location).off('value', unsyncObject);
   }
   lock(word:string): Promise<void> {
-    let didLock:boolean;
-    return this.firebaseRef.child('_leLocks').child(word).transaction(function(oldWordValue){
-      if(oldWordValue === true) {
+    let deferred = Promise.defer<void>();
+    this.firebaseRef.child('_leLocks').child(word).transaction(function(oldWordValue){
+      if(oldWordValue === 'locked') {
         return;
       } else {
-        didLock = true;
-        return true;
+        return 'locked';
       }
-    }).then(function(err){
+    }, function(err, didLock) {
       if(err){
-        return Promise.reject(err);
-      }
-      if (!didLock) {
-        Promise.reject(new Error(word + 'is already locked.'));
+        deferred.reject(err);
+      } else if (!didLock) {
+        deferred.reject(new Error(word + 'is already locked.'));
       } else {
-        return Promise.resolve();
+        deferred.resolve(undefined);
       }
     });
+    return deferred.promise;
   }
   unlock(word:string): Promise<void> {
-    let didUnlock:boolean;
-    return this.firebaseRef.child('_leLocks').child(word).transaction(function(oldWordValue){
-      if(oldWordValue !== true) {
+    var deferred = Promise.defer<void>();
+    var provider = this;
+    this.firebaseRef.child('_leLocks').child(word).remove(function(err){
+      if(err) {
+        deferred.reject(err);
         return;
-      } else {
-        didUnlock = true;
-        return false;
       }
-    }).then(function(err){
-      if(err){
-        return Promise.reject(err);
-      }
-      if (!didUnlock) {
-        Promise.reject(new Error(word + 'is already unlocked.'));
-      } else {
-        return Promise.resolve();
-      }
+      deferred.resolve(undefined);
     });
+    return deferred.promise;
   }
   generateID(): string {
     return this.firebaseRef.push().key();
