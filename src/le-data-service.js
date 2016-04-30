@@ -1087,6 +1087,9 @@ var LeDataService = (function () {
                 return _this.dataServiceProvider.updateData(location, objectToSetAtLocation);
             });
         }
+        else if (data === undefined) {
+            return this.dataServiceProvider.deleteData(location);
+        }
         else {
             return this.saveData(data).then(function (returnedData) {
                 return _this.dataServiceProvider.updateData(location, returnedData._id);
