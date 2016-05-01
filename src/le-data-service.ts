@@ -1214,6 +1214,8 @@ export class LeDataService {
 			return Promise.all(promises).then(()=>{
 				return this.dataServiceProvider.updateData(location, objectToSetAtLocation);
 			});
+		} else if (data === undefined) {
+			return this.dataServiceProvider.deleteData(location);
 		} else {
 			return this.saveData(data).then((returnedData)=>{
 				return this.dataServiceProvider.updateData(location, returnedData._id);
