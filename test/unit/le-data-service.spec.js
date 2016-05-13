@@ -312,6 +312,8 @@ describe('LeDataService', function () {
         beforeEach(function (done) {
             var ownerConfig = new le_type_config_1.default('Owner');
             ownerConfig.saveAt('owners');
+            ownerConfig.addField('firstName', 'string');
+            ownerConfig.addField('numberField', 'number');
             ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
             ownerConfig.addField('bankAccount', 'BankAccount').saveAt('bankAccount_id');
             ownerConfig.addField('createdAt', 'Date').saveAt('_times/createdAt');
@@ -321,10 +323,12 @@ describe('LeDataService', function () {
             propertyConfig.addField('units', 'Unit[]').saveAt('unit_ids');
             var tenantConfig = new le_type_config_1.default('Tenant');
             tenantConfig.saveAt('tenants');
+            tenantConfig.addField('tenantName', 'string');
             var unitConfig = new le_type_config_1.default('Unit');
             unitConfig.saveAt('units');
             var bankAccountConfig = new le_type_config_1.default('BankAccount');
             bankAccountConfig.saveAt('bankAccounts');
+            bankAccountConfig.addField('bankName', 'string');
             mockProvider.remoteStoredData = {
                 owners: {
                     owner_id1: {
@@ -333,6 +337,7 @@ describe('LeDataService', function () {
                         },
                         firstName: 'Joe',
                         lastName: 'Black',
+                        numberField: 'ShouldBeANumber',
                         bankAccount_id: 'bankAccount_id1',
                         property_ids: {
                             property_id1A: true,
@@ -484,7 +489,7 @@ describe('LeDataService', function () {
                 expect(ownerObject.createdAt instanceof Date).to.be.true;
                 expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
                 expect(ownerObject.firstName).to.equal('Joe');
-                expect(ownerObject.lastName).to.equal('Black');
+                expect(ownerObject.lastName).to.not.exist;
                 expect(ownerObject.bankAccount._type).to.equal('BankAccount');
                 expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
                 expect(ownerObject.properties.length).to.equal(2);
@@ -507,7 +512,7 @@ describe('LeDataService', function () {
                 expect(ownerObject.createdAt instanceof Date).to.be.true;
                 expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
                 expect(ownerObject.firstName).to.equal('Joe');
-                expect(ownerObject.lastName).to.equal('Black');
+                expect(ownerObject.lastName).to.not.exist;
                 expect(ownerObject.bankAccount._type).to.equal('BankAccount');
                 expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
                 expect(ownerObject.properties.length).to.equal(2);
@@ -530,7 +535,7 @@ describe('LeDataService', function () {
                 expect(ownerObject.createdAt instanceof Date).to.be.true;
                 expect(ownerObject.bankAccount.bankName).to.equal('BankOfAmerica');
                 expect(ownerObject.firstName).to.equal('Joe');
-                expect(ownerObject.lastName).to.equal('Black');
+                expect(ownerObject.lastName).to.not.exist;
                 expect(ownerObject.bankAccount._type).to.equal('BankAccount');
                 expect(ownerObject.bankAccount._id).to.equal('bankAccount_id1');
                 expect(ownerObject.properties.length).to.equal(2);

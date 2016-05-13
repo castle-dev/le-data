@@ -582,7 +582,9 @@ export class LeDataService {
 
 	private setFieldOnData(data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery): Promise<any> {
 		var innerQueryObject = queryObject.includedFields[fieldName];
-		delete data[rawFieldName];
+		if(rawFieldName.charAt(0) !== '_') {
+			delete data[rawFieldName];
+		}
 		return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
 			if(fieldInfo){
 				data[fieldInfo.name] = fieldInfo.data;
@@ -591,6 +593,9 @@ export class LeDataService {
 	}
 
 	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
+		if(!fieldConfig && fieldName.charAt(0) !== '_') {
+			return Promise.resolve();
+		}
 		if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
 			return Promise.resolve();
 		}

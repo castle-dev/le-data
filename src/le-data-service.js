@@ -462,7 +462,9 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.setFieldOnData = function (data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var innerQueryObject = queryObject.includedFields[fieldName];
-        delete data[rawFieldName];
+        if (rawFieldName.charAt(0) !== '_') {
+            delete data[rawFieldName];
+        }
         return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
             if (fieldInfo) {
                 data[fieldInfo.name] = fieldInfo.data;
@@ -470,6 +472,9 @@ var LeDataService = (function () {
         }, function () { });
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        if (!fieldConfig && fieldName.charAt(0) !== '_') {
+            return ts_promise_1.default.resolve();
+        }
         if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
             return ts_promise_1.default.resolve();
         }
