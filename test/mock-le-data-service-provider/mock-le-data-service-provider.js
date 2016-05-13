@@ -4,6 +4,9 @@ var MockLeDataServiceProvider = (function () {
         this.remoteStoredData = {};
         this.uniqueID = 0;
     }
+    MockLeDataServiceProvider.prototype.equalToLastedFetchData = function (location, data) {
+        return false;
+    };
     MockLeDataServiceProvider.prototype.dataExists = function (location) {
         var _this = this;
         return new ts_promise_1.default(function (resolve, reject) {

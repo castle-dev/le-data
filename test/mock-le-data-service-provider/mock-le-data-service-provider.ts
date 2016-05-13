@@ -10,6 +10,9 @@ export class MockLeDataServiceProvider implements LeDataServiceProvider {
     this.remoteStoredData = {};
     this.uniqueID = 0;
   }
+  equalToLastedFetchData(location:string, data: any): boolean {
+    return false;
+  }
   dataExists(location:string): Promise<boolean>{
     return new Promise<boolean>((resolve, reject)=>{
       this.fetchData(location).then((fetchedData)=>{

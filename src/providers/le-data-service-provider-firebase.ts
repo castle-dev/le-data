@@ -9,6 +9,20 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     this.firebaseRef = firebaseRef;
     this.lastedFetchedValueStore = {};
   }
+  equalToLastedFetchData(location:string, data: any): boolean {
+    if(typeof data === 'object') {
+      var doesMatch = true;
+      for (var key in data) {
+        if(data.hasOwnProperty(key)) {
+          var innerLocation = location + '/' + key;
+          doesMatch = doesMatch && this.equalToLastedFetchData(innerLocation, data[key]);
+        }
+      }
+      return doesMatch;
+    } else {
+      return data === this.storedValueForLocation(location);
+    }
+  }
   dataExists(location:string): Promise<boolean> {
     var deferred = Promise.defer<boolean>();
     var provider = this;

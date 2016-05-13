@@ -582,7 +582,9 @@ export class LeDataService {
 
 	private setFieldOnData(data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery): Promise<any> {
 		var innerQueryObject = queryObject.includedFields[fieldName];
-		delete data[rawFieldName];
+		if(rawFieldName.charAt(0) !== '_') {
+			delete data[rawFieldName];
+		}
 		return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((fieldInfo)=>{
 			if(fieldInfo){
 				data[fieldInfo.name] = fieldInfo.data;
@@ -591,6 +593,9 @@ export class LeDataService {
 	}
 
 	fetchFieldData(rawValue: any, fieldConfig: LeTypeFieldConfig, fieldQueryObject:any, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): any {
+		if(!fieldConfig && fieldName.charAt(0) !== '_') {
+			return Promise.resolve();
+		}
 		if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
 			return Promise.resolve();
 		}
@@ -897,7 +902,10 @@ export class LeDataService {
 				validateFieldPromises = [];
 				for(var i = 0; i < fieldConfigs.length; i += 1) {
 					var fieldConfig = fieldConfigs[i];
-					validateFieldPromises.push(this.validateField(fieldConfig, data, isUpdate));
+					var saveLocation = (typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType()) + '/' + data._id + '/' + (fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldConfig.getFieldName());
+					if(!this.dataServiceProvider.equalToLastedFetchData(saveLocation, data[fieldConfig.getFieldName()])) {
+						validateFieldPromises.push(this.validateField(fieldConfig, data, isUpdate));
+					}
 				}
 				validateFieldPromises.push(this.validateNoExtraFields(typeConfig, data));
 				return Promise.all(validateFieldPromises).then(()=>{
@@ -911,7 +919,8 @@ export class LeDataService {
 
 	private validateNoExtraFields(typeConfig: LeTypeConfig, data: LeData): Promise<void> {
 		for(var key in data) {
-			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key)) {
+			var saveLocation = (typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType()) + '/' + data._id + '/' + key;
+			if(data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key) && !this.dataServiceProvider.equalToLastedFetchData(saveLocation, data[key])) {
 				var errorMessage = 'An additional field was set on the data object.\n';
 				errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type +'\n';
 				errorMessage += 'data: ' + JSON.stringify(data);

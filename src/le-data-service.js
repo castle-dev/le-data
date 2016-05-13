@@ -462,7 +462,9 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.setFieldOnData = function (data, fieldName, fieldConfig, queryObject, rawDataObject, rawFieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var innerQueryObject = queryObject.includedFields[fieldName];
-        delete data[rawFieldName];
+        if (rawFieldName.charAt(0) !== '_') {
+            delete data[rawFieldName];
+        }
         return this.fetchFieldData(rawDataObject[rawFieldName], fieldConfig, innerQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (fieldInfo) {
             if (fieldInfo) {
                 data[fieldInfo.name] = fieldInfo.data;
@@ -470,6 +472,9 @@ var LeDataService = (function () {
         }, function () { });
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        if (!fieldConfig && fieldName.charAt(0) !== '_') {
+            return ts_promise_1.default.resolve();
+        }
         if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
             return ts_promise_1.default.resolve();
         }
@@ -771,7 +776,10 @@ var LeDataService = (function () {
                 validateFieldPromises = [];
                 for (var i = 0; i < fieldConfigs.length; i += 1) {
                     var fieldConfig = fieldConfigs[i];
-                    validateFieldPromises.push(_this.validateField(fieldConfig, data, isUpdate));
+                    var saveLocation = (typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType()) + '/' + data._id + '/' + (fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldConfig.getFieldName());
+                    if (!_this.dataServiceProvider.equalToLastedFetchData(saveLocation, data[fieldConfig.getFieldName()])) {
+                        validateFieldPromises.push(_this.validateField(fieldConfig, data, isUpdate));
+                    }
                 }
                 validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
                 return ts_promise_1.default.all(validateFieldPromises).then(function () {
@@ -784,7 +792,8 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.validateNoExtraFields = function (typeConfig, data) {
         for (var key in data) {
-            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key)) {
+            var saveLocation = (typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType()) + '/' + data._id + '/' + key;
+            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key) && !this.dataServiceProvider.equalToLastedFetchData(saveLocation, data[key])) {
                 var errorMessage = 'An additional field was set on the data object.\n';
                 errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type + '\n';
                 errorMessage += 'data: ' + JSON.stringify(data);
