@@ -4,6 +4,21 @@ var LeDataServiceProviderFirebase = (function () {
         this.firebaseRef = firebaseRef;
         this.lastedFetchedValueStore = {};
     }
+    LeDataServiceProviderFirebase.prototype.equalToLastedFetchData = function (location, data) {
+        if (typeof data === 'object') {
+            var doesMatch = true;
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var innerLocation = location + '/' + key;
+                    doesMatch = doesMatch && this.equalToLastedFetchData(innerLocation, data[key]);
+                }
+            }
+            return doesMatch;
+        }
+        else {
+            return data === this.storedValueForLocation(location);
+        }
+    };
     LeDataServiceProviderFirebase.prototype.dataExists = function (location) {
         var deferred = ts_promise_1.default.defer();
         var provider = this;

@@ -16,6 +16,7 @@ export interface LeDataServiceProvider {
   unlock(word:string): Promise<void>;
   sync(location:string, callback:(data)=>void, errorCallback:(error)=>void): any;
   unsync(location:string, unsyncObject:any):void;
+  equalToLastedFetchData(location:string, data: any): boolean;
   generateID(): string;
 }
 
