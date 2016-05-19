@@ -8,14 +8,12 @@ import LeIDGenerator from "./le-id-generator";
  * @param id? string - The id of the individual record to serve as the root of the query
  */
 export class LeDataQuery {
-	private hasCalledFilter: boolean;
 	constructor(type?:string, id?: string) {
 		this.queryObject = {};
 		this.queryObject.queryID = LeIDGenerator.generateID();
 		this.queryObject.type = type;
 		this.queryObject.id = id;
 		this.queryObject.includedFields = {};
-		this.hasCalledFilter = false;
 	}
 
 	getQueryID():string {
@@ -52,27 +50,53 @@ export class LeDataQuery {
 	 * @param value any -  the value to check the field against. Only accepts primitive values such as strings, numbers, and booleans. If the field the query is filtering on is of a custom type, this value represents the _id for the data set on that field;
 	 */
 	filter(fieldName:string, value:any):void {
-		if(this.hasCalledFilter) {
+		if(this.queryObject.filterFieldName) {
 			throw new Error('The filter has already been called on the query, and can only be called once per query.');
 		}
-		this.hasCalledFilter = true;
+		if(this.queryObject.sortByFieldName) {
+			throw new Error('You can\'t call filter and sortBy on the same query');
+		}
 		this.queryObject.filterFieldName = fieldName;
 		this.queryObject.filterValue = value;
 	}
-	//
-	// /**
-	//  * Sorts the returned values with repect to the specified field.
-	//  * This cannot be called if limitTo is called on the query object.
-	//  * This function is only relevant if no id was specified in the constructor.
-	//  *
-	//  * @function sortyBy
-	//  * @memberof LeDataQuery
-	//  * @instance
-	//  * @param filedName string - the name of the field to sort the values of
-	//  */
-	// sortyBy(fieldName:string):void {
-	//
-	// }
+
+	/**
+	 * Sorts the returned values with repect to the specified field.
+	 * This cannot be called if limitTo is called on the query object.
+	 * This function is only relevant if no id was specified in the constructor.
+	 *
+	 * @function sortBy
+	 * @memberof LeDataQuery
+	 * @instance
+	 * @param filedName string - the name of the field to sort the values of
+	 */
+	sortBy(fieldName:string):void {
+		if(this.queryObject.sortByFieldName) {
+			throw new Error('sortBy has already been called on the query, and can only be called once per query.');
+		}
+		if(this.queryObject.filterFieldName) {
+			throw new Error('You can\'t call filter and sortBy on the same query');
+		}
+		this.queryObject.sortByFieldName = fieldName;
+	}
+	startAt(value:any):void {
+		if(this.queryObject.hasOwnProperty('startAtValue')) {
+			throw new Error('startAt has already been called on the query, and can only be called once per query.');
+		}
+		if(!this.queryObject.sortByFieldName) {
+			throw new Error('sortBy must be called before calling startAt');
+		}
+		this.queryObject.startAtValue = value;
+	}
+	endAt(value:any):void {
+		if(this.queryObject.hasOwnProperty('endAtValue')) {
+			throw new Error('endAt has already been called on the query, and can only be called once per query.');
+		}
+		if(!this.queryObject.sortByFieldName) {
+			throw new Error('sortBy must be called before calling endAt');
+		}
+		this.queryObject.endAtValue = value;
+	}
 	//
 	// /**
 	//  * Limit the number of results to the first ones returned.

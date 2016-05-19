@@ -6,7 +6,6 @@ var LeDataQuery = (function () {
         this.queryObject.type = type;
         this.queryObject.id = id;
         this.queryObject.includedFields = {};
-        this.hasCalledFilter = false;
     }
     LeDataQuery.prototype.getQueryID = function () {
         return this.queryObject.queryID;
@@ -17,12 +16,41 @@ var LeDataQuery = (function () {
         return newSubQuery;
     };
     LeDataQuery.prototype.filter = function (fieldName, value) {
-        if (this.hasCalledFilter) {
+        if (this.queryObject.filterFieldName) {
             throw new Error('The filter has already been called on the query, and can only be called once per query.');
         }
-        this.hasCalledFilter = true;
+        if (this.queryObject.sortByFieldName) {
+            throw new Error('You can\'t call filter and sortBy on the same query');
+        }
         this.queryObject.filterFieldName = fieldName;
         this.queryObject.filterValue = value;
+    };
+    LeDataQuery.prototype.sortBy = function (fieldName) {
+        if (this.queryObject.sortByFieldName) {
+            throw new Error('sortBy has already been called on the query, and can only be called once per query.');
+        }
+        if (this.queryObject.filterFieldName) {
+            throw new Error('You can\'t call filter and sortBy on the same query');
+        }
+        this.queryObject.sortByFieldName = fieldName;
+    };
+    LeDataQuery.prototype.startAt = function (value) {
+        if (this.queryObject.hasOwnProperty('startAtValue')) {
+            throw new Error('startAt has already been called on the query, and can only be called once per query.');
+        }
+        if (!this.queryObject.sortByFieldName) {
+            throw new Error('sortBy must be called before calling startAt');
+        }
+        this.queryObject.startAtValue = value;
+    };
+    LeDataQuery.prototype.endAt = function (value) {
+        if (this.queryObject.hasOwnProperty('endAtValue')) {
+            throw new Error('endAt has already been called on the query, and can only be called once per query.');
+        }
+        if (!this.queryObject.sortByFieldName) {
+            throw new Error('sortBy must be called before calling endAt');
+        }
+        this.queryObject.endAtValue = value;
     };
     return LeDataQuery;
 })();

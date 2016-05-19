@@ -470,6 +470,16 @@ export class LeDataService {
 			fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
 			fetchDataOptions.filterValue = queryObject.filterValue;
 		}
+		if(queryObject.hasOwnProperty('sortByFieldName')) {
+			var filterFieldConfig = typeConfig.getFieldConfig(queryObject.sortByFieldName);
+			fetchDataOptions.sortByFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.sortByFieldName;
+		}
+		if(queryObject.hasOwnProperty('startAtValue')) {
+			fetchDataOptions.startAtValue = queryObject.startAtValue;
+		}
+		if(queryObject.hasOwnProperty('endAtValue')) {
+			fetchDataOptions.endAtValue = queryObject.endAtValue;
+		}
 		return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
 			if(dataID) {
 				rawQueryRoot._id = dataID;

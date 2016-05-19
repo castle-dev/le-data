@@ -4,6 +4,9 @@ import Promise from "ts-promise";
 export interface FetchDataOptions {
   filterFieldName?: string;
   filterValue?: any;
+  sortByFieldName?: any;
+  startAtValue?: any;
+  endAtValue?: any;
 }
 
 export interface LeDataServiceProvider {
