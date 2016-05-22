@@ -947,6 +947,11 @@ var LeDataService = (function () {
         return new ts_promise_1.default(function (resolve, reject) {
             var location = configObjectIndex + type;
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
+                if (!returnedConfigObject) {
+                    var errorMessage = type + ' is not a configured type';
+                    var error = new Error(errorMessage);
+                    return ts_promise_1.default.reject(error);
+                }
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {
                 typeConfig.addField(_this.createdAtFieldName, 'Date').saveAt(_this.createdAtSaveLocation);
