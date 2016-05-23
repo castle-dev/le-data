@@ -1075,6 +1075,11 @@ export class LeDataService {
 		return new Promise<LeTypeConfig>((resolve, reject)=>{
 			var location = configObjectIndex + type;
 			this.dataServiceProvider.fetchData(location).then((returnedConfigObject)=>{
+				if(!returnedConfigObject) {
+					var errorMessage = type +' is not a configured type';
+					var error = new Error(errorMessage);
+					return Promise.reject(error);
+				}
 				return this.typeConfigForTypeConfigObject(returnedConfigObject);
 			}).then((typeConfig)=>{
 				typeConfig.addField(this.createdAtFieldName, 'Date').saveAt(this.createdAtSaveLocation);
