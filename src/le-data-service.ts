@@ -1130,6 +1130,8 @@ export class LeDataService {
 			return Promise.resolve();
 		}
 		var initialPromise: Promise<any>;
+		var isCreate = false;
+		var rootRawData:LeData = {_type:data._type, _id:data._id};
 		if(!this.hasLoadedServiceConfig) {
 			initialPromise = this.dataServiceProvider.dataExists('_leServiceConfig').then((doesExist)=>{
 				if(doesExist) {
@@ -1147,20 +1149,18 @@ export class LeDataService {
 		}).then((location)=>{
 			var updateCreatedAtPropmise;
 			if(!data._id) {
+				isCreate = true;
 				data[this.createdAtFieldName] = new Date();
 				updateCreatedAtPropmise = Promise.resolve();
 			} else {
 				updateCreatedAtPropmise = this.dataServiceProvider.dataExists(location).then((doesExist)=>{
 					if(!doesExist) {
+						isCreate =true;
 						data[this.createdAtFieldName] = new Date();
 					}
 				});
 			}
 			return updateCreatedAtPropmise;
-		}).then(()=>{
-			if(!data._id) {
-				data._id = this.dataServiceProvider.generateID();
-			}
 		}).then(()=>{
 			var promises = [];
 			var shouldUpdateLastUpdated = false;
@@ -1169,22 +1169,37 @@ export class LeDataService {
 					shouldUpdateLastUpdated = true;
 				}
 				if(data.hasOwnProperty(key)) {
-					promises.push(this.saveFieldForData(data, key));
+					promises.push(this.saveFieldForData(data, key, isCreate, rootRawData));
 				}
 			}
 			if(shouldUpdateLastUpdated) {
 				data[this.lastUpdatedAtFieldName] = new Date();
-				promises.push(this.saveFieldForData(data, this.lastUpdatedAtFieldName));
+				promises.push(this.saveFieldForData(data, this.lastUpdatedAtFieldName, isCreate, rootRawData));
 			}
 			return Promise.all(promises);
 		}).then(()=>{
+			if(isCreate) {
+				return this.createRootRawData(rootRawData);
+			}
+		}).then(()=>{
+			if(!data._id && rootRawData._id) {
+				data._id = rootRawData._id;
+			}
 			return data;
 		});
 	};
 
-	private saveFieldForData(data:LeData, fieldName:string): Promise<any> {
+	private createRootRawData(rootRawData:LeData) {
+		return this.fetchTypeConfig(rootRawData._type).then((typeConfig)=>{
+			var saveLocation = typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType();
+			return this.dataServiceProvider.createData(saveLocation, rootRawData);
+		});
+	}
+
+	private saveFieldForData(data:LeData, fieldName:string, isCreate:boolean, rootRawData:LeData): Promise<any> {
 		var location;
 		var fieldConfig;
+		var rawFieldName;
 		if(fieldName === '_id' || fieldName === '_type') {
 			return Promise.resolve();
 		}
@@ -1194,16 +1209,12 @@ export class LeDataService {
 			if (typeConfig.saveLocation) {
 				location = typeConfig.saveLocation;
 			}
-			location += '/' + data._id;
-			if(fieldConfig && fieldConfig.saveLocation) {
-				location += '/' + fieldConfig.saveLocation;
-			} else {
-				location += '/' + fieldName;
-			}
+			rawFieldName = fieldConfig && fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldName;
+			location += '/' + data._id + '/' + rawFieldName;
 			if(fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
-				return this.saveDataAndSetReferenceAtLocation(data[fieldName], location);
+				return this.saveDataAndSetField(data[fieldName], location, isCreate, rootRawData, rawFieldName);
 			} else if(fieldConfig && fieldConfig.getFieldType() === 'object') {
-				return this.saveObjectField(location, fieldConfig, data[fieldName]);
+				return this.saveObjectField(location, fieldConfig, data[fieldName], isCreate, rootRawData);
 			} else {
 				var dataToSave;
 				if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
@@ -1211,12 +1222,18 @@ export class LeDataService {
 				} else {
 					dataToSave = data[fieldName];
 				}
+				if(isCreate) {
+					if(rootRawData && rawFieldName && dataToSave !== undefined) {
+						rootRawData[rawFieldName] = dataToSave;
+					}
+					return;
+				}
 				return this.dataServiceProvider.updateData(location, dataToSave);
 			}
 		});
 	}
 
-	private saveDataAndSetReferenceAtLocation(data, location) {
+	private saveDataAndReturnObjectToSetOnField(data:any): Promise<any> {
 		if(data && data.constructor === Array) {
 			var objectToSetAtLocation = {};
 			var promises = [];
@@ -1226,37 +1243,53 @@ export class LeDataService {
 				}));
 			});
 			return Promise.all(promises).then(()=>{
-				return this.dataServiceProvider.updateData(location, objectToSetAtLocation);
+				return objectToSetAtLocation;
 			});
 		} else if (data === undefined) {
-			return this.dataServiceProvider.deleteData(location);
+			return undefined;
 		} else {
 			return this.saveData(data).then((returnedData)=>{
-				return this.dataServiceProvider.updateData(location, returnedData._id);
+				return returnedData._id;
 			});
 		}
 	}
 
-	private saveObjectField(location:string, fieldConfig: LeTypeFieldConfig, data:any): Promise<any>{
+	private saveDataAndSetField(data, location, isCreate:boolean, rootRawData:LeData, rawFieldName:string) {
+		return this.saveDataAndReturnObjectToSetOnField(data).then(function(dataToSetOnField){
+			if(isCreate) {
+				if(rootRawData && rawFieldName && dataToSetOnField !== undefined) {
+					rootRawData[rawFieldName] = dataToSetOnField;
+				}
+				return;
+			}
+			if(dataToSetOnField === undefined) {
+				return this.dataServiceProvider.deleteData(location);
+			} else {
+				return this.dataServiceProvider.updateData(location, dataToSetOnField);
+			}
+		});
+	}
+
+	private saveObjectField(location:string, fieldConfig: LeTypeFieldConfig, data:any, isCreate: boolean, rootRawData: LeData): Promise<any>{
+		var rawFieldName = fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldConfig.getFieldName();
+		rootRawData[rawFieldName] = {};
+		var innerRawData = rootRawData[rawFieldName];
 		var promises = [];
 		var innerFieldConfigs = fieldConfig.getFieldConfigs();
 		for(var i = 0; i < innerFieldConfigs.length; i += 1) {
 			var innerFieldConfig = innerFieldConfigs[i];
-			var innerLocation;
-			if(innerFieldConfig.saveLocation) {
-				innerLocation = location + '/' + innerFieldConfig.saveLocation;
-			} else {
-				innerLocation = location + '/' + innerFieldConfig.getFieldName();
-			}
+			var innerRawFieldName = innerFieldConfig.saveLocation ? innerFieldConfig.saveLocation : innerFieldConfig.getFieldName();
+			var innerLocation = location + '/' + innerRawFieldName;
 			if(data.hasOwnProperty(innerFieldConfig.getFieldName())) {
-				promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()]));
+				promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()], isCreate, innerRawData));
 			}
 		}
 		return Promise.all(promises);
 	}
 
-	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any):Promise<any>{
+	private saveField(location:string, fieldConfig: LeTypeFieldConfig, fieldData: any, isCreate:boolean, rawData:any):Promise<any>{
 		var dataService = this;
+		var rawFieldName = fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldConfig.getFieldName();
 		if(this.fieldConfigTypeIsACustomLeDataType(fieldConfig)){
 			if(fieldData && fieldData.constructor === Array) {
 				var objectToSetAtLocation = {};
@@ -1267,17 +1300,29 @@ export class LeDataService {
 					}));
 				});
 				return Promise.all(promises).then(()=>{
-					return dataService.dataServiceProvider.updateData(location, objectToSetAtLocation);
+					if(isCreate) {
+						rawData[rawFieldName] = objectToSetAtLocation;
+					} else {
+						return dataService.dataServiceProvider.updateData(location, objectToSetAtLocation);
+					}
 				});
 		} else {
 			return this.saveData(fieldData).then((returnedData)=>{
-				return this.dataServiceProvider.updateData(location, returnedData._id);
+				if(isCreate) {
+					rawData[rawFieldName] = objectToSetAtLocation;
+				} else {
+					return dataService.dataServiceProvider.updateData(location, returnedData._id);
+				}
 			});
 		}
 		} else if(fieldConfig.getFieldType() === 'object') {
-			return this.saveObjectField(location, fieldConfig, fieldData);
+			return this.saveObjectField(location, fieldConfig, fieldData, isCreate, rawData);
 		} else {
-			return this.dataServiceProvider.updateData(location, fieldData);
+			if(isCreate) {
+				rawData[rawFieldName] = fieldData;
+			} else {
+				return this.dataServiceProvider.updateData(location, fieldData);
+			}
 		}
 	}
 }
