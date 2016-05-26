@@ -110,6 +110,8 @@ describe('LeDataService', ()=>{
         expect(returnedData._createdAt instanceof Date).to.be.true;
         expect(returnedData._lastUpdatedAt instanceof Date).to.be.true;
         done();
+      }, (err)=>{
+        console.log(err)
       });
     });
     it('should throw an error if there is an unconfigured field',(done)=>{

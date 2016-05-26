@@ -57,8 +57,10 @@ export class MockLeDataServiceProvider implements LeDataServiceProvider {
 
       locationToSaveAt = locationToSaveAt[sublocation];
     }
-    data._id = '' + this.uniqueID;
-    locationToSaveAt[this.uniqueID] = data;
+    if(!data._id) {
+      data._id = '' + this.uniqueID;
+    }
+    locationToSaveAt[data._id] = data;
     this.uniqueID += 1;
     return Promise.resolve(data);
   }

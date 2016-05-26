@@ -51,36 +51,27 @@ var LeDataServiceProviderFirebase = (function () {
         var deferred = ts_promise_1.default.defer();
         var provider = this;
         var dataID = data._id;
-        var dataType = data._type;
-        delete data._id;
-        delete data._type;
+        var dataToSave = convertDataToDataToSave(data);
         if (!dataID) {
-            var newFieldRef = this.firebaseRef.child(location).push(data, function (err) {
+            var newFieldRef = this.firebaseRef.child(location).push(dataToSave, function (err) {
                 if (err) {
                     deferred.reject(err);
                     return;
                 }
                 var newFieldLocationArray = newFieldRef.toString().split('/');
                 var newID = newFieldLocationArray[newFieldLocationArray.length - 1];
-                provider.updateStoreForLocation(location, data);
+                provider.updateStoreForLocation(location, dataToSave);
                 data._id = newID;
-                if (dataType) {
-                    data._type = dataType;
-                }
                 deferred.resolve(data);
             });
         }
         else {
-            this.firebaseRef.child(location).child(dataID).set(data, function (err) {
+            this.firebaseRef.child(location).child(dataID).set(dataToSave, function (err) {
                 if (err) {
                     deferred.reject(err);
                     return;
                 }
-                provider.updateStoreForLocation(location, data);
-                data._id = dataID;
-                if (dataType) {
-                    data._type = dataType;
-                }
+                provider.updateStoreForLocation(location, dataToSave);
                 deferred.resolve(data);
             });
         }
@@ -240,6 +231,27 @@ var LeDataServiceProviderFirebase = (function () {
     return LeDataServiceProviderFirebase;
 })();
 exports.LeDataServiceProviderFirebase = LeDataServiceProviderFirebase;
+function convertDataToDataToSave(object) {
+    var objectToReturn = {};
+    for (var key in object) {
+        if (object.hasOwnProperty(key) && key !== '_type' && key !== '_id') {
+            var keyArray = key.split('/');
+            var currentObject = objectToReturn;
+            for (var i = 0; i < keyArray.length; i += 1) {
+                var subKey = keyArray[i];
+                if (i === keyArray.length - 1) {
+                    currentObject[subKey] = typeof object[key] === 'object' ? convertDataToDataToSave(object[key]) : object[key];
+                    break;
+                }
+                if (!currentObject[subKey]) {
+                    currentObject[subKey] = {};
+                }
+                currentObject = currentObject[subKey];
+            }
+        }
+    }
+    return objectToReturn;
+}
 function removeUndefinedFeilds(data) {
     for (var key in data) {
         if (data.hasOwnProperty(key)) {
