@@ -51,8 +51,10 @@ var MockLeDataServiceProvider = (function () {
             }
             locationToSaveAt = locationToSaveAt[sublocation];
         }
-        data._id = '' + this.uniqueID;
-        locationToSaveAt[this.uniqueID] = data;
+        if (!data._id) {
+            data._id = '' + this.uniqueID;
+        }
+        locationToSaveAt[data._id] = data;
         this.uniqueID += 1;
         return ts_promise_1.default.resolve(data);
     };
