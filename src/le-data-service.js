@@ -1127,6 +1127,7 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.saveDataAndSetField = function (data, location, isCreate, rootRawData, rawFieldName) {
+        var dataService = this;
         return this.saveDataAndReturnObjectToSetOnField(data).then(function (dataToSetOnField) {
             if (isCreate) {
                 if (rootRawData && rawFieldName && dataToSetOnField !== undefined) {
@@ -1135,10 +1136,10 @@ var LeDataService = (function () {
                 return;
             }
             if (dataToSetOnField === undefined) {
-                return this.dataServiceProvider.deleteData(location);
+                return dataService.dataServiceProvider.deleteData(location);
             }
             else {
-                return this.dataServiceProvider.updateData(location, dataToSetOnField);
+                return dataService.dataServiceProvider.updateData(location, dataToSetOnField);
             }
         });
     };

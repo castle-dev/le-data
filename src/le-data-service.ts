@@ -1255,6 +1255,7 @@ export class LeDataService {
 	}
 
 	private saveDataAndSetField(data, location, isCreate:boolean, rootRawData:LeData, rawFieldName:string) {
+		var dataService = this;
 		return this.saveDataAndReturnObjectToSetOnField(data).then(function(dataToSetOnField){
 			if(isCreate) {
 				if(rootRawData && rawFieldName && dataToSetOnField !== undefined) {
@@ -1263,9 +1264,9 @@ export class LeDataService {
 				return;
 			}
 			if(dataToSetOnField === undefined) {
-				return this.dataServiceProvider.deleteData(location);
+				return dataService.dataServiceProvider.deleteData(location);
 			} else {
-				return this.dataServiceProvider.updateData(location, dataToSetOnField);
+				return dataService.dataServiceProvider.updateData(location, dataToSetOnField);
 			}
 		});
 	}
