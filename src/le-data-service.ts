@@ -1246,7 +1246,7 @@ export class LeDataService {
 				return objectToSetAtLocation;
 			});
 		} else if (data === undefined) {
-			return undefined;
+			return Promise.resolve();
 		} else {
 			return this.saveData(data).then((returnedData)=>{
 				return returnedData._id;

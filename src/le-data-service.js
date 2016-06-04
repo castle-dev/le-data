@@ -1118,7 +1118,7 @@ var LeDataService = (function () {
             });
         }
         else if (data === undefined) {
-            return undefined;
+            return ts_promise_1.default.resolve();
         }
         else {
             return this.saveData(data).then(function (returnedData) {
