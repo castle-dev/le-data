@@ -793,7 +793,8 @@ var LeDataService = (function () {
     LeDataService.prototype.validateNoExtraFields = function (typeConfig, data) {
         for (var key in data) {
             var saveLocation = (typeConfig.saveLocation ? typeConfig.saveLocation : typeConfig.getType()) + '/' + data._id + '/' + key;
-            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key) && !this.dataServiceProvider.equalToLastedFetchData(saveLocation, data[key])) {
+            var valueToCheck = data[key] instanceof Date ? data[key].getTime() : data[key];
+            if (data.hasOwnProperty(key) && key.charAt(0) !== '_' && !typeConfig.fieldExists(key) && (!this.dataServiceProvider.equalToLastedFetchData(saveLocation, valueToCheck) || valueToCheck === undefined)) {
                 var errorMessage = 'An additional field was set on the data object.\n';
                 errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type + '\n';
                 errorMessage += 'data: ' + JSON.stringify(data);
