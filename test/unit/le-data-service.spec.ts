@@ -77,6 +77,18 @@ describe('LeDataService', ()=>{
           done();
         });
       });
+      it('should throw an error if there is an unconfigured field',(done)=>{
+        var dogTypeConfig = new LeTypeConfig('Dog');
+        dataService.configureType(dogTypeConfig).then(()=>{
+          return dataService.createData({_type:'Dog'});
+        }).then((returnedDogData)=>{
+          returnedDogData.badField = new Date();
+          return dataService.updateData(returnedDogData);
+        }).then(undefined, (err)=>{
+          expect(err.message).to.include('An additional field was set on the data object.\nthe field "badField" is not configured on objects of type Dog\ndata: ');
+          done();
+        });
+      });
     });
 
     describe('deleteData', ()=>{
