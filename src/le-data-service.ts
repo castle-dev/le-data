@@ -292,9 +292,9 @@ export class LeDataService {
 		});
 	}
 
-	removeDataFromArray(type:string, id:string, fieldName:string, data:LeData) {
+	removeDataFromArray(type:string, id:string, fieldName:string, data:LeData): Promise<void> {
 		var dataService = this;
-		dataService.fetchTypeConfig(type).then((typeConfig)=>{
+		return dataService.fetchTypeConfig(type).then((typeConfig)=>{
 			var fieldConfig =  typeConfig.getFieldConfig(fieldName);
 			var location;
 			if (typeConfig.saveLocation) {
