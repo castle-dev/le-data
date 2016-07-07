@@ -199,7 +199,7 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.removeDataFromArray = function (type, id, fieldName, data) {
         var dataService = this;
-        dataService.fetchTypeConfig(type).then(function (typeConfig) {
+        return dataService.fetchTypeConfig(type).then(function (typeConfig) {
             var fieldConfig = typeConfig.getFieldConfig(fieldName);
             var location;
             if (typeConfig.saveLocation) {
