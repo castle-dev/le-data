@@ -88,11 +88,11 @@ var LeDataServiceProviderFirebase = (function () {
             }
             return ts_promise_1.default.all(innerUpdatePromises);
         }
-        if (data === this.storedValueForLocation(location)) {
-            return ts_promise_1.default.resolve();
-        }
         if (data === undefined) {
             return this.deleteData(location);
+        }
+        if (data === this.storedValueForLocation(location)) {
+            return ts_promise_1.default.resolve();
         }
         var deferred = ts_promise_1.default.defer();
         this.firebaseRef.child(location).set(data, function (err) {

@@ -92,11 +92,11 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
       }
       return Promise.all(innerUpdatePromises);
     }
-    if(data === this.storedValueForLocation(location)) {
-      return Promise.resolve();
-    }
     if(data === undefined) {
       return this.deleteData(location);
+    }
+    if(data === this.storedValueForLocation(location)) {
+      return Promise.resolve();
     }
     var deferred = Promise.defer<any>();
     this.firebaseRef.child(location).set(data, function(err){
