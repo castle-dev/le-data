@@ -21,7 +21,7 @@ var LeDataQuery = (function () {
             throw new Error('The filter has already been called on the query, and can only be called once per query.');
         }
         this.hasCalledFilter = true;
-        this.queryObject.filterFieldName = fieldName;
+        this.queryObject.filterFieldName = fieldName.replace('.', '/');
         this.queryObject.filterValue = value;
     };
     return LeDataQuery;
