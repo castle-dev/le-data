@@ -105,6 +105,17 @@ export class LeTypeFieldConfig {
   }
 
   /**
+   * @function getFieldConfigs - returns the fieldConfig that has been added to this fieldConfig with the specified feild name
+   *
+   * @param fieldName string - the name of the inner field added to this field
+   *
+   * @returns LeTypeFieldConfig - the fieldConfig for the inner field with the specified name
+   */
+  getFieldConfig(fieldName: string):LeTypeFieldConfig[] {
+    return this.addedFieldsObejct[fieldName];
+  }
+
+  /**
    * @function fieldExists - returns if the field is configured on the fieldConfig
    *
    * @returns boolean - if the field is configured on the fieldConfig

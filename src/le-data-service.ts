@@ -466,7 +466,7 @@ export class LeDataService {
 		}
 		var fetchDataOptions: FetchDataOptions = {};
 		if(queryObject.hasOwnProperty('filterFieldName')) {
-			var filterFieldConfig = typeConfig.getFieldConfig(queryObject.filterFieldName);
+			var filterFieldConfig = this.fieldConfigForFilterFieldName(queryObject.filterFieldName, typeConfig);
 			fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
 			fetchDataOptions.filterValue = queryObject.filterValue;
 		}
@@ -695,6 +695,19 @@ export class LeDataService {
 			return Promise.all(promises);
 		});
 	}
+	private fieldConfigForFilterFieldName(filterFieldName: string, typeConfig: LeTypeConfig): LeTypeFieldConfig {
+		var filterFieldNameSegments = filterFieldName.split('/');
+		var fieldConfig;
+		for (var i = 0; i < filterFieldNameSegments.length; i += 1) {
+			var filterFieldNameSegment = filterFieldNameSegments[i];
+			if(i === 0) {
+				fieldConfig = typeConfig.getFieldConfig(filterFieldNameSegment);
+			} else if (fieldConfig) {
+				fieldConfig = fieldConfig.getFieldConfig(filterFieldNameSegment);
+			}
+		}
+		return fieldConfig;
+	}
 	private validateFilterOnQueryObject(queryObject: any, typeConfig: LeTypeConfig): Promise<void> {
 		if(!queryObject.hasOwnProperty('filterFieldName')) {
 			return Promise.resolve();
@@ -706,7 +719,7 @@ export class LeDataService {
 		}
 		var filterFieldName = queryObject.filterFieldName;
 		var filterValue = queryObject.filterValue;
-		var fieldConfig = typeConfig.getFieldConfig(filterFieldName);
+		var fieldConfig = this.fieldConfigForFilterFieldName(filterFieldName, typeConfig);
 		if(!fieldConfig) {
 			var errorMessage = 'Invalid filter field name. No field named "' + filterFieldName +'" exists on type ' + typeConfig.getType() + '.';
 			var error = new Error(errorMessage);

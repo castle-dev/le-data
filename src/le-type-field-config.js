@@ -34,6 +34,9 @@ var LeTypeFieldConfig = (function () {
     LeTypeFieldConfig.prototype.getFieldConfigs = function () {
         return this.addedFieldsArray;
     };
+    LeTypeFieldConfig.prototype.getFieldConfig = function (fieldName) {
+        return this.addedFieldsObejct[fieldName];
+    };
     LeTypeFieldConfig.prototype.fieldExists = function (fieldName) {
         return !!this.addedFieldsObejct[fieldName];
     };

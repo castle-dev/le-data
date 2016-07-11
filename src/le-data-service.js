@@ -342,7 +342,7 @@ var LeDataService = (function () {
         }
         var fetchDataOptions = {};
         if (queryObject.hasOwnProperty('filterFieldName')) {
-            var filterFieldConfig = typeConfig.getFieldConfig(queryObject.filterFieldName);
+            var filterFieldConfig = this.fieldConfigForFilterFieldName(queryObject.filterFieldName, typeConfig);
             fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
             fetchDataOptions.filterValue = queryObject.filterValue;
         }
@@ -579,6 +579,20 @@ var LeDataService = (function () {
             return ts_promise_1.default.all(promises);
         });
     };
+    LeDataService.prototype.fieldConfigForFilterFieldName = function (filterFieldName, typeConfig) {
+        var filterFieldNameSegments = filterFieldName.split('/');
+        var fieldConfig;
+        for (var i = 0; i < filterFieldNameSegments.length; i += 1) {
+            var filterFieldNameSegment = filterFieldNameSegments[i];
+            if (i === 0) {
+                fieldConfig = typeConfig.getFieldConfig(filterFieldNameSegment);
+            }
+            else if (fieldConfig) {
+                fieldConfig = fieldConfig.getFieldConfig(filterFieldNameSegment);
+            }
+        }
+        return fieldConfig;
+    };
     LeDataService.prototype.validateFilterOnQueryObject = function (queryObject, typeConfig) {
         if (!queryObject.hasOwnProperty('filterFieldName')) {
             return ts_promise_1.default.resolve();
@@ -590,7 +604,7 @@ var LeDataService = (function () {
         }
         var filterFieldName = queryObject.filterFieldName;
         var filterValue = queryObject.filterValue;
-        var fieldConfig = typeConfig.getFieldConfig(filterFieldName);
+        var fieldConfig = this.fieldConfigForFilterFieldName(filterFieldName, typeConfig);
         if (!fieldConfig) {
             var errorMessage = 'Invalid filter field name. No field named "' + filterFieldName + '" exists on type ' + typeConfig.getType() + '.';
             var error = new Error(errorMessage);
