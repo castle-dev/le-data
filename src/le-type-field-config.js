@@ -1,4 +1,3 @@
-"use strict";
 /**
  * The object used to configure a field on a type of data
  *
@@ -86,7 +85,8 @@ var LeTypeFieldConfig = (function () {
         return this.type !== 'string' && this.type !== 'boolean' && this.type !== 'number' && this.type !== 'Date' && this.type !== 'object';
     };
     return LeTypeFieldConfig;
-}());
+})();
 exports.LeTypeFieldConfig = LeTypeFieldConfig;
 exports.__esModule = true;
 exports["default"] = LeTypeFieldConfig;
+//# sourceMappingURL=le-type-field-config.js.map

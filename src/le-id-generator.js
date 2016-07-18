@@ -1,4 +1,3 @@
-"use strict";
 /**
  * The object used to configure a type of data
  *
@@ -20,7 +19,8 @@ var LeIDGenerator = (function () {
             s4() + '-' + s4() + s4() + s4();
     };
     return LeIDGenerator;
-}());
+})();
 exports.LeIDGenerator = LeIDGenerator;
 exports.__esModule = true;
 exports["default"] = LeIDGenerator;
+//# sourceMappingURL=le-id-generator.js.map

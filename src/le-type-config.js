@@ -1,4 +1,3 @@
-"use strict";
 var le_type_field_config_1 = require("./le-type-field-config");
 /**
  * The object used to configure a type of data
@@ -56,7 +55,8 @@ var LeTypeConfig = (function () {
         return this.type;
     };
     return LeTypeConfig;
-}());
+})();
 exports.LeTypeConfig = LeTypeConfig;
 exports.__esModule = true;
 exports["default"] = LeTypeConfig;
+//# sourceMappingURL=le-type-config.js.map

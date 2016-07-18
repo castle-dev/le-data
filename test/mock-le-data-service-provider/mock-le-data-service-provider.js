@@ -5,6 +5,14 @@ var MockLeDataServiceProvider = (function () {
         this.remoteStoredData = {};
         this.uniqueID = 0;
     }
+    MockLeDataServiceProvider.prototype.lock = function (word) {
+        return ts_promise_1["default"].resolve();
+    };
+    MockLeDataServiceProvider.prototype.unsync = function (location, unsyncObject) {
+    };
+    MockLeDataServiceProvider.prototype.unlock = function (word) {
+        return ts_promise_1["default"].resolve();
+    };
     MockLeDataServiceProvider.prototype.equalToLastedFetchData = function (location, data) {
         return false;
     };
@@ -97,7 +105,7 @@ var MockLeDataServiceProvider = (function () {
         return true;
     };
     return MockLeDataServiceProvider;
-}());
+})();
 exports.MockLeDataServiceProvider = MockLeDataServiceProvider;
 exports.__esModule = true;
 exports["default"] = MockLeDataServiceProvider;

@@ -5,6 +5,14 @@ import LeDataServiceProvider from "../../src/le-data-service-provider.ts";
 
 export class MockLeDataServiceProvider implements LeDataServiceProvider {
   remoteStoredData: Object;
+  lock(word:string): Promise<void>{
+    return Promise.resolve();
+  }
+  unsync(location:string, unsyncObject:any):void {
+  }
+  unlock(word:string): Promise<void>{
+    return Promise.resolve();
+  }
   private uniqueID: number;
   constructor(){
     this.remoteStoredData = {};

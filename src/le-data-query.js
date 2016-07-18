@@ -1,4 +1,3 @@
-"use strict";
 var le_id_generator_1 = require("./le-id-generator");
 /**
  * The object used to configure a type of data
@@ -56,7 +55,8 @@ var LeDataQuery = (function () {
         this.queryObject.filterValue = value;
     };
     return LeDataQuery;
-}());
+})();
 exports.LeDataQuery = LeDataQuery;
 exports.__esModule = true;
 exports["default"] = LeDataQuery;
+//# sourceMappingURL=le-data-query.js.map
