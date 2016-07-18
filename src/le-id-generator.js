@@ -23,4 +23,3 @@ var LeIDGenerator = (function () {
 exports.LeIDGenerator = LeIDGenerator;
 exports.__esModule = true;
 exports["default"] = LeIDGenerator;
-//# sourceMappingURL=le-id-generator.js.map

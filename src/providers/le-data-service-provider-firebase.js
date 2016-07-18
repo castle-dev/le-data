@@ -1,4 +1,3 @@
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var LeDataServiceProviderFirebase = (function () {
     function LeDataServiceProviderFirebase(firebaseRef) {

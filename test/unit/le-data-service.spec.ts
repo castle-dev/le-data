@@ -1,6 +1,5 @@
 /// <reference path="../../typings/mocha/mocha.d.ts" />
 /// <reference path="../../typings/chai/chai.d.ts" />
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 
 import Promise from "ts-promise";
 import chai = require('chai');

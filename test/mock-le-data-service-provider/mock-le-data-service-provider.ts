@@ -1,4 +1,3 @@
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 import Promise from "ts-promise";
 
 import LeDataServiceProvider from "../../src/le-data-service-provider.ts";

@@ -39,6 +39,6 @@
     "travis-encrypt": "^1.1.1"
   },
   "dependencies": {
-    "ts-promise": "^0.2.3"
+    "ts-promise": "0.3.0"
   }
 }

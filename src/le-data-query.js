@@ -59,4 +59,3 @@ var LeDataQuery = (function () {
 exports.LeDataQuery = LeDataQuery;
 exports.__esModule = true;
 exports["default"] = LeDataQuery;
-//# sourceMappingURL=le-data-query.js.map

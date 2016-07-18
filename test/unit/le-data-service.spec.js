@@ -1,6 +1,5 @@
 /// <reference path="../../typings/mocha/mocha.d.ts" />
 /// <reference path="../../typings/chai/chai.d.ts" />
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
@@ -567,4 +566,3 @@ describe('LeDataService', function () {
         });
     });
 });
-//# sourceMappingURL=le-data-service.spec.js.map

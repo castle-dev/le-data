@@ -1,4 +1,3 @@
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 import Promise from "ts-promise";
 import {FetchDataOptions, LeDataServiceProvider} from "../le-data-service-provider";
 

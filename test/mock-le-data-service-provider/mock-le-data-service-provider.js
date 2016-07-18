@@ -1,4 +1,3 @@
-/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var MockLeDataServiceProvider = (function () {
     function MockLeDataServiceProvider() {
@@ -109,4 +108,3 @@ var MockLeDataServiceProvider = (function () {
 exports.MockLeDataServiceProvider = MockLeDataServiceProvider;
 exports.__esModule = true;
 exports["default"] = MockLeDataServiceProvider;
-//# sourceMappingURL=mock-le-data-service-provider.js.map
