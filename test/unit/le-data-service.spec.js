@@ -1,3 +1,6 @@
+/// <reference path="../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../typings/chai/chai.d.ts" />
+/// <reference path="../../node_modules/ts-promise/dist/ts-promise.d.ts" />
 var ts_promise_1 = require("ts-promise");
 var chai = require('chai');
 var data = require("../../src/le-data-service");
@@ -7,7 +10,7 @@ var mock_le_data_service_provider_1 = require("../mock-le-data-service-provider/
 var expect = chai.expect;
 describe('LeDataService', function () {
     var dataService;
-    var mockProvider = new mock_le_data_service_provider_1.default();
+    var mockProvider = new mock_le_data_service_provider_1["default"]();
     before(function () {
         dataService = new data.LeDataService(mockProvider);
     });
@@ -17,7 +20,7 @@ describe('LeDataService', function () {
     describe('createData', function () {
         it('should return a promise', function () {
             var returnedObject = dataService.createData({ _type: 'exampleType' });
-            expect(returnedObject instanceof ts_promise_1.default).to.be.true;
+            expect(returnedObject instanceof ts_promise_1["default"]).to.be.true;
         });
         it('should reject if there is no type specified in the data', function (done) {
             var returnedPromise = dataService.createData({});
@@ -37,7 +40,7 @@ describe('LeDataService', function () {
     describe('updateData', function () {
         it('should return a promise', function () {
             var returnedObject = dataService.updateData({ _type: 'exampleType' });
-            expect(returnedObject instanceof ts_promise_1.default).to.be.true;
+            expect(returnedObject instanceof ts_promise_1["default"]).to.be.true;
         });
         it('should reject if no data is passed to the function', function (done) {
             var returnedPromise = dataService.updateData();
@@ -67,7 +70,7 @@ describe('LeDataService', function () {
             });
         });
         it('should throw an error if there is an unconfigured field', function (done) {
-            var dogTypeConfig = new le_type_config_1.default('Dog');
+            var dogTypeConfig = new le_type_config_1["default"]('Dog');
             dataService.configureType(dogTypeConfig).then(function () {
                 return dataService.createData({ _type: 'Dog' });
             }).then(function (returnedDogData) {
@@ -102,7 +105,7 @@ describe('LeDataService', function () {
         });
     });
     it('should successfully create a configured type', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         dataService.configureType(dogTypeConfig).then(function () {
             return dataService.createData({ _type: 'Dog' });
         }).then(function (returnedData) {
@@ -115,7 +118,7 @@ describe('LeDataService', function () {
         });
     });
     it('should throw an error if there is an unconfigured field', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         dataService.configureType(dogTypeConfig).then(function () {
             return dataService.createData({ _type: 'Dog', badField: 'thisFieldIsTrash' });
         }).then(undefined, function (err) {
@@ -124,7 +127,7 @@ describe('LeDataService', function () {
         });
     });
     it('should successfully create if there is a configured field', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         var goodFieldConfig = dogTypeConfig.addField('goodField', 'string');
         dataService.configureType(dogTypeConfig).then(function () {
             return dataService.createData({ _type: 'Dog', goodField: 'thisfieldIsAwesome' });
@@ -140,7 +143,7 @@ describe('LeDataService', function () {
         });
     });
     it('should throw an error on create create if the field is the wrong type', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         var goodFieldConfig = dogTypeConfig.addField('goodField', 'string');
         dataService.configureType(dogTypeConfig).then(function () {
             return dataService.createData({ _type: 'Dog', goodField: 74 });
@@ -149,10 +152,10 @@ describe('LeDataService', function () {
         });
     });
     it('should correctly configure and save custom type fields', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         var goodFieldConfig = dogTypeConfig.addField('catField', 'Cat');
         dataService.configureType(dogTypeConfig).then(function () {
-            var catTypeConfig = new le_type_config_1.default('Cat');
+            var catTypeConfig = new le_type_config_1["default"]('Cat');
             return dataService.configureType(catTypeConfig);
         }).then(function () {
             return dataService.createData({ _type: 'Dog', catField: { _type: "Cat" } });
@@ -172,12 +175,12 @@ describe('LeDataService', function () {
     });
     it('should correctly save Dates', function (done) {
         mockProvider.remoteStoredData = {};
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         var goodFieldConfig = dogTypeConfig.addField('catField', 'Cat');
         var dateFieldConfig = dogTypeConfig.addField('testingDates', 'Date');
         dogTypeConfig.addField('_createdAt', 'Date');
         dataService.configureType(dogTypeConfig).then(function () {
-            var catTypeConfig = new le_type_config_1.default('Cat');
+            var catTypeConfig = new le_type_config_1["default"]('Cat');
             return dataService.configureType(catTypeConfig);
         }).then(function () {
             return dataService.createData({ _type: 'Dog', catField: { _type: "Cat" }, testingDates: new Date() });
@@ -199,7 +202,7 @@ describe('LeDataService', function () {
         });
     });
     it('should correctly configure and save object type fields', function (done) {
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         dogTypeConfig.addField('name', 'string');
         var myJsonConfig = dogTypeConfig.addField('myJson', 'object');
         myJsonConfig.addField('theStringField', 'string');
@@ -235,10 +238,10 @@ describe('LeDataService', function () {
     });
     it('should correctly configure and save custom type array fields', function (done) {
         mockProvider.remoteStoredData = {};
-        var dogTypeConfig = new le_type_config_1.default('Dog');
+        var dogTypeConfig = new le_type_config_1["default"]('Dog');
         var goodFieldConfig = dogTypeConfig.addField('catsField', 'Cat[]');
         dataService.configureType(dogTypeConfig).then(function () {
-            var catTypeConfig = new le_type_config_1.default('Cat');
+            var catTypeConfig = new le_type_config_1["default"]('Cat');
             catTypeConfig.addField('name', 'string');
             return dataService.configureType(catTypeConfig);
         }).then(function () {
@@ -282,23 +285,23 @@ describe('LeDataService', function () {
                     }
                 }
             };
-            var unitConfig = new le_type_config_1.default('Unit');
+            var unitConfig = new le_type_config_1["default"]('Unit');
             unitConfig.addField('ledger', 'Ledger');
             unitConfig.addField('ledgerCache', 'LedgerCache').saveAt('ledger');
-            var ledgerConfig = new le_type_config_1.default('Ledger');
+            var ledgerConfig = new le_type_config_1["default"]('Ledger');
             ledgerConfig.addField('lineItems', 'string');
-            var ledgerCacheConfig = new le_type_config_1.default('LedgerCache');
+            var ledgerCacheConfig = new le_type_config_1["default"]('LedgerCache');
             ledgerCacheConfig.addField('total', 'number');
             var promises = [];
             promises.push(dataService.configureType(unitConfig));
             promises.push(dataService.configureType(ledgerConfig));
             promises.push(dataService.configureType(ledgerCacheConfig));
-            ts_promise_1.default.all(promises).then(function () {
+            ts_promise_1["default"].all(promises).then(function () {
                 done();
             });
         });
         it('should fetch multiple fields of different types that are configured to the same location', function (done) {
-            var unitQuery = new le_data_query_1.default('Unit', 'unitID1');
+            var unitQuery = new le_data_query_1["default"]('Unit', 'unitID1');
             unitQuery.include('ledger');
             unitQuery.include('ledgerCache');
             dataService.search(unitQuery).then(function (unitData) {
@@ -324,23 +327,23 @@ describe('LeDataService', function () {
     });
     describe('queries', function () {
         beforeEach(function (done) {
-            var ownerConfig = new le_type_config_1.default('Owner');
+            var ownerConfig = new le_type_config_1["default"]('Owner');
             ownerConfig.saveAt('owners');
             ownerConfig.addField('firstName', 'string');
             ownerConfig.addField('numberField', 'number');
             ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
             ownerConfig.addField('bankAccount', 'BankAccount').saveAt('bankAccount_id');
             ownerConfig.addField('createdAt', 'Date').saveAt('_times/createdAt');
-            var propertyConfig = new le_type_config_1.default('Property');
+            var propertyConfig = new le_type_config_1["default"]('Property');
             propertyConfig.saveAt('properties');
             propertyConfig.addField('tenants', 'Tenant[]').saveAt('tenant_ids');
             propertyConfig.addField('units', 'Unit[]').saveAt('unit_ids');
-            var tenantConfig = new le_type_config_1.default('Tenant');
+            var tenantConfig = new le_type_config_1["default"]('Tenant');
             tenantConfig.saveAt('tenants');
             tenantConfig.addField('tenantName', 'string');
-            var unitConfig = new le_type_config_1.default('Unit');
+            var unitConfig = new le_type_config_1["default"]('Unit');
             unitConfig.saveAt('units');
-            var bankAccountConfig = new le_type_config_1.default('BankAccount');
+            var bankAccountConfig = new le_type_config_1["default"]('BankAccount');
             bankAccountConfig.saveAt('bankAccounts');
             bankAccountConfig.addField('bankName', 'string');
             mockProvider.remoteStoredData = {
@@ -355,7 +358,7 @@ describe('LeDataService', function () {
                         bankAccount_id: 'bankAccount_id1',
                         property_ids: {
                             property_id1A: true,
-                            property_id1B: true,
+                            property_id1B: true
                         }
                     },
                     owner_id2: {
@@ -364,7 +367,7 @@ describe('LeDataService', function () {
                         bankAccount_id: 'bankAccount_id2',
                         property_ids: {
                             property_id2A: true,
-                            property_id2B: true,
+                            property_id2B: true
                         }
                     }
                 },
@@ -481,12 +484,12 @@ describe('LeDataService', function () {
             promises.push(dataService.configureType(tenantConfig));
             promises.push(dataService.configureType(unitConfig));
             promises.push(dataService.configureType(bankAccountConfig));
-            ts_promise_1.default.all(promises).then(function () {
+            ts_promise_1["default"].all(promises).then(function () {
                 done();
             });
         });
         it('should error if invalid', function (done) {
-            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            var myQuery = new le_data_query_1["default"]('Owner', 'owner_id1');
             myQuery.include('bankAccount');
             var propertySubQuery = myQuery.include('properties');
             propertySubQuery.include('dfj');
@@ -495,7 +498,7 @@ describe('LeDataService', function () {
             });
         });
         it('should fetch the data correctly starting at a specific record', function (done) {
-            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            var myQuery = new le_data_query_1["default"]('Owner', 'owner_id1');
             myQuery.include('bankAccount');
             var propertySubQuery = myQuery.include('properties');
             propertySubQuery.include('units');
@@ -516,7 +519,7 @@ describe('LeDataService', function () {
             });
         });
         it('should fetch the data correctly starting with a collection', function (done) {
-            var myQuery = new le_data_query_1.default('Owner');
+            var myQuery = new le_data_query_1["default"]('Owner');
             myQuery.include('bankAccount');
             var propertySubQuery = myQuery.include('properties');
             propertySubQuery.include('units');
@@ -539,7 +542,7 @@ describe('LeDataService', function () {
             });
         });
         it('should sync the data correctly starting with a record', function (done) {
-            var myQuery = new le_data_query_1.default('Owner', 'owner_id1');
+            var myQuery = new le_data_query_1["default"]('Owner', 'owner_id1');
             myQuery.include('bankAccount');
             var propertySubQuery = myQuery.include('properties');
             propertySubQuery.include('units');

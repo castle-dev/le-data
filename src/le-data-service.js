@@ -251,22 +251,21 @@ var LeDataService = (function () {
             }
             return promiseToReturn;
         }).then(function (data) {
+            var promise = ts_promise_1.default.resolve();
             if (!data || !data[fieldName] || typeof data[fieldName] === 'string') {
-                return ts_promise_1.default.resolve();
+                return promise;
             }
             if (data[fieldName] instanceof Array) {
                 var promises = [];
                 data[fieldName].forEach(function (objectToDelete) {
                     promises.push(_this.deleteData(objectToDelete._type, objectToDelete._id));
                 });
-                return ts_promise_1.default.all(promises);
+                promise = ts_promise_1.default.all(promises);
             }
             else if (data[fieldName]._type && data[fieldName]._id) {
-                return _this.deleteData(data[fieldName]._type, data[fieldName]._id);
+                promise = _this.deleteData(data[fieldName]._type, data[fieldName]._id);
             }
-            else {
-                return ts_promise_1.default.resolve();
-            }
+            return promise;
         });
     };
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
@@ -308,7 +307,7 @@ var LeDataService = (function () {
             return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }).then(function (data) {
             if (!data || data[_this.deletedAtFieldName]) {
-                return ts_promise_1.default.reject(new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id));
+                throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
             }
             return data;
         });
@@ -965,7 +964,7 @@ var LeDataService = (function () {
                 if (!returnedConfigObject) {
                     var errorMessage = type + ' is not a configured type';
                     var error = new Error(errorMessage);
-                    return ts_promise_1.default.reject(error);
+                    throw error;
                 }
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {

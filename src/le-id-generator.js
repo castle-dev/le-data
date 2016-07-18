@@ -1,3 +1,12 @@
+"use strict";
+/**
+ * The object used to configure a type of data
+ *
+ * @interface LeTypeConfig
+ *
+ * @param type string - the LeData configured type to start the query from
+ * @param id? string - The id of the individual record to serve as the root of the query
+ */
 var LeIDGenerator = (function () {
     function LeIDGenerator() {
     }
@@ -11,8 +20,7 @@ var LeIDGenerator = (function () {
             s4() + '-' + s4() + s4() + s4();
     };
     return LeIDGenerator;
-})();
+}());
 exports.LeIDGenerator = LeIDGenerator;
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = LeIDGenerator;
-//# sourceMappingURL=le-id-generator.js.map
+exports.__esModule = true;
+exports["default"] = LeIDGenerator;
