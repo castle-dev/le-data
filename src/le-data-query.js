@@ -55,7 +55,7 @@ var LeDataQuery = (function () {
         this.queryObject.filterValue = value;
     };
     return LeDataQuery;
-})();
+}());
 exports.LeDataQuery = LeDataQuery;
 exports.__esModule = true;
 exports["default"] = LeDataQuery;

@@ -19,7 +19,7 @@ var LeIDGenerator = (function () {
             s4() + '-' + s4() + s4() + s4();
     };
     return LeIDGenerator;
-})();
+}());
 exports.LeIDGenerator = LeIDGenerator;
 exports.__esModule = true;
 exports["default"] = LeIDGenerator;

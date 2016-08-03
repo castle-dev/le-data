@@ -229,7 +229,7 @@ var LeDataServiceProviderFirebase = (function () {
         return currentStore[sublocation];
     };
     return LeDataServiceProviderFirebase;
-})();
+}());
 exports.LeDataServiceProviderFirebase = LeDataServiceProviderFirebase;
 function convertDataToDataToSave(object) {
     var objectToReturn = {};

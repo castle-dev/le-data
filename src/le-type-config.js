@@ -55,7 +55,7 @@ var LeTypeConfig = (function () {
         return this.type;
     };
     return LeTypeConfig;
-})();
+}());
 exports.LeTypeConfig = LeTypeConfig;
 exports.__esModule = true;
 exports["default"] = LeTypeConfig;

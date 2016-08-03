@@ -2,6 +2,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "moduleResolution": "node",
+    "noImplicitUseStrict": true,
     "module": "commonjs"
   }
 }

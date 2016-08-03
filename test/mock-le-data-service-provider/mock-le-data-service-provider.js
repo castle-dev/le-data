@@ -104,7 +104,7 @@ var MockLeDataServiceProvider = (function () {
         return true;
     };
     return MockLeDataServiceProvider;
-})();
+}());
 exports.MockLeDataServiceProvider = MockLeDataServiceProvider;
 exports.__esModule = true;
 exports["default"] = MockLeDataServiceProvider;

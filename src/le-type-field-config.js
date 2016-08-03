@@ -85,7 +85,7 @@ var LeTypeFieldConfig = (function () {
         return this.type !== 'string' && this.type !== 'boolean' && this.type !== 'number' && this.type !== 'Date' && this.type !== 'object';
     };
     return LeTypeFieldConfig;
-})();
+}());
 exports.LeTypeFieldConfig = LeTypeFieldConfig;
 exports.__esModule = true;
 exports["default"] = LeTypeFieldConfig;
