@@ -1,11 +1,13 @@
-var LeDataQuery = require('./le-data-query.js').LeDataQuery;
-var LeDataServiceProviderFirebase = require('./providers/le-data-service-provider-firebase.js').LeDataServiceProviderFirebase;
-var LeDataService = require('./le-data-service.js').LeDataService;
-var LeTypeConfig = require('./le-type-config.js').LeTypeConfig;
-var exportObject = {};
-exportObject.service = LeDataService;
-exportObject.providerFirebase = LeDataServiceProviderFirebase;
-exportObject.query = LeDataQuery;
-exportObject.typeConfig = LeTypeConfig;
-
-module.exports = exportObject;
+var le_data_query_1 = require('./le-data-query');
+exports.LeDataQuery = le_data_query_1.LeDataQuery;
+exports.query = le_data_query_1.LeDataQuery;
+var le_data_service_provider_firebase_1 = require('./providers/le-data-service-provider-firebase');
+exports.LeDataServiceProviderFirebase = le_data_service_provider_firebase_1.LeDataServiceProviderFirebase;
+exports.providerFirebase = le_data_service_provider_firebase_1.LeDataServiceProviderFirebase;
+var le_data_service_1 = require('./le-data-service');
+exports.LeDataService = le_data_service_1.LeDataService;
+exports.service = le_data_service_1.LeDataService;
+var le_type_config_1 = require('./le-type-config');
+exports.LeTypeConfig = le_type_config_1.LeTypeConfig;
+exports.typeConfig = le_type_config_1.LeTypeConfig;
+//# sourceMappingURL=index.js.map
