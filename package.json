@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "Send and receive arbirary JSON data to and from a remote storage provider.",
   "main": "src/index.js",
+  "typings": "src/index.ts",
   "scripts": {
     "test": "gulp test"
   },
@@ -39,6 +40,6 @@
     "travis-encrypt": "^1.1.1"
   },
   "dependencies": {
-    "ts-promise": "0.2.3"
+    "ts-promise": "0.3.0"
   }
 }

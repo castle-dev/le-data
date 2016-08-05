@@ -20,7 +20,7 @@ var LeDataServiceProviderFirebase = (function () {
         }
     };
     LeDataServiceProviderFirebase.prototype.dataExists = function (location) {
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         var provider = this;
         this.firebaseRef.child(location).once('value', function (snapshot) {
             provider.updateStoreForLocation(location, snapshot.val());
@@ -31,7 +31,7 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.fetchData = function (location, fetchDataOptions) {
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         var provider = this;
         var locationRef = this.firebaseRef.child(location);
         if (fetchDataOptions && fetchDataOptions.hasOwnProperty('filterFieldName')) {
@@ -48,7 +48,7 @@ var LeDataServiceProviderFirebase = (function () {
     };
     LeDataServiceProviderFirebase.prototype.createData = function (location, data) {
         removeUndefinedFeilds(data);
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         var provider = this;
         var dataID = data._id;
         var dataToSave = convertDataToDataToSave(data);
@@ -86,15 +86,15 @@ var LeDataServiceProviderFirebase = (function () {
                     innerUpdatePromises.push(this.updateData(innerLocation, data[key]));
                 }
             }
-            return ts_promise_1.default.all(innerUpdatePromises);
+            return ts_promise_1["default"].all(innerUpdatePromises);
         }
         if (data === undefined) {
             return this.deleteData(location);
         }
         if (data === this.storedValueForLocation(location)) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         this.firebaseRef.child(location).set(data, function (err) {
             if (err) {
                 deferred.reject(err);
@@ -105,7 +105,7 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.deleteData = function (location) {
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         var provider = this;
         this.firebaseRef.child(location).remove(function (err) {
             if (err) {
@@ -130,7 +130,7 @@ var LeDataServiceProviderFirebase = (function () {
         this.firebaseRef.child(location).off('value', unsyncObject);
     };
     LeDataServiceProviderFirebase.prototype.lock = function (word) {
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         this.firebaseRef.child('_leLocks').child(word).transaction(function (oldWordValue) {
             if (oldWordValue === 'locked') {
                 return;
@@ -152,7 +152,7 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.unlock = function (word) {
-        var deferred = ts_promise_1.default.defer();
+        var deferred = ts_promise_1["default"].defer();
         var provider = this;
         this.firebaseRef.child('_leLocks').child(word).remove(function (err) {
             if (err) {
@@ -229,7 +229,7 @@ var LeDataServiceProviderFirebase = (function () {
         return currentStore[sublocation];
     };
     return LeDataServiceProviderFirebase;
-})();
+}());
 exports.LeDataServiceProviderFirebase = LeDataServiceProviderFirebase;
 function convertDataToDataToSave(object) {
     var objectToReturn = {};
@@ -261,6 +261,6 @@ function removeUndefinedFeilds(data) {
         }
     }
 }
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = LeDataServiceProviderFirebase;
+exports.__esModule = true;
+exports["default"] = LeDataServiceProviderFirebase;
 //# sourceMappingURL=le-data-service-provider-firebase.js.map

@@ -1,8 +1,19 @@
+/// <reference path="le-data.ts"/>
 var ts_promise_1 = require("ts-promise");
 var le_type_config_1 = require("./le-type-config");
 var le_type_field_config_1 = require("./le-type-field-config");
 var le_data_query_1 = require("./le-data-query");
 var configObjectIndex = '_leTypeConfigs/';
+/**
+ * The main service for the module.
+ * In charge of sending and recieving arbitrary JSON data to
+ * and from an remote storage provicer.
+ *
+ * @class LeDataService
+ * @param LeDataServiceProvider - The object that will be acting directly
+ *                                with the remote storage provider.
+ *
+ */
 var LeDataService = (function () {
     function LeDataService(provider) {
         var _this = this;
@@ -18,12 +29,23 @@ var LeDataService = (function () {
         });
         this.updateServiceConfigVariablesWithServiceConfigObject(undefined);
     }
+    /**
+     * Creates the passed in data in the remote storage provider.
+     * Sets id if no id is set. Sets _createdAt and _lastUpdatedAt.
+     * Fails if _type is not set. Fails if the object does not adhere to the type configuration.
+     *
+     * @function createData
+     * @memberof LeDataService
+     * @instance
+     * @param data LeData - The data to create.
+     * @returns Promise<LeData> resolves with the data that was saved.
+     */
     LeDataService.prototype.createData = function (data) {
         var _this = this;
         if (!data) {
             var errorMessage = 'No data passed to createData function';
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -31,13 +53,13 @@ var LeDataService = (function () {
         if (!data._type) {
             var errorMessage = 'No _type specified in LeData object passed to createData, object: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
         }
         if (data._id) {
-            return new ts_promise_1.default(function (resolve, reject) {
+            return new ts_promise_1["default"](function (resolve, reject) {
                 _this.checkExistence(data._type, data._id).then(function (dataExists) {
                     if (dataExists) {
                         var errorMessage = 'Attempted to create data with an id and type that already exists, _id: ' + data._id + ', _type: ' + data._type;
@@ -57,7 +79,7 @@ var LeDataService = (function () {
             });
         }
         else {
-            return new ts_promise_1.default(function (resolve, reject) {
+            return new ts_promise_1["default"](function (resolve, reject) {
                 _this.validateData(data, false).then(function () {
                     return _this.saveData(data);
                 }).then(function (returnedData) {
@@ -77,6 +99,16 @@ var LeDataService = (function () {
     LeDataService.prototype.delete = function (type, id) {
         return this.deleteData(type, id);
     };
+    /**
+     * Checks of the data with the specified type and id exists remotely.
+     *
+     * @function checkExistence
+     * @memberof LeDataService
+     * @instance
+     * @param type string - The type of the data.
+     * @param id string - The id for the data.
+     * @returns Promise<boolean> resolves true if the data exists and false if it does not.
+     */
     LeDataService.prototype.checkExistence = function (type, id) {
         var _this = this;
         return this.fetchTypeConfig(type).then(function (typeConfig) {
@@ -85,18 +117,54 @@ var LeDataService = (function () {
             return _this.dataServiceProvider.dataExists(location);
         });
     };
+    /**
+     * Locks the word so that you know no one else
+     * is performing the action that word represents
+     * at the same time as you. Make sure to use unlock
+     * when you have completed the task.
+     *
+     * @function lock
+     * @memberof LeDataService
+     * @instance
+     * @param word string - The word you are locking.
+     * @returns Promise<void> resolves if the word was successfully lock. Rejects if the word is already locked.
+     */
     LeDataService.prototype.lock = function (word) {
         return this.dataServiceProvider.lock(word);
     };
+    /**
+     * Unlocks the word that was locked earlier to allow
+     * others to perform the action that word represents.
+     *
+     * @function unlock
+     * @memberof LeDataService
+     * @instance
+     * @param word string - The word you are unlocking.
+     * @returns Promise<void> resolves if the word was successfully unlocked.
+     */
     LeDataService.prototype.unlock = function (word) {
         return this.dataServiceProvider.unlock(word);
     };
+    /**
+     * Updates the data in the database. This only removes data from the database if the field is specified
+     * If a LeData object is removed from a field that is configured to cascade deletes, the data will be soft deleted.
+     * Sets _lastUpdatedAt.
+     *
+     * Fails if _type or _id is not set. Fails if the object does not adhere to the type configuration.
+     * Fails if any of the values for the fields specified in the LeData interface differ from the ones saved in the database.
+     *
+     * @function updateData
+     * @memberof LeDataService
+     * @instance
+     * @param data LeData - The data to update.
+     * @returns Promise<LeData> resolves with the data that was saved.
+     */
     LeDataService.prototype.updateData = function (data) {
         var _this = this;
         if (!data) {
             var errorMessage = 'No data passed to updateData function';
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -104,7 +172,7 @@ var LeDataService = (function () {
         if (!data._type) {
             var errorMessage = 'No _type specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -112,12 +180,12 @@ var LeDataService = (function () {
         if (!data._id) {
             var errorMessage = 'No _id specified in LeData object passed to updateData, object: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
         }
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             _this.checkExistence(data._type, data._id).then(function (dataExists) {
                 if (dataExists) {
                     return _this.validateData(data, true);
@@ -138,7 +206,7 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.locationForData = function (data) {
         var _this = this;
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             _this.fetchTypeConfig(data._type).then(function (typeConfig) {
                 var locationToReturn = data._type;
                 if (typeConfig.saveLocation) {
@@ -153,12 +221,24 @@ var LeDataService = (function () {
             });
         });
     };
+    /**
+     * Soft deletes the data in the database.
+     * If a LeData object is configured with fields that cascade delete, the data at those fields will also soft delete.
+     * Sets _deletedAt, and _lastUpdatedAt.
+     *
+     * @function deleteData
+     * @memberof LeDataService
+     * @instance
+     * @param type string - the _type of the data.
+     * @param id string - the _id of the data.
+     * @returns Promise<void>.
+     */
     LeDataService.prototype.deleteData = function (type, id) {
         var _this = this;
         if (!type) {
             var errorMessage = 'Undefined type passed to deleteData.\ntype: ' + type + ' id: ' + id;
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -166,7 +246,7 @@ var LeDataService = (function () {
         if (!id) {
             var errorMessage = 'Undefined id passed to deleteData.\ntype: ' + type + ' id: ' + id;
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -185,7 +265,7 @@ var LeDataService = (function () {
             return _this.dataServiceProvider.fetchData(location);
         }).then(function (data) {
             if (!_this.archiveDeletedData) {
-                return ts_promise_1.default.resolve();
+                return ts_promise_1["default"].resolve();
             }
             var location = _this.archiveLocation + '/';
             location += typeConfig.saveLocation ? typeConfig.saveLocation : type;
@@ -221,7 +301,7 @@ var LeDataService = (function () {
             else {
                 var errorMessage = 'The specified field is not an array';
                 var error = new Error(errorMessage);
-                return ts_promise_1.default.reject(error);
+                return ts_promise_1["default"].reject(error);
             }
             return dataService.dataServiceProvider.updateData(location, undefined);
         });
@@ -233,42 +313,54 @@ var LeDataService = (function () {
         fieldConfigs.forEach(function (fieldConfig) {
             promises.push(_this.handleCascadeDelete(typeConfig, fieldConfig, id));
         });
-        return ts_promise_1.default.all(promises);
+        return ts_promise_1["default"].all(promises);
     };
     LeDataService.prototype.handleCascadeDelete = function (typeConfig, fieldConfig, id) {
         var _this = this;
         if (!fieldConfig.cascadeDelete) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         var type = typeConfig.getType();
         var fieldName = fieldConfig.getFieldName();
         return this.checkExistence(type, id).then(function (doesExist) {
-            var promiseToReturn = ts_promise_1.default.resolve();
+            var promiseToReturn = ts_promise_1["default"].resolve();
             if (doesExist) {
-                var query = new le_data_query_1.default(type, id);
+                var query = new le_data_query_1["default"](type, id);
                 query.include(fieldName);
                 promiseToReturn = _this.search(query);
             }
             return promiseToReturn;
         }).then(function (data) {
+            var promise = ts_promise_1["default"].resolve();
             if (!data || !data[fieldName] || typeof data[fieldName] === 'string') {
-                return ts_promise_1.default.resolve();
+                return promise;
             }
             if (data[fieldName] instanceof Array) {
                 var promises = [];
                 data[fieldName].forEach(function (objectToDelete) {
                     promises.push(_this.deleteData(objectToDelete._type, objectToDelete._id));
                 });
-                return ts_promise_1.default.all(promises);
+                promise = ts_promise_1["default"].all(promises);
             }
             else if (data[fieldName]._type && data[fieldName]._id) {
-                return _this.deleteData(data[fieldName]._type, data[fieldName]._id);
+                promise = _this.deleteData(data[fieldName]._type, data[fieldName]._id);
             }
-            else {
-                return ts_promise_1.default.resolve();
-            }
+            return promise;
         });
     };
+    /**
+     * Retrieves the data that matches the query data, and retrieves it again every time the data that matches the query has changed.
+     *
+     * Fails if the LeDataQuery object is invalid
+     *
+     * @function sync
+     * @memberof LeDataService
+     * @instance
+     * @param query LeDataQuery - The query used to get the data.
+     * @param callback (data: LeData) => void - a function that is passed the data every time the data is retrieved from the remote storage provider
+     * @param errorCallback (error: Error) => void - a function that is called if something went wrong with the data retrival,
+     *					such as not having access to the requested data.
+     */
     LeDataService.prototype.sync = function (query, callback, errorCallback) {
         var _this = this;
         this.validateQuery(query).then(function () {
@@ -283,6 +375,14 @@ var LeDataService = (function () {
             }
         });
     };
+    /**
+     * Stops listening to a synced query. This needs to be called when the sync is no longer being used to avoid memory leaks and improve performance.
+     *
+     * @function unsync
+     * @memberof LeDataService
+     * @instance
+     * @param query LeDataQuery - The query used in the origional sync. It must have the same id as the query used to sync. This insures that only the syncs used for that query object are removed.
+     */
     LeDataService.prototype.unsync = function (query) {
         var queryID = query.queryObject.queryID;
         var innerQueryObject = this.queryDictionary[queryID];
@@ -295,6 +395,17 @@ var LeDataService = (function () {
             delete this.queryDictionary[queryID];
         }
     };
+    /**
+     * Retrieves the data that matches the query data.
+     *
+     * Fails if the LeDataQuery object is invalid
+     *
+     * @function search
+     * @memberof LeDataService
+     * @instance
+     * @param query LeDataQuery - The query used to get the data.
+     * @returns Promise<LeData> resolves with the desired data.
+     */
     LeDataService.prototype.search = function (query) {
         var _this = this;
         return this.validateQuery(query).then(function () {
@@ -308,7 +419,7 @@ var LeDataService = (function () {
             return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }).then(function (data) {
             if (!data || data[_this.deletedAtFieldName]) {
-                return ts_promise_1.default.reject(new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id));
+                throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
             }
             return data;
         });
@@ -418,7 +529,7 @@ var LeDataService = (function () {
                 }, function (err) { }));
             }
         }
-        return ts_promise_1.default.all(promises).then(function () {
+        return ts_promise_1["default"].all(promises).then(function () {
             return objectsToReturn;
         });
     };
@@ -433,7 +544,7 @@ var LeDataService = (function () {
         var fieldConfigsByLocation = this.fieldConfigsByLocation(fieldConfigs);
         var promises = [];
         this.addFetchFieldPromises(rawDataObject, fieldConfigsByLocation, queryObject, promises, data, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
-        return ts_promise_1.default.all(promises).then(function () {
+        return ts_promise_1["default"].all(promises).then(function () {
             return data;
         });
     };
@@ -473,10 +584,10 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.fetchFieldData = function (rawValue, fieldConfig, fieldQueryObject, fieldName, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         if (!fieldConfig && fieldName.charAt(0) !== '_') {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         if (fieldConfig && this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && !fieldQueryObject) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         if (!fieldQueryObject) {
             fieldQueryObject = {};
@@ -487,11 +598,11 @@ var LeDataService = (function () {
         var fieldInfo = { name: fieldName };
         if (!fieldConfig) {
             fieldInfo.data = rawValue;
-            return ts_promise_1.default.resolve(fieldInfo);
+            return ts_promise_1["default"].resolve(fieldInfo);
         }
         else if (fieldConfig.getFieldType() === 'Date') {
             fieldInfo.data = new Date(rawValue);
-            return ts_promise_1.default.resolve(fieldInfo);
+            return ts_promise_1["default"].resolve(fieldInfo);
         }
         else if (this.isFieldConfigTypeAnArray(fieldConfig) && this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
             var promises = [];
@@ -501,7 +612,7 @@ var LeDataService = (function () {
                     promises.push(this.setDataForArrayField(objectsForArrayField, this.singularVersionOfType(fieldConfig), fieldDataID, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(function () { }));
                 }
             }
-            return ts_promise_1.default.all(promises).then(function () {
+            return ts_promise_1["default"].all(promises).then(function () {
                 fieldInfo.data = objectsForArrayField;
                 return fieldInfo;
             });
@@ -511,11 +622,11 @@ var LeDataService = (function () {
         }
         else {
             fieldInfo.data = rawValue;
-            return ts_promise_1.default.resolve(fieldInfo);
+            return ts_promise_1["default"].resolve(fieldInfo);
         }
     };
     LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
-        var queryForField = new le_data_query_1.default(type, id);
+        var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
@@ -568,7 +679,7 @@ var LeDataService = (function () {
                     var fieldConfig = typeConfig.getFieldConfig(fieldName);
                     if (!fieldConfig) {
                         var errorMessage = 'invalid field included in query, invalid field: ' + fieldName;
-                        promises.push(ts_promise_1.default.reject(new Error(errorMessage)));
+                        promises.push(ts_promise_1["default"].reject(new Error(errorMessage)));
                     }
                     else {
                         promises.push(_this.validateQueryObject(includedFields[fieldName], fieldConfig));
@@ -576,7 +687,7 @@ var LeDataService = (function () {
                 }
             }
             promises.push(_this.validateFilterOnQueryObject(queryObject, typeConfig));
-            return ts_promise_1.default.all(promises);
+            return ts_promise_1["default"].all(promises);
         });
     };
     LeDataService.prototype.fieldConfigForFilterFieldName = function (filterFieldName, typeConfig) {
@@ -595,12 +706,12 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.validateFilterOnQueryObject = function (queryObject, typeConfig) {
         if (!queryObject.hasOwnProperty('filterFieldName')) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         if (queryObject.id) {
             var errorMessage = 'The filter method cannot be called on a query that was created with an id.';
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
         var filterFieldName = queryObject.filterFieldName;
         var filterValue = queryObject.filterValue;
@@ -608,38 +719,38 @@ var LeDataService = (function () {
         if (!fieldConfig) {
             var errorMessage = 'Invalid filter field name. No field named "' + filterFieldName + '" exists on type ' + typeConfig.getType() + '.';
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
         var type = fieldConfig.getFieldType();
         if (this.isFieldConfigTypeAnArray(fieldConfig)) {
             var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName + '" is an array type.';
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
         if (fieldConfig.getFieldType() === 'Date' || fieldConfig.getFieldType() === 'object') {
             var errorMessage = 'Invalid filter field. Queries can only filter on fields of type string, boolean, number, or a custom configured type. And the field "' + filterFieldName + '" is of type' + fieldConfig.getFieldType() + '.';
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
         if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
             if (typeof filterValue === 'string') {
-                return ts_promise_1.default.resolve();
+                return ts_promise_1["default"].resolve();
             }
             else {
                 var errorMessage = 'Invalid filter value for the field "' + filterFieldName + '" on type ' + typeConfig.getType() + '. A value representing the _id for the data is expected, and a value of type ' + typeof filterValue + ' was given.';
                 var error = new Error(errorMessage);
-                return ts_promise_1.default.reject(error);
+                return ts_promise_1["default"].reject(error);
             }
         }
         if (typeof filterValue !== type) {
             var errorMessage = 'Invalid filter value for the field "' + filterFieldName + '" on type ' + typeConfig.getType() + '. A value of type ' + type + 'is expected, and a value of type ' + typeof filterValue + ' was given.';
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
-        return ts_promise_1.default.resolve();
+        return ts_promise_1["default"].resolve();
     };
     LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
-        var queryForField = new le_data_query_1.default(type, id);
+        var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
@@ -660,7 +771,7 @@ var LeDataService = (function () {
                     var fieldConfig = typeConfig.getFieldConfig(fieldName);
                     if (!fieldConfig) {
                         var errorMessage = 'invalid field included in query, invalid field: ' + fieldName;
-                        promises.push(ts_promise_1.default.reject(new Error(errorMessage)));
+                        promises.push(ts_promise_1["default"].reject(new Error(errorMessage)));
                     }
                     else {
                         promises.push(_this.validateQueryObject(includedFields[fieldName], fieldConfig));
@@ -668,12 +779,23 @@ var LeDataService = (function () {
                 }
             }
             promises.push(_this.validateFilterOnQueryObject(queryObject, typeConfig));
-            return ts_promise_1.default.all(promises);
+            return ts_promise_1["default"].all(promises);
         });
     };
+    /**
+     * Configures what passes as valid for the specified data type.
+     *
+     * @function configureType
+     * @memberof LeDataService
+     *
+     * @instance
+     *
+     * @param config LeTypeConfig - The object that defines how the type should be configured.
+     * @returns Promis<any> - Resolves with no data when the type has been successfully configured.
+     */
     LeDataService.prototype.configureType = function (config) {
         var _this = this;
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             var configObjectToSave = {};
             configObjectToSave.type = config.getType();
             configObjectToSave.saveLocation = config.saveLocation;
@@ -689,7 +811,7 @@ var LeDataService = (function () {
                     configObjectToSave.fieldConfigs[returnedFieldConfigID] = true;
                 }));
             }
-            ts_promise_1.default.all(promises).then(function () {
+            ts_promise_1["default"].all(promises).then(function () {
                 _this.dataServiceProvider.updateData(location, configObjectToSave).then(function () {
                     resolve(undefined);
                 }, function (err) {
@@ -725,7 +847,7 @@ var LeDataService = (function () {
                 fieldConfigObject.fieldConfigs[returnedFieldConfigID] = true;
             }));
         }
-        return ts_promise_1.default.all(promises).then(function () {
+        return ts_promise_1["default"].all(promises).then(function () {
             return _this.dataServiceProvider.createData('_leTypeFieldConfigs', fieldConfigObject);
         }).then(function (returnedConfigObject) {
             return returnedConfigObject._id;
@@ -741,9 +863,9 @@ var LeDataService = (function () {
                 }));
             }
         }
-        return ts_promise_1.default.all(promises).then(function () {
+        return ts_promise_1["default"].all(promises).then(function () {
             var typeToSet = fieldConfigObject.many ? fieldConfigObject.type + '[]' : fieldConfigObject.type;
-            var fieldConfig = new le_type_field_config_1.default(fieldConfigObject.fieldName, typeToSet);
+            var fieldConfig = new le_type_field_config_1["default"](fieldConfigObject.fieldName, typeToSet);
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
@@ -760,7 +882,7 @@ var LeDataService = (function () {
         if (!data) {
             var errorMessage = 'Invalid LeData object - cannot be undefined';
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
@@ -768,13 +890,13 @@ var LeDataService = (function () {
         if (!data._type) {
             var errorMessage = 'Invalid LeData object - _type must be set, data: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
-            var promise = new ts_promise_1.default(function (resolve, reject) {
+            var promise = new ts_promise_1["default"](function (resolve, reject) {
                 reject(error);
             });
             return promise;
         }
         var configLocation = configObjectIndex + data._type;
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             _this.dataServiceProvider.dataExists(configLocation).then(function (doesConfigExist) {
                 if (!doesConfigExist) {
                     var errorMessage = 'Invalid _type set on data: ' + JSON.stringify(data);
@@ -796,7 +918,7 @@ var LeDataService = (function () {
                     }
                 }
                 validateFieldPromises.push(_this.validateNoExtraFields(typeConfig, data));
-                return ts_promise_1.default.all(validateFieldPromises).then(function () {
+                return ts_promise_1["default"].all(validateFieldPromises).then(function () {
                     resolve(undefined);
                 }, function (error) {
                     reject(error);
@@ -813,10 +935,10 @@ var LeDataService = (function () {
                 errorMessage += 'the field "' + key + '" is not configured on objects of type ' + data._type + '\n';
                 errorMessage += 'data: ' + JSON.stringify(data);
                 var error = new Error(errorMessage);
-                return ts_promise_1.default.reject(error);
+                return ts_promise_1["default"].reject(error);
             }
         }
-        return ts_promise_1.default.resolve();
+        return ts_promise_1["default"].resolve();
     };
     LeDataService.prototype.validateNoExtraFieldsOnObject = function (fieldConfig, data) {
         for (var key in data[fieldConfig.getFieldName()]) {
@@ -825,10 +947,10 @@ var LeDataService = (function () {
                 errorMessage += 'the field "' + key + '" is not configured on the object\n';
                 errorMessage += 'data: ' + JSON.stringify(data);
                 var error = new Error(errorMessage);
-                return ts_promise_1.default.reject(error);
+                return ts_promise_1["default"].reject(error);
             }
         }
-        return ts_promise_1.default.resolve();
+        return ts_promise_1["default"].resolve();
     };
     LeDataService.prototype.validateField = function (fieldConfig, data, isUpdate) {
         var validationPromises = [];
@@ -836,22 +958,22 @@ var LeDataService = (function () {
         var typePromise = this.validateTypeOnField(fieldConfig, data, isUpdate);
         validationPromises.push(requiredPromise);
         validationPromises.push(typePromise);
-        return ts_promise_1.default.all(validationPromises);
+        return ts_promise_1["default"].all(validationPromises);
     };
     LeDataService.prototype.validateTypeOnField = function (fieldConfig, data, isUpdate) {
         var type = fieldConfig.getFieldType();
         var fieldName = fieldConfig.getFieldName();
         if (!data[fieldName]) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         else if (type === 'object') {
             return this.validateObjectTypeOnField(fieldConfig, data, isUpdate);
         }
         else if (typeof data[fieldName] === type) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         else if (type === 'Date' && data[fieldName] instanceof Date) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig) && type === data[fieldName]._type) {
             return this.validateData(data[fieldName], isUpdate);
@@ -877,7 +999,7 @@ var LeDataService = (function () {
                     }
                 }
                 if (isValid) {
-                    return ts_promise_1.default.all(arrayObjectValidationPromises);
+                    return ts_promise_1["default"].all(arrayObjectValidationPromises);
                 }
             }
         }
@@ -886,7 +1008,7 @@ var LeDataService = (function () {
         errorMessage += "field's set type: " + type + '\n';
         errorMessage += 'data: ' + JSON.stringify(data);
         var error = new Error(errorMessage);
-        return ts_promise_1.default.reject(error);
+        return ts_promise_1["default"].reject(error);
     };
     LeDataService.prototype.isFieldConfigTypeAnArray = function (fieldConfig) {
         var fieldType = fieldConfig.getFieldType();
@@ -910,8 +1032,8 @@ var LeDataService = (function () {
             promises.push(this.validateField(innerFieldConfig, objectUnderValidation, isUpdate));
         }
         promises.push(this.validateNoExtraFieldsOnObject(fieldConfig, data));
-        return new ts_promise_1.default(function (resolve, reject) {
-            ts_promise_1.default.all(promises).then(function () {
+        return new ts_promise_1["default"](function (resolve, reject) {
+            ts_promise_1["default"].all(promises).then(function () {
                 resolve(undefined);
             }, function (err) {
                 reject(err);
@@ -924,10 +1046,10 @@ var LeDataService = (function () {
         if (fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
             var errorMessage = fieldConfig.getFieldName() + ' is required but was set to undefined on the LeData object, data: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
-            return ts_promise_1.default.reject(error);
+            return ts_promise_1["default"].reject(error);
         }
         else if (fieldConfig.required && !data[fieldName] && !isUpdate) {
-            return new ts_promise_1.default(function (resolve, reject) {
+            return new ts_promise_1["default"](function (resolve, reject) {
                 if (data._id) {
                     _this.checkExistence(data._type, data._id).then(function (doesExist) {
                         if (doesExist) {
@@ -950,22 +1072,32 @@ var LeDataService = (function () {
             });
         }
         else {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
     };
     LeDataService.prototype.fieldConfigTypeIsACustomLeDataType = function (fieldConfig) {
         var type = this.singularVersionOfType(fieldConfig);
         return type !== 'string' && type !== 'boolean' && type !== 'number' && type !== 'Date' && type !== 'object';
     };
+    /**
+     * Returns the LeTypeConfig stored remotely for the specified type
+     * Fails if the type is not configured
+     *
+     * @function ypeConfig
+     * @memberof LeDataServiceProvider
+     * @instance
+     * @param type LeDataQuery - The type for the LeTypeConfig
+     * @returns Promise<LeTypeConfig>
+     */
     LeDataService.prototype.fetchTypeConfig = function (type) {
         var _this = this;
-        return new ts_promise_1.default(function (resolve, reject) {
+        return new ts_promise_1["default"](function (resolve, reject) {
             var location = configObjectIndex + type;
             _this.dataServiceProvider.fetchData(location).then(function (returnedConfigObject) {
                 if (!returnedConfigObject) {
                     var errorMessage = type + ' is not a configured type';
                     var error = new Error(errorMessage);
-                    return ts_promise_1.default.reject(error);
+                    throw error;
                 }
                 return _this.typeConfigForTypeConfigObject(returnedConfigObject);
             }).then(function (typeConfig) {
@@ -988,8 +1120,8 @@ var LeDataService = (function () {
     };
     LeDataService.prototype.typeConfigForTypeConfigObject = function (typeConfigObject) {
         var _this = this;
-        return new ts_promise_1.default(function (resolve, reject) {
-            var typeConfig = new le_type_config_1.default(typeConfigObject.type);
+        return new ts_promise_1["default"](function (resolve, reject) {
+            var typeConfig = new le_type_config_1["default"](typeConfigObject.type);
             typeConfig.saveAt(typeConfigObject.saveLocation);
             var promises = [];
             for (var fieldConfigID in typeConfigObject.fieldConfigs) {
@@ -999,15 +1131,26 @@ var LeDataService = (function () {
                     }));
                 }
             }
-            ts_promise_1.default.all(promises).then(function () {
+            ts_promise_1["default"].all(promises).then(function () {
                 resolve(typeConfig);
             });
         });
     };
+    /**
+     * Saves the LeData remotely. It will recursively save all the data.
+     * This will not do any checks on if the data is valid.
+     * only removes fields if the field is explicitly passed with undefined set as the value
+     *
+     * @function saveData
+     * @memberof LeDataServiceProvider
+     * @instance
+     * @param data LeData - The data to be saved.
+     * @returns Promise<LeData>
+     */
     LeDataService.prototype.saveData = function (data) {
         var _this = this;
         if (!data) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         var initialPromise;
         var isCreate = false;
@@ -1023,7 +1166,7 @@ var LeDataService = (function () {
             });
         }
         else {
-            initialPromise = ts_promise_1.default.resolve();
+            initialPromise = ts_promise_1["default"].resolve();
         }
         return initialPromise.then(function () {
             return _this.locationForData(data);
@@ -1032,7 +1175,7 @@ var LeDataService = (function () {
             if (!data._id) {
                 isCreate = true;
                 data[_this.createdAtFieldName] = new Date();
-                updateCreatedAtPropmise = ts_promise_1.default.resolve();
+                updateCreatedAtPropmise = ts_promise_1["default"].resolve();
             }
             else {
                 updateCreatedAtPropmise = _this.dataServiceProvider.dataExists(location).then(function (doesExist) {
@@ -1058,7 +1201,7 @@ var LeDataService = (function () {
                 data[_this.lastUpdatedAtFieldName] = new Date();
                 promises.push(_this.saveFieldForData(data, _this.lastUpdatedAtFieldName, isCreate, rootRawData));
             }
-            return ts_promise_1.default.all(promises);
+            return ts_promise_1["default"].all(promises);
         }).then(function () {
             if (isCreate) {
                 return _this.createRootRawData(rootRawData);
@@ -1084,7 +1227,7 @@ var LeDataService = (function () {
         var fieldConfig;
         var rawFieldName;
         if (fieldName === '_id' || fieldName === '_type') {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         return this.fetchTypeConfig(data._type).then(function (typeConfig) {
             fieldConfig = typeConfig.getFieldConfig(fieldName);
@@ -1128,12 +1271,12 @@ var LeDataService = (function () {
                     objectToSetAtLocation[returnedData._id] = true;
                 }));
             });
-            return ts_promise_1.default.all(promises).then(function () {
+            return ts_promise_1["default"].all(promises).then(function () {
                 return objectToSetAtLocation;
             });
         }
         else if (data === undefined) {
-            return ts_promise_1.default.resolve();
+            return ts_promise_1["default"].resolve();
         }
         else {
             return this.saveData(data).then(function (returnedData) {
@@ -1172,7 +1315,7 @@ var LeDataService = (function () {
                 promises.push(this.saveField(innerLocation, innerFieldConfig, data[innerFieldConfig.getFieldName()], isCreate, innerRawData));
             }
         }
-        return ts_promise_1.default.all(promises);
+        return ts_promise_1["default"].all(promises);
     };
     LeDataService.prototype.saveField = function (location, fieldConfig, fieldData, isCreate, rawData) {
         var _this = this;
@@ -1187,7 +1330,7 @@ var LeDataService = (function () {
                         objectToSetAtLocation[returnedData._id] = true;
                     }));
                 });
-                return ts_promise_1.default.all(promises).then(function () {
+                return ts_promise_1["default"].all(promises).then(function () {
                     if (isCreate) {
                         rawData[rawFieldName] = objectToSetAtLocation;
                     }
@@ -1220,6 +1363,6 @@ var LeDataService = (function () {
         }
     };
     return LeDataService;
-})();
+}());
 exports.LeDataService = LeDataService;
 //# sourceMappingURL=le-data-service.js.map
