@@ -1285,11 +1285,20 @@ export class LeDataService {
   }
 
   private saveObjectField(location:string, fieldConfig: LeTypeFieldConfig, data:any, isCreate: boolean, rootRawData: LeData): Promise<any>{
+    var dataService = this;
     var rawFieldName = fieldConfig.saveLocation ? fieldConfig.saveLocation : fieldConfig.getFieldName();
     rootRawData[rawFieldName] = {};
     var innerRawData = rootRawData[rawFieldName];
     var promises = [];
     var innerFieldConfigs = fieldConfig.getFieldConfigs();
+    if (!innerFieldConfigs.length) {
+      if(isCreate) {
+        rootRawData[rawFieldName] = data;
+        return Promise.resolve();
+      } else {
+        return dataService.dataServiceProvider.updateData(location, data);
+      }
+    }
     for(var i = 0; i < innerFieldConfigs.length; i += 1) {
       var innerFieldConfig = innerFieldConfigs[i];
       var innerRawFieldName = innerFieldConfig.saveLocation ? innerFieldConfig.saveLocation : innerFieldConfig.getFieldName();

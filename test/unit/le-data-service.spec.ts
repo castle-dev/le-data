@@ -45,6 +45,44 @@ describe('LeDataService', ()=>{
     });
 
     describe('updateData', ()=>{
+      beforeEach((done)=>{
+        var exampleConfig = new LeTypeConfig('ExampleType');
+        exampleConfig.saveAt('exampleTypes');
+        exampleConfig.addField('objectField', 'object');
+        mockProvider.remoteStoredData = {
+          exampleTypes: {
+            id1: {
+              _times: {
+                createdAt: 1452575643030
+              },
+            }
+          }
+        };
+
+        var promises:Promise<any>[] = [];
+        promises.push(dataService.configureType(exampleConfig));
+        Promise.all(promises).then(()=>{
+          done();
+        });
+      });
+      it('should allow you to save any object to objectField on ExampleType', (done)=>{
+        var dataToSave = {
+          _type:'ExampleType',
+          _id: 'id1',
+          objectField: {
+            cat: 'meow',
+            nestedObject: {
+              dog: 'bark'
+            }
+          }
+        };
+        return dataService.update(dataToSave).then(()=>{
+          var writtenObject = mockProvider.remoteStoredData.exampleTypes.id1;
+          expect(writtenObject.objectField.cat === 'meow').to.be.true;
+          expect(writtenObject.objectField.nestedObject.dog === 'bark').to.be.true;
+          done();
+        });
+      });
       it('should return a promise', ()=>{
         var returnedObject = dataService.updateData({_type:'exampleType'});
         expect(returnedObject instanceof Promise).to.be.true;
