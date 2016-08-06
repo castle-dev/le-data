@@ -37,6 +37,43 @@ describe('LeDataService', function () {
         });
     });
     describe('updateData', function () {
+        beforeEach(function (done) {
+            var exampleConfig = new le_type_config_1["default"]('ExampleType');
+            exampleConfig.saveAt('exampleTypes');
+            exampleConfig.addField('objectField', 'object');
+            mockProvider.remoteStoredData = {
+                exampleTypes: {
+                    id1: {
+                        _times: {
+                            createdAt: 1452575643030
+                        }
+                    }
+                }
+            };
+            var promises = [];
+            promises.push(dataService.configureType(exampleConfig));
+            ts_promise_1["default"].all(promises).then(function () {
+                done();
+            });
+        });
+        it('should allow you to save any object to objectField on ExampleType', function (done) {
+            var dataToSave = {
+                _type: 'ExampleType',
+                _id: 'id1',
+                objectField: {
+                    cat: 'meow',
+                    nestedObject: {
+                        dog: 'bark'
+                    }
+                }
+            };
+            return dataService.update(dataToSave).then(function () {
+                var writtenObject = mockProvider.remoteStoredData.exampleTypes.id1;
+                expect(writtenObject.objectField.cat === 'meow').to.be.true;
+                expect(writtenObject.objectField.nestedObject.dog === 'bark').to.be.true;
+                done();
+            });
+        });
         it('should return a promise', function () {
             var returnedObject = dataService.updateData({ _type: 'exampleType' });
             expect(returnedObject instanceof ts_promise_1["default"]).to.be.true;
