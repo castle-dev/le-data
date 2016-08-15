@@ -80,8 +80,8 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
 
     return deferred.promise;
   }
-  updateData(location:string, data:any): Promise<any> {
-    if(typeof data === 'object') {
+  updateData(location:string, data:any, replaceDataAtLocation?:boolean): Promise<any> {
+    if(typeof data === 'object' && !replaceDataAtLocation) {
       var innerUpdatePromises = [];
       for (var key in data) {
         if(data.hasOwnProperty(key)) {
@@ -94,7 +94,7 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     if(data === undefined) {
       return this.deleteData(location);
     }
-    if(data === this.storedValueForLocation(location)) {
+    if(typeof data !== 'object' && data === this.storedValueForLocation(location)) {
       return Promise.resolve();
     }
     var deferred = Promise.defer<any>();

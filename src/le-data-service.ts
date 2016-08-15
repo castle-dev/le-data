@@ -804,6 +804,7 @@ export class LeDataService {
       var location = configObjectIndex + configObjectToSave.type;
       var fieldConfigs = config.getFieldConfigs();
       var promises = [];
+      promises.push(this.validateFieldConfigs(fieldConfigs));
       for(var i = 0; i < fieldConfigs.length; i += 1) {
         var fieldConfig = fieldConfigs[i];
         promises.push(this.saveFieldConfig(fieldConfig).then((returnedFieldConfigID)=>{
@@ -825,6 +826,29 @@ export class LeDataService {
     });
   }
 
+  private validateFieldConfigs(fieldConfigs: LeTypeFieldConfig[]):Promise<void> {
+    if(!fieldConfigs || !fieldConfigs.length) {
+      return Promise.resolve();
+    }
+    let promises:Promise<void>[] = [];
+    fieldConfigs.forEach((fieldConfig) => {
+      promises.push(this.validateFieldConfig(fieldConfig));
+    });
+    return Promise.all(promises).then(()=>{});
+  }
+
+  private validateFieldConfig(fieldConfig: LeTypeFieldConfig):Promise<void> {
+    if(fieldConfig.replaceOnUpdate && fieldConfig.getFieldType() !== 'object') {
+      let error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
+      return Promise.reject(error);
+    }
+    if(fieldConfig.replaceOnUpdate && fieldConfig.getFieldConfigs() && fieldConfig.getFieldConfigs().length) {
+      let error = new Error(fieldConfig.getFieldName() + ' cannot have sub-fields configured if replaceOnUpdate is set');
+      return Promise.reject(error);
+    }
+    return Promise.resolve();
+  }
+
   private saveFieldConfig(fieldConfig: LeTypeFieldConfig):Promise<string> {
     var fieldConfigObject:any = {};
     var fieldType = fieldConfig.getFieldType();
@@ -838,6 +862,7 @@ export class LeDataService {
     fieldConfigObject.required = fieldConfig.required;
     fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
     fieldConfigObject.saveLocation = fieldConfig.saveLocation;
+    fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
 
     var promises = [];
     var innerFieldConfigs = fieldConfig.getFieldConfigs();
@@ -872,6 +897,7 @@ export class LeDataService {
       var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, typeToSet);
       fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
       fieldConfig.required = fieldConfigObject.required;
+      fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
       fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
       fieldConfig.saveLocation = fieldConfigObject.saveLocation;
       for(var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -1296,7 +1322,7 @@ export class LeDataService {
         rootRawData[rawFieldName] = data;
         return Promise.resolve();
       } else {
-        return dataService.dataServiceProvider.updateData(location, data);
+        return dataService.dataServiceProvider.updateData(location, data, fieldConfig.replaceOnUpdate);
       }
     }
     for(var i = 0; i < innerFieldConfigs.length; i += 1) {
