@@ -32,6 +32,13 @@ export class LeTypeFieldConfig {
   cascadeDelete: boolean;
 
   /**
+   * @var replaceOnUpdate boolean  - if set to true, the object stored at this field will be completely replaced instead of only the set feilds on the object being replaced
+   *
+   * @throws if set on a LeTypeFieldConfig that does not have the type set to object
+   */
+  replaceOnUpdate: boolean;
+
+  /**
    * @var required boolean - if set to true, the field must be set to a value on the LeData object
    */
   required: boolean;

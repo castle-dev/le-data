@@ -802,6 +802,7 @@ var LeDataService = (function () {
             var location = configObjectIndex + configObjectToSave.type;
             var fieldConfigs = config.getFieldConfigs();
             var promises = [];
+            promises.push(_this.validateFieldConfigs(fieldConfigs));
             for (var i = 0; i < fieldConfigs.length; i += 1) {
                 var fieldConfig = fieldConfigs[i];
                 promises.push(_this.saveFieldConfig(fieldConfig).then(function (returnedFieldConfigID) {
@@ -822,6 +823,28 @@ var LeDataService = (function () {
             });
         });
     };
+    LeDataService.prototype.validateFieldConfigs = function (fieldConfigs) {
+        var _this = this;
+        if (!fieldConfigs || !fieldConfigs.length) {
+            return ts_promise_1["default"].resolve();
+        }
+        var promises = [];
+        fieldConfigs.forEach(function (fieldConfig) {
+            promises.push(_this.validateFieldConfig(fieldConfig));
+        });
+        return ts_promise_1["default"].all(promises).then(function () { });
+    };
+    LeDataService.prototype.validateFieldConfig = function (fieldConfig) {
+        if (fieldConfig.replaceOnUpdate && fieldConfig.getFieldType() !== 'object') {
+            var error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
+            return ts_promise_1["default"].reject(error);
+        }
+        if (fieldConfig.replaceOnUpdate && fieldConfig.getFieldConfigs() && fieldConfig.getFieldConfigs().length) {
+            var error = new Error(fieldConfig.getFieldName() + ' cannot have sub-fields configured if replaceOnUpdate is set');
+            return ts_promise_1["default"].reject(error);
+        }
+        return ts_promise_1["default"].resolve();
+    };
     LeDataService.prototype.saveFieldConfig = function (fieldConfig) {
         var _this = this;
         var fieldConfigObject = {};
@@ -836,6 +859,7 @@ var LeDataService = (function () {
         fieldConfigObject.required = fieldConfig.required;
         fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
         fieldConfigObject.saveLocation = fieldConfig.saveLocation;
+        fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
         var promises = [];
         var innerFieldConfigs = fieldConfig.getFieldConfigs();
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -868,6 +892,7 @@ var LeDataService = (function () {
             var fieldConfig = new le_type_field_config_1["default"](fieldConfigObject.fieldName, typeToSet);
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
+            fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
             fieldConfig.saveLocation = fieldConfigObject.saveLocation;
             for (var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -1314,7 +1339,7 @@ var LeDataService = (function () {
                 return ts_promise_1["default"].resolve();
             }
             else {
-                return dataService.dataServiceProvider.updateData(location, data);
+                return dataService.dataServiceProvider.updateData(location, data, fieldConfig.replaceOnUpdate);
             }
         }
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {

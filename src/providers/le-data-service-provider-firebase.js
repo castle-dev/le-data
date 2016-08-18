@@ -77,8 +77,8 @@ var LeDataServiceProviderFirebase = (function () {
         }
         return deferred.promise;
     };
-    LeDataServiceProviderFirebase.prototype.updateData = function (location, data) {
-        if (typeof data === 'object') {
+    LeDataServiceProviderFirebase.prototype.updateData = function (location, data, replaceDataAtLocation) {
+        if (typeof data === 'object' && !replaceDataAtLocation) {
             var innerUpdatePromises = [];
             for (var key in data) {
                 if (data.hasOwnProperty(key)) {
@@ -91,7 +91,7 @@ var LeDataServiceProviderFirebase = (function () {
         if (data === undefined) {
             return this.deleteData(location);
         }
-        if (data === this.storedValueForLocation(location)) {
+        if (typeof data !== 'object' && data === this.storedValueForLocation(location)) {
             return ts_promise_1["default"].resolve();
         }
         var deferred = ts_promise_1["default"].defer();
