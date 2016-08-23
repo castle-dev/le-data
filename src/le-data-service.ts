@@ -468,6 +468,9 @@ export class LeDataService {
       var filterFieldConfig = this.fieldConfigForFilterFieldName(queryObject.filterFieldName, typeConfig);
       fetchDataOptions.filterFieldName = filterFieldConfig.saveLocation ? filterFieldConfig.saveLocation : queryObject.filterFieldName;
       fetchDataOptions.filterValue = queryObject.filterValue;
+      if(fetchDataOptions.filterValue === undefined) {
+        fetchDataOptions.filterValue = null;
+      }
     }
     return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
       if(dataID) {
@@ -744,8 +747,8 @@ export class LeDataService {
         return Promise.reject(error);
       }
     }
-    if (typeof filterValue !== type) {
-      var errorMessage = 'Invalid filter value for the field "' + filterFieldName +'" on type ' + typeConfig.getType() + '. A value of type ' + type + 'is expected, and a value of type ' + typeof filterValue + ' was given.';
+    if (typeof filterValue !== type && filterValue !== undefined) {
+      var errorMessage = 'Invalid filter value for the field "' + filterFieldName +'" on type ' + typeConfig.getType() + '. A value of type ' + type + ' is expected, and a value of type ' + typeof filterValue + ' was given.';
       var error = new Error(errorMessage);
       return Promise.reject(error);
     }
