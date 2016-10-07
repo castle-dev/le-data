@@ -523,11 +523,15 @@ var LeDataService = (function () {
         }
     };
     LeDataService.prototype.addFieldsToRawDataObjects = function (rawDataObject, fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        var _this = this;
         var promises = [];
         var objectsToReturn = [];
         for (var objectID in rawDataObject) {
             if (rawDataObject.hasOwnProperty(objectID)) {
                 promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
+                    if (data[_this.deletedAtFieldName]) {
+                        return;
+                    }
                     objectsToReturn.push(data);
                 }, function (err) { }));
             }
