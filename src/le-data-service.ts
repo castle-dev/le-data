@@ -537,6 +537,9 @@ export class LeDataService {
     for(var objectID in rawDataObject) {
       if(rawDataObject.hasOwnProperty(objectID)) {
         promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
+          if(data[this.deletedAtFieldName]) {
+            return;
+          }
           objectsToReturn.push(data);
         }, (err)=>{}));
       }
