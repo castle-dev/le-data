@@ -821,7 +821,7 @@ export class LeDataService {
         }));
       }
       Promise.all(promises).then(()=>{
-        this.dataServiceProvider.updateData(location, configObjectToSave).then(()=>{
+        this.dataServiceProvider.updateData(location, configObjectToSave, true).then(()=>{
           resolve(undefined);
         }, (err)=>{
           reject(err);

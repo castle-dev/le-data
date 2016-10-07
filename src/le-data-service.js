@@ -820,7 +820,7 @@ var LeDataService = (function () {
                 }));
             }
             ts_promise_1["default"].all(promises).then(function () {
-                _this.dataServiceProvider.updateData(location, configObjectToSave).then(function () {
+                _this.dataServiceProvider.updateData(location, configObjectToSave, true).then(function () {
                     resolve(undefined);
                 }, function (err) {
                     reject(err);
