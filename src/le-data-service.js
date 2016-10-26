@@ -1,5 +1,6 @@
 /// <reference path="le-data.ts"/>
 var ts_promise_1 = require("ts-promise");
+var le_data_service_provider_1 = require("./le-data-service-provider");
 var le_type_config_1 = require("./le-type-config");
 var le_type_field_config_1 = require("./le-type-field-config");
 var le_data_query_1 = require("./le-data-query");
@@ -820,7 +821,7 @@ var LeDataService = (function () {
                 }));
             }
             ts_promise_1["default"].all(promises).then(function () {
-                _this.dataServiceProvider.updateData(location, configObjectToSave, true).then(function () {
+                _this.dataServiceProvider.updateData(location, configObjectToSave, le_data_service_provider_1.UpdateType.replace).then(function () {
                     resolve(undefined);
                 }, function (err) {
                     reject(err);
@@ -846,6 +847,10 @@ var LeDataService = (function () {
             var error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
             return ts_promise_1["default"].reject(error);
         }
+        if (fieldConfig.mergeOnUpdate && fieldConfig.getFieldType() !== 'object') {
+            var error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
+            return ts_promise_1["default"].reject(error);
+        }
         if (fieldConfig.replaceOnUpdate && fieldConfig.getFieldConfigs() && fieldConfig.getFieldConfigs().length) {
             var error = new Error(fieldConfig.getFieldName() + ' cannot have sub-fields configured if replaceOnUpdate is set');
             return ts_promise_1["default"].reject(error);
@@ -867,6 +872,7 @@ var LeDataService = (function () {
         fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
         fieldConfigObject.saveLocation = fieldConfig.saveLocation;
         fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
+        fieldConfigObject.mergeOnUpdate = fieldConfig.mergeOnUpdate;
         var promises = [];
         var innerFieldConfigs = fieldConfig.getFieldConfigs();
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -900,6 +906,7 @@ var LeDataService = (function () {
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
             fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
+            fieldConfig.mergeOnUpdate = fieldConfigObject.mergeOnUpdate;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
             fieldConfig.saveLocation = fieldConfigObject.saveLocation;
             for (var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -1346,7 +1353,15 @@ var LeDataService = (function () {
                 return ts_promise_1["default"].resolve();
             }
             else {
-                return dataService.dataServiceProvider.updateData(location, data, fieldConfig.replaceOnUpdate);
+                if (fieldConfig.replaceOnUpdate) {
+                    return dataService.dataServiceProvider.updateData(location, data, le_data_service_provider_1.UpdateType.replace);
+                }
+                else if (fieldConfig.mergeOnUpdate) {
+                    return dataService.dataServiceProvider.updateData(location, data, le_data_service_provider_1.UpdateType.merge);
+                }
+                else {
+                    return dataService.dataServiceProvider.updateData(location, data, le_data_service_provider_1.UpdateType.default);
+                }
             }
         }
         for (var i = 0; i < innerFieldConfigs.length; i += 1) {
