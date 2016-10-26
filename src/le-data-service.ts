@@ -1,7 +1,7 @@
 /// <reference path="le-data.ts"/>
 
 import Promise from "ts-promise";
-import {LeDataServiceProvider, FetchDataOptions} from "./le-data-service-provider";
+import {LeDataServiceProvider, FetchDataOptions, UpdateType} from "./le-data-service-provider";
 import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 import LeDataQuery from "./le-data-query";
@@ -821,7 +821,7 @@ export class LeDataService {
         }));
       }
       Promise.all(promises).then(()=>{
-        this.dataServiceProvider.updateData(location, configObjectToSave, true).then(()=>{
+        this.dataServiceProvider.updateData(location, configObjectToSave, UpdateType.replace).then(()=>{
           resolve(undefined);
         }, (err)=>{
           reject(err);
@@ -848,6 +848,10 @@ export class LeDataService {
       let error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
       return Promise.reject(error);
     }
+    if(fieldConfig.mergeOnUpdate && fieldConfig.getFieldType() !== 'object') {
+      let error = new Error(fieldConfig.getFieldName() + ' must be of type object to set replaceOnUpdate');
+      return Promise.reject(error);
+    }
     if(fieldConfig.replaceOnUpdate && fieldConfig.getFieldConfigs() && fieldConfig.getFieldConfigs().length) {
       let error = new Error(fieldConfig.getFieldName() + ' cannot have sub-fields configured if replaceOnUpdate is set');
       return Promise.reject(error);
@@ -869,6 +873,7 @@ export class LeDataService {
     fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
     fieldConfigObject.saveLocation = fieldConfig.saveLocation;
     fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
+    fieldConfigObject.mergeOnUpdate = fieldConfig.mergeOnUpdate;
 
     var promises = [];
     var innerFieldConfigs = fieldConfig.getFieldConfigs();
@@ -904,6 +909,7 @@ export class LeDataService {
       fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
       fieldConfig.required = fieldConfigObject.required;
       fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
+      fieldConfig.mergeOnUpdate = fieldConfigObject.mergeOnUpdate;
       fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
       fieldConfig.saveLocation = fieldConfigObject.saveLocation;
       for(var i = 0; i < innerFieldConfigs.length; i += 1) {
@@ -1328,7 +1334,13 @@ export class LeDataService {
         rootRawData[rawFieldName] = data;
         return Promise.resolve();
       } else {
-        return dataService.dataServiceProvider.updateData(location, data, fieldConfig.replaceOnUpdate);
+        if(fieldConfig.replaceOnUpdate) {
+          return dataService.dataServiceProvider.updateData(location, data, UpdateType.replace);
+        } else if (fieldConfig.mergeOnUpdate) {
+          return dataService.dataServiceProvider.updateData(location, data, UpdateType.merge);
+        } else {
+          return dataService.dataServiceProvider.updateData(location, data, UpdateType.default);
+        }
       }
     }
     for(var i = 0; i < innerFieldConfigs.length; i += 1) {

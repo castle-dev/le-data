@@ -1,5 +1,5 @@
 import Promise from "ts-promise";
-import {FetchDataOptions, LeDataServiceProvider} from "../le-data-service-provider";
+import {FetchDataOptions, LeDataServiceProvider, UpdateType} from "../le-data-service-provider";
 
 export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
   firebaseRef:any;
@@ -80,8 +80,11 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
 
     return deferred.promise;
   }
-  updateData(location:string, data:any, replaceDataAtLocation?:boolean): Promise<any> {
-    if(typeof data === 'object' && !replaceDataAtLocation) {
+  updateData(location:string, data:any, updateType?:UpdateType): Promise<any> {
+    if(!updateType) {
+      updateType = UpdateType.default;
+    }
+    if(typeof data === 'object' && updateType === UpdateType.default) {
       var innerUpdatePromises = [];
       for (var key in data) {
         if(data.hasOwnProperty(key)) {
@@ -91,21 +94,33 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
       }
       return Promise.all(innerUpdatePromises);
     }
+
     if(data === undefined) {
       return this.deleteData(location);
     }
     if(typeof data !== 'object' && data === this.storedValueForLocation(location)) {
       return Promise.resolve();
     }
-    var deferred = Promise.defer<any>();
-    this.firebaseRef.child(location).set(data, function(err){
-      if(err) {
-        deferred.reject(err);
-        return;
-      }
-      deferred.resolve(data);
+    var mergeDataIfNeededPromise;
+    if(updateType === UpdateType.merge) {
+      mergeDataIfNeededPromise = this.fetchData(location).then((oldData)=>{
+        data = mergeData(oldData, data);
+      });
+    } else {
+      mergeDataIfNeededPromise = Promise.resolve();
+    }
+
+    return mergeDataIfNeededPromise.then(()=>{
+      var deferred = Promise.defer<any>();
+      this.firebaseRef.child(location).set(data, function(err){
+        if(err) {
+          deferred.reject(err);
+          return;
+        }
+        deferred.resolve(data);
+      });
+      return deferred.promise;
     });
-    return deferred.promise;
   }
   deleteData(location:string): Promise<void> {
     var deferred = Promise.defer<void>();
@@ -247,6 +262,24 @@ function convertDataToDataToSave(object){
     }
   }
   return objectToReturn;
+}
+function mergeData(oldData, newData) {
+  if(newData === undefined) {
+    return oldData;
+  }
+  if(typeof oldData !== 'object') {
+    return newData;
+  }
+  for(var key in newData) {
+    if(newData.hasOwnProperty(key) && newData[key] !== undefined) {
+      if(typeof newData[key] === 'object') {
+        oldData[key] = mergeData(oldData[key], newData[key]);
+      } else {
+        oldData[key] = newData[key];
+      }
+    }
+  }
+  return oldData;
 }
 function removeUndefinedFeilds(data) {
   for(var key in data) {

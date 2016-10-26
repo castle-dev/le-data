@@ -5,11 +5,17 @@ export interface FetchDataOptions {
   filterValue?: any;
 }
 
+export enum UpdateType {
+  default,
+  replace,
+  merge,
+}
+
 export interface LeDataServiceProvider {
   dataExists(location:string): Promise<boolean>;
   fetchData(location:string, fetchDataOptions?: FetchDataOptions): Promise<any>;
   createData(location:string, data:LeData): Promise<LeData>;
-  updateData(location:string, data:any, replaceDataAtLocation?:boolean): Promise<any>;
+  updateData(location:string, data:any, updateType?:UpdateType): Promise<any>;
   deleteData(location:string): Promise<void>;
   lock(word:string): Promise<void>;
   unlock(word:string): Promise<void>;
