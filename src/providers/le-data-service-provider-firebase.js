@@ -1,4 +1,5 @@
 var ts_promise_1 = require("ts-promise");
+var le_data_service_provider_1 = require("../le-data-service-provider");
 var LeDataServiceProviderFirebase = (function () {
     function LeDataServiceProviderFirebase(firebaseRef) {
         this.firebaseRef = firebaseRef;
@@ -77,8 +78,12 @@ var LeDataServiceProviderFirebase = (function () {
         }
         return deferred.promise;
     };
-    LeDataServiceProviderFirebase.prototype.updateData = function (location, data, replaceDataAtLocation) {
-        if (typeof data === 'object' && !replaceDataAtLocation) {
+    LeDataServiceProviderFirebase.prototype.updateData = function (location, data, updateType) {
+        var _this = this;
+        if (!updateType) {
+            updateType = le_data_service_provider_1.UpdateType.default;
+        }
+        if (typeof data === 'object' && updateType === le_data_service_provider_1.UpdateType.default) {
             var innerUpdatePromises = [];
             for (var key in data) {
                 if (data.hasOwnProperty(key)) {
@@ -94,15 +99,26 @@ var LeDataServiceProviderFirebase = (function () {
         if (typeof data !== 'object' && data === this.storedValueForLocation(location)) {
             return ts_promise_1["default"].resolve();
         }
-        var deferred = ts_promise_1["default"].defer();
-        this.firebaseRef.child(location).set(data, function (err) {
-            if (err) {
-                deferred.reject(err);
-                return;
-            }
-            deferred.resolve(data);
+        var mergeDataIfNeededPromise;
+        if (updateType === le_data_service_provider_1.UpdateType.merge) {
+            mergeDataIfNeededPromise = this.fetchData(location).then(function (oldData) {
+                data = mergeData(oldData, data);
+            });
+        }
+        else {
+            mergeDataIfNeededPromise = ts_promise_1["default"].resolve();
+        }
+        return mergeDataIfNeededPromise.then(function () {
+            var deferred = ts_promise_1["default"].defer();
+            _this.firebaseRef.child(location).set(data, function (err) {
+                if (err) {
+                    deferred.reject(err);
+                    return;
+                }
+                deferred.resolve(data);
+            });
+            return deferred.promise;
         });
-        return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.deleteData = function (location) {
         var deferred = ts_promise_1["default"].defer();
@@ -251,6 +267,25 @@ function convertDataToDataToSave(object) {
         }
     }
     return objectToReturn;
+}
+function mergeData(oldData, newData) {
+    if (newData === undefined) {
+        return oldData;
+    }
+    if (typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
+        return newData;
+    }
+    for (var key in newData) {
+        if (newData.hasOwnProperty(key) && newData[key] !== undefined) {
+            if (typeof newData[key] === 'object') {
+                oldData[key] = mergeData(oldData[key], newData[key]);
+            }
+            else {
+                oldData[key] = newData[key];
+            }
+        }
+    }
+    return oldData;
 }
 function removeUndefinedFeilds(data) {
     for (var key in data) {

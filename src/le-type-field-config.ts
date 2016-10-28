@@ -39,6 +39,13 @@ export class LeTypeFieldConfig {
   replaceOnUpdate: boolean;
 
   /**
+   * @var mergeOnUpdate boolean  - if set to true, the object stored at this field will be queryed and the only the fields passed in on update will be changed in a single update. NOTE: read access is required for this location to update if this field is set.
+   *
+   * @throws if set on a LeTypeFieldConfig that does not have the type set to object
+   */
+  mergeOnUpdate: boolean;
+
+  /**
    * @var required boolean - if set to true, the field must be set to a value on the LeData object
    */
   required: boolean;
