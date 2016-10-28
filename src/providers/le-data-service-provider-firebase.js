@@ -272,7 +272,7 @@ function mergeData(oldData, newData) {
     if (newData === undefined) {
         return oldData;
     }
-    if (typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
+    if (oldData === null || typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
         return newData;
     }
     for (var key in newData) {
