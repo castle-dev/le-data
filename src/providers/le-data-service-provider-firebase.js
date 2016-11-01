@@ -270,18 +270,23 @@ function convertDataToDataToSave(object) {
 }
 function mergeData(oldData, newData) {
     if (newData === undefined) {
-        return oldData;
+        return undefined;
     }
     if (oldData === null || typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
         return newData;
     }
     for (var key in newData) {
-        if (newData.hasOwnProperty(key) && newData[key] !== undefined) {
-            if (typeof newData[key] === 'object') {
-                oldData[key] = mergeData(oldData[key], newData[key]);
+        if (newData.hasOwnProperty(key)) {
+            if (newData[key] === undefined) {
+                delete oldData[key];
             }
             else {
-                oldData[key] = newData[key];
+                if (typeof newData[key] === 'object') {
+                    oldData[key] = mergeData(oldData[key], newData[key]);
+                }
+                else {
+                    oldData[key] = newData[key];
+                }
             }
         }
     }
