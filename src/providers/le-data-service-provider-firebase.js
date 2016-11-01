@@ -48,7 +48,7 @@ var LeDataServiceProviderFirebase = (function () {
         return deferred.promise;
     };
     LeDataServiceProviderFirebase.prototype.createData = function (location, data) {
-        removeUndefinedFeilds(data);
+        removeUndefinedFields(data);
         var deferred = ts_promise_1["default"].defer();
         var provider = this;
         var dataID = data._id;
@@ -270,26 +270,47 @@ function convertDataToDataToSave(object) {
 }
 function mergeData(oldData, newData) {
     if (newData === undefined) {
-        return oldData;
+        return undefined;
     }
     if (oldData === null || typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
+        removeUndefinedFields(newData);
         return newData;
     }
     for (var key in newData) {
-        if (newData.hasOwnProperty(key) && newData[key] !== undefined) {
-            if (typeof newData[key] === 'object') {
-                oldData[key] = mergeData(oldData[key], newData[key]);
+        if (newData.hasOwnProperty(key)) {
+            if (newData[key] === undefined) {
+                delete oldData[key];
             }
             else {
-                oldData[key] = newData[key];
+                if (typeof newData[key] === 'object') {
+                    oldData[key] = mergeData(oldData[key], newData[key]);
+                }
+                else {
+                    oldData[key] = newData[key];
+                }
             }
         }
     }
     return oldData;
 }
-function removeUndefinedFeilds(data) {
+function removeUndefinedFields(data) {
+    if (Array.isArray(data)) {
+        for (var i = 0; i < data.length; i += 1) {
+            var arrayContent = data[i];
+            if (arrayContent === undefined) {
+                data.splice(i);
+                i -= 1;
+            }
+        }
+    }
+    if (typeof data !== 'object') {
+        return;
+    }
     for (var key in data) {
         if (data.hasOwnProperty(key)) {
+            if (typeof data[key] === 'object') {
+                removeUndefinedFields(data[key]);
+            }
             if (data[key] === undefined) {
                 delete data[key];
             }
