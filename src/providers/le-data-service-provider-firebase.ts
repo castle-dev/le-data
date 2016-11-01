@@ -50,7 +50,7 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     return deferred.promise;
   }
   createData(location:string, data:LeData): Promise<LeData> {
-    removeUndefinedFeilds(data);
+    removeUndefinedFields(data);
     var deferred = Promise.defer<LeData>();
     var provider = this;
     var dataID = data._id;
@@ -268,6 +268,7 @@ function mergeData(oldData, newData) {
     return undefined;
   }
   if(oldData === null || typeof oldData !== 'object' || Array.isArray(newData) || Array.isArray(oldData)) {
+    removeUndefinedFields(newData);
     return newData;
   }
   for(var key in newData) {
@@ -285,9 +286,24 @@ function mergeData(oldData, newData) {
   }
   return oldData;
 }
-function removeUndefinedFeilds(data) {
+function removeUndefinedFields(data) {
+  if(Array.isArray(data)) {
+    for(var i = 0; i <data.length; i +=1) {
+      var arrayContent = data[i];
+      if(arrayContent === undefined) {
+        data.splice(i);
+        i -=1;
+      }
+    }
+  }
+  if(typeof data !== 'object') {
+    return;
+  }
   for(var key in data) {
     if(data.hasOwnProperty(key)) {
+      if(typeof data[key] === 'object') {
+        removeUndefinedFields(data[key]);
+      }
       if(data[key] === undefined) {
         delete data[key];
       }
