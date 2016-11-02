@@ -115,7 +115,15 @@ var LeDataService = (function () {
         return this.fetchTypeConfig(type).then(function (typeConfig) {
             var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
             location += '/' + id;
-            return _this.dataServiceProvider.dataExists(location);
+            var deletedAtLocation = location + '/' + _this.deletedAtSaveLocation;
+            return ts_promise_1["default"].all([
+                _this.dataServiceProvider.dataExists(location),
+                _this.dataServiceProvider.dataExists(deletedAtLocation)
+            ]).then(function (results) {
+                var dataExists = results[0];
+                var hasDeletedAtField = results[1];
+                return dataExists && !hasDeletedAtField;
+            });
         });
     };
     /**
