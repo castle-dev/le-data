@@ -124,9 +124,17 @@ export class LeDataService {
    */
   checkExistence(type:string, id:string): Promise<boolean> {
     return this.fetchTypeConfig(type).then((typeConfig)=>{
-      var location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
+      let location = typeConfig.saveLocation ? typeConfig.saveLocation : type;
       location += '/' + id;
-      return this.dataServiceProvider.dataExists(location);
+      let deletedAtLocation = location +'/' + this.deletedAtSaveLocation;
+      return Promise.all([
+        this.dataServiceProvider.dataExists(location),
+        this.dataServiceProvider.dataExists(deletedAtLocation)
+      ]).then((results)=>{
+        let dataExists = results[0];
+        let hasDeletedAtField = results[1];
+        return dataExists && !hasDeletedAtField;
+      });
     });
   }
 
