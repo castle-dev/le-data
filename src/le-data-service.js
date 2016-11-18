@@ -471,6 +471,9 @@ var LeDataService = (function () {
         }
         return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function (rawQueryRoot) {
             if (dataID) {
+                if (!rawQueryRoot || rawQueryRoot[this.deletedAtSaveLocation]) {
+                    throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
+                }
                 rawQueryRoot._id = dataID;
                 rawQueryRoot._type = dataType;
             }
