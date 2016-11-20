@@ -682,6 +682,7 @@ export class LeDataService {
   setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):Promise<any> {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+    queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {
         return;
@@ -802,6 +803,7 @@ export class LeDataService {
   setDataForArrayField(objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery): Promise<any> {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
+    queryForField.queryObject.includeDeleted =  fieldQueryObject.includeDeleted;
 
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {

@@ -623,21 +623,44 @@ describe('LeDataService', ()=>{
                 createdAt:1479514260000,
                 deletedAt:1479514270000
               }
+            },
+            properties: {
+              property_1a:{
+                createdAt:1479514260000,
+                deletedAt:1479514270000
+              }
             }
           },
           owners: {
             owner_id1: {
-                createdAt:1479514267482
+              createdAt:1479514267482,
+              property_ids: {
+                property_1a:true,
+                property_1b:true
+              }
             },
             owner_id2: {
                 createdAt:1479514267482
+            }
+          },
+          properties: {
+            property_1b:{
+              createdAt:1479514260000,
+              owner_id: 'owner_id3'
             }
           },
         };
         var ownerConfig = new LeTypeConfig('Owner');
         ownerConfig.saveAt('owners');
         ownerConfig.addField('deletedAt', 'Date');
-        dataService.configureType(ownerConfig).then(()=>{
+        ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
+        var propertyConfig = new LeTypeConfig('Property');
+        propertyConfig.saveAt('properties');
+        propertyConfig.addField('owner', 'Owner').saveAt('owner_id');
+        Promise.all([
+          dataService.configureType(ownerConfig),
+          dataService.configureType(propertyConfig)
+        ]).then(()=>{
           done();
         });
       });
@@ -649,12 +672,37 @@ describe('LeDataService', ()=>{
           done();
         });
       });
-      it('should include the deleted data when searching all ', (done)=>{
+      it('should include the deleted data when searching a specific thing', (done)=>{
         var ownerQuery = new LeDataQuery('Owner', 'owner_id3');
         ownerQuery.includeDeleted();
         dataService.search(ownerQuery).then((ownerData)=>{
           expect(ownerData._id === 'owner_id3');
           expect(ownerData.deletedAt).to.exist;
+          done();
+        });
+      });
+      it('should not include the deleted included data without includeDeleted', (done)=>{
+        var ownerQuery = new LeDataQuery('Owner', 'owner_id1');
+        ownerQuery.include('properties');
+        dataService.search(ownerQuery).then((ownerData)=>{
+          expect(ownerData.properties.length).to.equal(1);
+          expect(ownerData.properties[0]._id).to.equal('property_1b');
+          done();
+        });
+      });
+      it('should include the deleted included data with includeDeleted for array fields', (done)=>{
+        var ownerQuery = new LeDataQuery('Owner', 'owner_id1');
+        ownerQuery.include('properties').includeDeleted();
+        dataService.search(ownerQuery).then((ownerData)=>{
+          expect(ownerData.properties.length).to.equal(2);
+          done();
+        });
+      });
+      it('should include the deleted included data with includeDeleted for single fields', (done)=>{
+        var propertyQuery = new LeDataQuery('Property', 'property_1b');
+        propertyQuery.include('owner').includeDeleted();
+        dataService.search(propertyQuery).then((propertyData)=>{
+          expect(propertyData.owner._id).to.equal('owner_id3');
           done();
         });
       });

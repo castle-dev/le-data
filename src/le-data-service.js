@@ -679,6 +679,7 @@ var LeDataService = (function () {
     LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;
@@ -803,6 +804,7 @@ var LeDataService = (function () {
     LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;
