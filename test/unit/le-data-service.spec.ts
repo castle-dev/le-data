@@ -645,7 +645,6 @@ describe('LeDataService', ()=>{
         var ownersQuery = new LeDataQuery('Owner');
         ownersQuery.includeDeleted();
         dataService.search(ownersQuery).then((ownersData)=>{
-          console.log(ownersData);
           expect(ownersData.length === 3).to.be.true;
           done();
         });
@@ -654,7 +653,6 @@ describe('LeDataService', ()=>{
         var ownerQuery = new LeDataQuery('Owner', 'owner_id3');
         ownerQuery.includeDeleted();
         dataService.search(ownerQuery).then((ownerData)=>{
-          console.log(ownerData);
           expect(ownerData._id === 'owner_id3');
           expect(ownerData.deletedAt).to.exist;
           done();

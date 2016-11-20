@@ -632,7 +632,6 @@ describe('LeDataService', function () {
                 var ownersQuery = new le_data_query_1["default"]('Owner');
                 ownersQuery.includeDeleted();
                 dataService.search(ownersQuery).then(function (ownersData) {
-                    console.log(ownersData);
                     expect(ownersData.length === 3).to.be.true;
                     done();
                 });
@@ -641,7 +640,6 @@ describe('LeDataService', function () {
                 var ownerQuery = new le_data_query_1["default"]('Owner', 'owner_id3');
                 ownerQuery.includeDeleted();
                 dataService.search(ownerQuery).then(function (ownerData) {
-                    console.log(ownerData);
                     expect(ownerData._id === 'owner_id3');
                     expect(ownerData.deletedAt).to.exist;
                     done();
