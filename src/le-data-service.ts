@@ -456,6 +456,7 @@ export class LeDataService {
     if (dataID) {
       location += '/' + dataID;
     }
+    var archiveLocation = this.archiveLocation + '/' + location;
     var dataService = this;
     if(shouldSync && !syncDictionary) {
       if(this.queryDictionary[queryObject.queryID]) {
@@ -471,6 +472,9 @@ export class LeDataService {
     if(shouldSync) {
       this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
     }
+    if(shouldSync && queryObject.includeDeleted) {
+      this.syncLocation(archiveLocation, outerMostQuery, syncDictionary, callback, errorCallback);
+    }
     var fetchDataOptions: FetchDataOptions = {};
     if(queryObject.hasOwnProperty('filterFieldName')) {
       var filterFieldConfig = this.fieldConfigForFilterFieldName(queryObject.filterFieldName, typeConfig);
@@ -480,9 +484,36 @@ export class LeDataService {
         fetchDataOptions.filterValue = null;
       }
     }
+    if(!queryObject.includeDeleted) {
+      return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+    } else {
+      return Promise.all([
+        this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{}),
+        this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{})
+      ]).then((results)=>{
+        if(dataID && results[0]) {
+          return results[0];
+        }
+        if(dataID && results[1]) {
+          return results[1];
+        }
+        if(results[0] && results[1]) {
+          return results[0].concat(results[1]);
+        }
+        if(results[0]) {
+          return results[0];
+        }
+        if(results[1]) {
+          return results[1];
+        }
+      });
+    }
+  }
+  private fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery):Promise<any> {
+    var dataService = this;
     return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
       if(dataID) {
-        if(!rawQueryRoot || rawQueryRoot[this.deletedAtSaveLocation]) {
+        if(!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted)) {
           throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
         }
         rawQueryRoot._id = dataID;

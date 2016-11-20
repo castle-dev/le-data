@@ -601,6 +601,53 @@ describe('LeDataService', function () {
                 console.log(err.stack);
             });
         });
+        describe('includeDeleted', function () {
+            beforeEach(function (done) {
+                mockProvider.remoteStoredData = {
+                    _archive: {
+                        owners: {
+                            owner_id3: {
+                                createdAt: 1479514260000,
+                                deletedAt: 1479514270000
+                            }
+                        }
+                    },
+                    owners: {
+                        owner_id1: {
+                            createdAt: 1479514267482
+                        },
+                        owner_id2: {
+                            createdAt: 1479514267482
+                        }
+                    }
+                };
+                var ownerConfig = new le_type_config_1["default"]('Owner');
+                ownerConfig.saveAt('owners');
+                ownerConfig.addField('deletedAt', 'Date');
+                dataService.configureType(ownerConfig).then(function () {
+                    done();
+                });
+            });
+            it('should include the deleted data when searching all ', function (done) {
+                var ownersQuery = new le_data_query_1["default"]('Owner');
+                ownersQuery.includeDeleted();
+                dataService.search(ownersQuery).then(function (ownersData) {
+                    console.log(ownersData);
+                    expect(ownersData.length === 3).to.be.true;
+                    done();
+                });
+            });
+            it('should include the deleted data when searching all ', function (done) {
+                var ownerQuery = new le_data_query_1["default"]('Owner', 'owner_id3');
+                ownerQuery.includeDeleted();
+                dataService.search(ownerQuery).then(function (ownerData) {
+                    console.log(ownerData);
+                    expect(ownerData._id === 'owner_id3');
+                    expect(ownerData.deletedAt).to.exist;
+                    done();
+                });
+            });
+        });
     });
 });
 //# sourceMappingURL=le-data-service.spec.js.map
