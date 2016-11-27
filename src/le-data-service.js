@@ -444,6 +444,7 @@ var LeDataService = (function () {
         if (dataID) {
             location += '/' + dataID;
         }
+        var archiveLocation = this.archiveLocation + '/' + location;
         var dataService = this;
         if (shouldSync && !syncDictionary) {
             if (this.queryDictionary[queryObject.queryID]) {
@@ -460,6 +461,9 @@ var LeDataService = (function () {
         if (shouldSync) {
             this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
         }
+        if (shouldSync && queryObject.includeDeleted) {
+            this.syncLocation(archiveLocation, outerMostQuery, syncDictionary, callback, errorCallback);
+        }
         var fetchDataOptions = {};
         if (queryObject.hasOwnProperty('filterFieldName')) {
             var filterFieldConfig = this.fieldConfigForFilterFieldName(queryObject.filterFieldName, typeConfig);
@@ -469,9 +473,37 @@ var LeDataService = (function () {
                 fetchDataOptions.filterValue = null;
             }
         }
+        if (!queryObject.includeDeleted) {
+            return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+        }
+        else {
+            return ts_promise_1["default"].all([
+                this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(function () { }),
+                this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(function () { })
+            ]).then(function (results) {
+                if (dataID && results[0]) {
+                    return results[0];
+                }
+                if (dataID && results[1]) {
+                    return results[1];
+                }
+                if (results[0] && results[1]) {
+                    return results[0].concat(results[1]);
+                }
+                if (results[0]) {
+                    return results[0];
+                }
+                if (results[1]) {
+                    return results[1];
+                }
+            });
+        }
+    };
+    LeDataService.prototype.fetchAndConvertData = function (location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
+        var dataService = this;
         return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function (rawQueryRoot) {
             if (dataID) {
-                if (!rawQueryRoot || rawQueryRoot[this.deletedAtSaveLocation]) {
+                if (!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted)) {
                     throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
                 }
                 rawQueryRoot._id = dataID;
@@ -647,6 +679,7 @@ var LeDataService = (function () {
     LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;
@@ -771,6 +804,7 @@ var LeDataService = (function () {
     LeDataService.prototype.setDataForArrayField = function (objectsForArrayField, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
+        queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;

@@ -20,15 +20,15 @@ var LeDataQuery = (function () {
         return this.queryObject.queryID;
     };
     /**
-    * includes the LeData configured type field in the query.
-    * If this is not called for a configured LeData type that is on the LeData, that field will not be included in the results.\
-    *
-    * @function include
-    * @memberof LeDataQuery
-    * @instance
-    * @param filedName string - the name of the field to include in the query. The filed must be a configured LeData type.
-    * @returns LeDataQuery -  the sub query object used to control an query specificaitons from the specified field.
-    */
+     * includes the LeData configured type field in the query.
+     * If this is not called for a configured LeData type that is on the LeData, that field will not be included in the results.\
+     *
+     * @function include
+     * @memberof LeDataQuery
+     * @instance
+     * @param filedName string - the name of the field to include in the query. The filed must be a configured LeData type.
+     * @returns LeDataQuery -  the sub query object used to control an query specificaitons from the specified field.
+     */
     LeDataQuery.prototype.include = function (fieldName) {
         var newSubQuery = new LeDataQuery();
         this.queryObject.includedFields[fieldName] = newSubQuery.queryObject;
@@ -54,6 +54,21 @@ var LeDataQuery = (function () {
         this.queryObject.filterFieldName = fieldName.replace('.', '/');
         this.queryObject.filterValue = value;
     };
+    /**
+     * Includes Deleted objects in the query.
+     * This can only be called once on a query object.
+     *
+     * @function includeDeleted
+     * @memberof LeDataQuery
+     * @instance
+     */
+    LeDataQuery.prototype.includeDeleted = function () {
+        if (this.queryObject.includeDeleted) {
+            throw new Error('includeDeleted can on be called once on a query');
+        }
+        this.queryObject.includeDeleted = true;
+    };
+    ;
     return LeDataQuery;
 }());
 exports.LeDataQuery = LeDataQuery;
