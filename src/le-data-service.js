@@ -427,7 +427,7 @@ var LeDataService = (function () {
         return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
             return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }).then(function (data) {
-            if (!data || data[_this.deletedAtFieldName]) {
+            if (!data || (data[_this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
                 throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
             }
             return data;
