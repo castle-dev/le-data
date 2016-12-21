@@ -573,7 +573,7 @@ var LeDataService = (function () {
         for (var objectID in rawDataObject) {
             if (rawDataObject.hasOwnProperty(objectID)) {
                 promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
-                    if (data[_this.deletedAtFieldName]) {
+                    if (data[_this.deletedAtFieldName] && !queryObject.includeDeleted) {
                         return;
                     }
                     objectsToReturn.push(data);
