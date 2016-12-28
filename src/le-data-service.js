@@ -427,7 +427,7 @@ var LeDataService = (function () {
         return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
             return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }).then(function (data) {
-            if (!data || data[_this.deletedAtFieldName]) {
+            if (!data || (data[_this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
                 throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
             }
             return data;
@@ -573,7 +573,7 @@ var LeDataService = (function () {
         for (var objectID in rawDataObject) {
             if (rawDataObject.hasOwnProperty(objectID)) {
                 promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
-                    if (data[_this.deletedAtFieldName]) {
+                    if (data[_this.deletedAtFieldName] && !queryObject.includeDeleted) {
                         return;
                     }
                     objectsToReturn.push(data);

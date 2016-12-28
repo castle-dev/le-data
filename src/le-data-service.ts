@@ -438,7 +438,7 @@ export class LeDataService {
     return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
       return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
     }).then((data)=>{
-      if(!data || data[this.deletedAtFieldName]) {
+      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
         throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
       }
       return data;
@@ -579,7 +579,7 @@ export class LeDataService {
     for(var objectID in rawDataObject) {
       if(rawDataObject.hasOwnProperty(objectID)) {
         promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
-          if(data[this.deletedAtFieldName]) {
+          if(data[this.deletedAtFieldName] && !queryObject.includeDeleted) {
             return;
           }
           objectsToReturn.push(data);
