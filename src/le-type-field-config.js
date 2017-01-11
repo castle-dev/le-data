@@ -81,6 +81,20 @@ var LeTypeFieldConfig = (function () {
     LeTypeFieldConfig.prototype.fieldExists = function (fieldName) {
         return !!this.addedFieldsObejct[fieldName];
     };
+    /**
+     * @function fieldExists - returns if the field is configured on the fieldConfig
+     *
+     * @returns boolean - if the field is configured on the fieldConfig
+     */
+    LeTypeFieldConfig.prototype.encrypt = function () {
+        if (this.isEncrypted) {
+            throw new Error('encrypt has already been called on the ' + this.fieldName + ' field config object. encrypt can only be called once on each field.');
+        }
+        this.isEncrypted = true;
+    };
+    LeTypeFieldConfig.prototype.getIsEncrypted = function () {
+        return this.isEncrypted;
+    };
     LeTypeFieldConfig.prototype.isCustomeType = function () {
         return this.type !== 'string' && this.type !== 'boolean' && this.type !== 'number' && this.type !== 'Date' && this.type !== 'object';
     };

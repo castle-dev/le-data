@@ -4,6 +4,7 @@ var le_data_service_provider_1 = require("./le-data-service-provider");
 var le_type_config_1 = require("./le-type-config");
 var le_type_field_config_1 = require("./le-type-field-config");
 var le_data_query_1 = require("./le-data-query");
+var le_encryption_service_1 = require("./le-encryption-service");
 var configObjectIndex = '_leTypeConfigs/';
 /**
  * The main service for the module.
@@ -19,6 +20,7 @@ var LeDataService = (function () {
     function LeDataService(provider) {
         var _this = this;
         this.dataServiceProvider = provider;
+        this.encryptionService = new le_encryption_service_1["default"]();
         this.queryDictionary = {};
         this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
@@ -670,6 +672,9 @@ var LeDataService = (function () {
         }
         else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
             return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+        }
+        else if (fieldConfig.getIsEncrypted()) {
+            fieldInfo.data = this.encryptionService.decrypt(rawValue);
         }
         else {
             fieldInfo.data = rawValue;
@@ -1331,6 +1336,9 @@ var LeDataService = (function () {
                 var dataToSave;
                 if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
                     dataToSave = data[fieldName] && data[fieldName].getTime();
+                }
+                else if (fieldConfig && fieldConfig.getIsEncrypted()) {
+                    dataToSave = _this.encryptionService.encrypt(data[fieldName]);
                 }
                 else {
                     dataToSave = data[fieldName];
