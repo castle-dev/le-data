@@ -9,6 +9,7 @@ export class LeTypeFieldConfig {
   private type: string;
   private addedFieldsArray: LeTypeFieldConfig[];
   private addedFieldsObejct: Object;
+  private isEncrypted: boolean;
   /**
    * @param type string - the type for the field.
    * Accepts values of 'string', 'boolean', 'number', 'Date', 'object' or any a LeData type configured in the storage provider.
@@ -136,6 +137,22 @@ export class LeTypeFieldConfig {
    */
   fieldExists(fieldName: string): boolean {
     return !!this.addedFieldsObejct[fieldName];
+  }
+
+  /**
+   * @function fieldExists - returns if the field is configured on the fieldConfig
+   *
+   * @returns boolean - if the field is configured on the fieldConfig
+   */
+  encrypt():void {
+    if(this.isEncrypted) {
+      throw new Error('encrypt has already been called on the ' + this.fieldName + ' field config object. encrypt can only be called once on each field.');
+    }
+    this.isEncrypted = true;
+  }
+
+  getIsEncrypted():boolean {
+    return this.isEncrypted;
   }
 
   isCustomeType(): boolean {

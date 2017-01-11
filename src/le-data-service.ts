@@ -674,6 +674,8 @@ export class LeDataService {
     } else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
       return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
 
+    } else if (fieldConfig.getIsEncrypted()) {
+      fieldInfo.data = this.encryptionService.decrypt(rawValue);
     } else {
       fieldInfo.data = rawValue;
       return Promise.resolve(fieldInfo);
@@ -1314,6 +1316,8 @@ export class LeDataService {
         var dataToSave;
         if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
           dataToSave = data[fieldName] && data[fieldName].getTime();
+        } else if(fieldConfig && fieldConfig.getIsEncrypted()) {
+          dataToSave = this.encryptionService.encrypt(data[fieldName]);
         } else {
           dataToSave = data[fieldName];
         }
