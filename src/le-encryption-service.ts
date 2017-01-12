@@ -1,3 +1,4 @@
+import {AES} from 'crypto-js';
 /**
  * The object used to configure a field on a type of data
  *
@@ -15,13 +16,13 @@ export class LeEncryptionService {
     if(!this.encryptionKey) {
       throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
     }
-    return data;
+    return AES.encrypt(data, this.encryptionKey);
   }
   decrypt(data:string) {
     if(!this.encryptionKey) {
       throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
     }
-    return data;
+    return AES.decrypt(data, this.encryptionKey);
   }
 }
 

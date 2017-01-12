@@ -1,3 +1,4 @@
+var crypto_js_1 = require('crypto-js');
 /**
  * The object used to configure a field on a type of data
  *
@@ -14,13 +15,13 @@ var LeEncryptionService = (function () {
         if (!this.encryptionKey) {
             throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
         }
-        return data;
+        return crypto_js_1.AES.encrypt(data, this.encryptionKey);
     };
     LeEncryptionService.prototype.decrypt = function (data) {
         if (!this.encryptionKey) {
             throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
         }
-        return data;
+        return crypto_js_1.AES.decrypt(data, this.encryptionKey);
     };
     return LeEncryptionService;
 }());
