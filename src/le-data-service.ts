@@ -230,6 +230,10 @@ export class LeDataService {
     });
   }
 
+  public setEncryptionKey(key:string):void {
+    this.encryptionService.setEncryptionKey(key);
+  }
+
   private locationForData(data:LeData): Promise<string> {
     return new Promise<string>((resolve, reject)=>{
       this.fetchTypeConfig(data._type).then((typeConfig)=>{

@@ -215,6 +215,9 @@ var LeDataService = (function () {
             });
         });
     };
+    LeDataService.prototype.setEncryptionKey = function (key) {
+        this.encryptionService.setEncryptionKey(key);
+    };
     LeDataService.prototype.locationForData = function (data) {
         var _this = this;
         return new ts_promise_1["default"](function (resolve, reject) {
