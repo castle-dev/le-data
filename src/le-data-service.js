@@ -919,6 +919,7 @@ var LeDataService = (function () {
         fieldConfigObject.fieldName = fieldConfig.getFieldName();
         fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
         fieldConfigObject.required = fieldConfig.required;
+        fieldConfigObject.isEncrypted = fieldConfig.getIsEncrypted();
         fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
         fieldConfigObject.saveLocation = fieldConfig.saveLocation;
         fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
@@ -955,6 +956,9 @@ var LeDataService = (function () {
             var fieldConfig = new le_type_field_config_1["default"](fieldConfigObject.fieldName, typeToSet);
             fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
             fieldConfig.required = fieldConfigObject.required;
+            if (fieldConfigObject.isEncrypted) {
+                fieldConfig.encrypt();
+            }
             fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
             fieldConfig.mergeOnUpdate = fieldConfigObject.mergeOnUpdate;
             fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;

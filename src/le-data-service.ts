@@ -920,6 +920,7 @@ export class LeDataService {
     fieldConfigObject.fieldName = fieldConfig.getFieldName();
     fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
     fieldConfigObject.required = fieldConfig.required;
+    fieldConfigObject.isEncrypted = fieldConfig.getIsEncrypted();
     fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
     fieldConfigObject.saveLocation = fieldConfig.saveLocation;
     fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
@@ -958,6 +959,9 @@ export class LeDataService {
       var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, typeToSet);
       fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
       fieldConfig.required = fieldConfigObject.required;
+      if(fieldConfigObject.isEncrypted) {
+        fieldConfig.encrypt();
+      }
       fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
       fieldConfig.mergeOnUpdate = fieldConfigObject.mergeOnUpdate;
       fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;

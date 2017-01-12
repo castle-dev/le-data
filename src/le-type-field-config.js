@@ -90,6 +90,9 @@ var LeTypeFieldConfig = (function () {
         if (this.isEncrypted) {
             throw new Error('encrypt has already been called on the ' + this.fieldName + ' field config object. encrypt can only be called once on each field.');
         }
+        if (this.type !== 'string') {
+            throw new Error('encrypt has already been called on the ' + this.fieldName + ' field config object. encrypt can only be called once on each field.');
+        }
         this.isEncrypted = true;
     };
     LeTypeFieldConfig.prototype.getIsEncrypted = function () {
