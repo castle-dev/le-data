@@ -681,13 +681,12 @@ export class LeDataService {
       });
     } else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
       return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
-
     } else if (fieldConfig.getIsEncrypted()) {
       fieldInfo.data = this.encryptionService.decrypt(rawValue);
     } else {
       fieldInfo.data = rawValue;
-      return Promise.resolve(fieldInfo);
     }
+    return Promise.resolve(fieldInfo);
   }
   setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):Promise<any> {
     var queryForField = new LeDataQuery(type, id);

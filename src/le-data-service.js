@@ -681,8 +681,8 @@ var LeDataService = (function () {
         }
         else {
             fieldInfo.data = rawValue;
-            return ts_promise_1["default"].resolve(fieldInfo);
         }
+        return ts_promise_1["default"].resolve(fieldInfo);
     };
     LeDataService.prototype.setDataOnFeildInfo = function (fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery) {
         var queryForField = new le_data_query_1["default"](type, id);
