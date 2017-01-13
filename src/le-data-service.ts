@@ -5,6 +5,8 @@ import {LeDataServiceProvider, FetchDataOptions, UpdateType} from "./le-data-ser
 import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 import LeDataQuery from "./le-data-query";
+import LeEncryptionService from "./le-encryption-service";
+
 var configObjectIndex = '_leTypeConfigs/';
 
 /**
@@ -30,9 +32,11 @@ export class LeDataService {
   private archiveDeletedData: boolean;
   private archiveLocation: string;
   private hasLoadedServiceConfig: boolean;
+  private encryptionService:LeEncryptionService;
 
   constructor(provider: LeDataServiceProvider) {
     this.dataServiceProvider = provider;
+    this.encryptionService = new LeEncryptionService();
     this.queryDictionary = {};
     this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
     this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});
@@ -224,6 +228,10 @@ export class LeDataService {
         reject(err);
       });
     });
+  }
+
+  public setEncryptionKey(key:string):void {
+    this.encryptionService.setEncryptionKey(key);
   }
 
   private locationForData(data:LeData): Promise<string> {
@@ -673,11 +681,12 @@ export class LeDataService {
       });
     } else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
       return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
-
+    } else if (fieldConfig.getIsEncrypted()) {
+      fieldInfo.data = this.encryptionService.decrypt(rawValue);
     } else {
       fieldInfo.data = rawValue;
-      return Promise.resolve(fieldInfo);
     }
+    return Promise.resolve(fieldInfo);
   }
   setDataOnFeildInfo(fieldInfo, type, id, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery: LeDataQuery):Promise<any> {
     var queryForField = new LeDataQuery(type, id);
@@ -914,6 +923,7 @@ export class LeDataService {
     fieldConfigObject.fieldName = fieldConfig.getFieldName();
     fieldConfigObject.cascadeDelete = fieldConfig.cascadeDelete;
     fieldConfigObject.required = fieldConfig.required;
+    fieldConfigObject.isEncrypted = fieldConfig.getIsEncrypted();
     fieldConfigObject.convertToLocalTimeZone = fieldConfig.convertToLocalTimeZone;
     fieldConfigObject.saveLocation = fieldConfig.saveLocation;
     fieldConfigObject.replaceOnUpdate = fieldConfig.replaceOnUpdate;
@@ -952,6 +962,9 @@ export class LeDataService {
       var fieldConfig = new LeTypeFieldConfig(fieldConfigObject.fieldName, typeToSet);
       fieldConfig.cascadeDelete = fieldConfigObject.cascadeDelete;
       fieldConfig.required = fieldConfigObject.required;
+      if(fieldConfigObject.isEncrypted) {
+        fieldConfig.encrypt();
+      }
       fieldConfig.replaceOnUpdate = fieldConfigObject.replaceOnUpdate;
       fieldConfig.mergeOnUpdate = fieldConfigObject.mergeOnUpdate;
       fieldConfig.convertToLocalTimeZone = fieldConfigObject.convertToLocalTimeZone;
@@ -1314,6 +1327,8 @@ export class LeDataService {
         var dataToSave;
         if (fieldConfig && fieldConfig.getFieldType() === 'Date') {
           dataToSave = data[fieldName] && data[fieldName].getTime();
+        } else if(fieldConfig && fieldConfig.getIsEncrypted()) {
+          dataToSave = this.encryptionService.encrypt(data[fieldName]);
         } else {
           dataToSave = data[fieldName];
         }

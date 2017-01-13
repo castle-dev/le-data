@@ -40,6 +40,7 @@
     "travis-encrypt": "^1.1.1"
   },
   "dependencies": {
+    "crypto-js": "3.1.8",
     "ts-promise": "0.3.0"
   }
 }
