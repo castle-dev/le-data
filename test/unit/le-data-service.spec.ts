@@ -49,21 +49,51 @@ describe('LeDataService', ()=>{
       var exampleConfig = new LeTypeConfig('ExampleType');
       exampleConfig.saveAt('exampleTypes');
       exampleConfig.addField('objectField', 'object');
+      exampleConfig.addField('relatedDatas', 'RelatedData[]').saveAt('relatedData_ids');
+      var relatedDataConfig = new LeTypeConfig('RelatedData');
+      relatedDataConfig.saveAt('relatedDatas');
+      relatedDataConfig.addField('name', 'string');
       mockProvider.remoteStoredData = {
         exampleTypes: {
           id1: {
             _times: {
               createdAt: 1452575643030
             },
+          },
+          id2: {
+            relatedData_ids: {
+              relatedDataID1: false
+            }
+          }
+        },
+        relatedDatas: {
+          relatedDataID1: {
+            name:'testing123'
           }
         }
       };
 
       var promises:Promise<any>[] = [];
       promises.push(dataService.configureType(exampleConfig));
+      promises.push(dataService.configureType(relatedDataConfig));
       Promise.all(promises).then(()=>{
         done();
       });
+    });
+    it('should be able to add a relationship even if the remote data has a false on the relationship id', (done) =>{
+        dataService.update({
+          _type:'ExampleType',
+          _id:'id2',
+          relatedDatas: [{
+            _type:'RelatedData',
+            _id:'relatedDataID1'
+          }]
+        }).then(()=>{
+          expect(mockProvider.remoteStoredData.exampleTypes.id2.relatedData_ids.relatedDataID1).to.be.true;
+          done();
+        }).catch((err)=>{
+          console.log(err);
+        });
     });
     it('should allow you to save any object to objectField on ExampleType', (done)=>{
       var dataToSave = {

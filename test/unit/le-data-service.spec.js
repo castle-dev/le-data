@@ -41,19 +41,49 @@ describe('LeDataService', function () {
             var exampleConfig = new le_type_config_1["default"]('ExampleType');
             exampleConfig.saveAt('exampleTypes');
             exampleConfig.addField('objectField', 'object');
+            exampleConfig.addField('relatedDatas', 'RelatedData[]').saveAt('relatedData_ids');
+            var relatedDataConfig = new le_type_config_1["default"]('RelatedData');
+            relatedDataConfig.saveAt('relatedDatas');
+            relatedDataConfig.addField('name', 'string');
             mockProvider.remoteStoredData = {
                 exampleTypes: {
                     id1: {
                         _times: {
                             createdAt: 1452575643030
                         }
+                    },
+                    id2: {
+                        relatedData_ids: {
+                            relatedDataID1: false
+                        }
+                    }
+                },
+                relatedDatas: {
+                    relatedDataID1: {
+                        name: 'testing123'
                     }
                 }
             };
             var promises = [];
             promises.push(dataService.configureType(exampleConfig));
+            promises.push(dataService.configureType(relatedDataConfig));
             ts_promise_1["default"].all(promises).then(function () {
                 done();
+            });
+        });
+        it('should be able to add a relationship even if the remote data has a false on the relationship id', function (done) {
+            dataService.update({
+                _type: 'ExampleType',
+                _id: 'id2',
+                relatedDatas: [{
+                        _type: 'RelatedData',
+                        _id: 'relatedDataID1'
+                    }]
+            }).then(function () {
+                expect(mockProvider.remoteStoredData.exampleTypes.id2.relatedData_ids.relatedDataID1).to.be.true;
+                done();
+            }).catch(function (err) {
+                console.log(err);
             });
         });
         it('should allow you to save any object to objectField on ExampleType', function (done) {
