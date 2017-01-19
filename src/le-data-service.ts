@@ -116,6 +116,14 @@ export class LeDataService {
   delete(type:string, id:string): Promise<void>{
     return this.deleteData(type, id);
   }
+  stream(query:LeDataQuery, callback:(data:LeData[])=>Promise<any>, errorCallback:(error:Error)=>void, packetSize?:number):void {
+    if(!packetSize) {
+      packetSize = 100;
+    }
+    if(packetSize < 0) {
+      throw new Error('packetSize must be a positive number');
+    }
+  }
   /**
    * Checks of the data with the specified type and id exists remotely.
    *
