@@ -682,7 +682,11 @@ export class LeDataService {
     } else if (this.fieldConfigTypeIsACustomLeDataType(fieldConfig)) {
       return this.setDataOnFeildInfo(fieldInfo, this.singularVersionOfType(fieldConfig), rawValue, fieldQueryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
     } else if (fieldConfig.getIsEncrypted()) {
-      fieldInfo.data = this.encryptionService.decrypt(rawValue);
+      if(this.encryptionService.getEncryptionKey()) {
+        fieldInfo.data = this.encryptionService.decrypt(rawValue);
+      } else {
+        return Promise.resolve();
+      }
     } else {
       fieldInfo.data = rawValue;
     }

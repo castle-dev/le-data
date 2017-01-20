@@ -12,6 +12,9 @@ export class LeEncryptionService {
   setEncryptionKey(key:string) {
     this.encryptionKey = key;
   }
+  getEncryptionKey():string {
+    return this.encryptionKey;
+  }
   encrypt(data:string) {
     if(!this.encryptionKey) {
       throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
