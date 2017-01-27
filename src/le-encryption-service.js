@@ -11,6 +11,9 @@ var LeEncryptionService = (function () {
     LeEncryptionService.prototype.setEncryptionKey = function (key) {
         this.encryptionKey = key;
     };
+    LeEncryptionService.prototype.getEncryptionKey = function () {
+        return this.encryptionKey;
+    };
     LeEncryptionService.prototype.encrypt = function (data) {
         if (!this.encryptionKey) {
             throw new Error('Encryption key not set. Call setEncryptionKey before encrypting or decrypting data');
