@@ -116,13 +116,45 @@ export class LeDataService {
   delete(type:string, id:string): Promise<void>{
     return this.deleteData(type, id);
   }
-  stream(query:LeDataQuery, callback:(data:LeData[])=>Promise<any>, errorCallback:(error:Error)=>void, packetSize?:number):void {
-    if(!packetSize) {
-      packetSize = 100;
+  stream(query:LeDataQuery, callback:(data:LeData[])=>Promise<any>):Promise<any> {
+    let packetSize = 100;
+    if(query.queryObject.includeDeleted) {
+      throw new Error('stream does not support Queries that include deleted');
     }
-    if(packetSize < 0) {
-      throw new Error('packetSize must be a positive number');
+    query.limitToTop(packetSize + 1);
+    let deferred = Promise.defer();
+    let errorCallback = (err)=>{
+      deferred.reject(err);
     }
+    let complete = ()=>{
+      deferred.resolve();
+    }
+    this.streamSection(undefined, packetSize, query, callback, complete, errorCallback);
+    return deferred.promise;
+  }
+  private streamSection(startAt:string, packetSize:number, query:LeDataQuery, callback:(data:LeData[])=>Promise<any>, complete:()=>void, errorCallback:(error:Error)=>void):void {
+    if(startAt) {
+      query.startAt(startAt);
+    }
+    let newStartAt;
+    this.search(query).then((data)=>{
+      let anyData:any = data;
+      let callbackData:LeData[] = anyData;
+      callbackData.sort((a, b)=>{
+        return a._id < b._id? -1:1;
+      });
+      if(callbackData.length === packetSize + 1) {
+        newStartAt = callbackData[packetSize]._id;
+        callbackData.splice(packetSize, 1);
+      }
+      callback(callbackData).then(()=>{
+        if(newStartAt) {
+          this.streamSection(newStartAt, packetSize, query, callback, complete, errorCallback);
+        } else {
+          complete();
+        }
+      });
+    }).catch(errorCallback);
   }
   /**
    * Checks of the data with the specified type and id exists remotely.
@@ -499,6 +531,12 @@ export class LeDataService {
       if(fetchDataOptions.filterValue === undefined) {
         fetchDataOptions.filterValue = null;
       }
+    }
+    if(queryObject.hasOwnProperty('limitToTop')) {
+      fetchDataOptions.limitToTop = queryObject.limitToTop;
+    }
+    if(queryObject.hasOwnProperty('startAt')) {
+      fetchDataOptions.startAt = queryObject.startAt;
     }
     if(!queryObject.includeDeleted) {
       return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);

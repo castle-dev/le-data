@@ -102,6 +102,48 @@ var LeDataService = (function () {
     LeDataService.prototype.delete = function (type, id) {
         return this.deleteData(type, id);
     };
+    LeDataService.prototype.stream = function (query, callback) {
+        var packetSize = 100;
+        if (query.queryObject.includeDeleted) {
+            throw new Error('stream does not support Queries that include deleted');
+        }
+        query.limitToTop(packetSize + 1);
+        var deferred = ts_promise_1["default"].defer();
+        var errorCallback = function (err) {
+            deferred.reject(err);
+        };
+        var complete = function () {
+            deferred.resolve();
+        };
+        this.streamSection(undefined, packetSize, query, callback, complete, errorCallback);
+        return deferred.promise;
+    };
+    LeDataService.prototype.streamSection = function (startAt, packetSize, query, callback, complete, errorCallback) {
+        var _this = this;
+        if (startAt) {
+            query.startAt(startAt);
+        }
+        var newStartAt;
+        this.search(query).then(function (data) {
+            var anyData = data;
+            var callbackData = anyData;
+            callbackData.sort(function (a, b) {
+                return a._id < b._id ? -1 : 1;
+            });
+            if (callbackData.length === packetSize + 1) {
+                newStartAt = callbackData[packetSize]._id;
+                callbackData.splice(packetSize, 1);
+            }
+            callback(callbackData).then(function () {
+                if (newStartAt) {
+                    _this.streamSection(newStartAt, packetSize, query, callback, complete, errorCallback);
+                }
+                else {
+                    complete();
+                }
+            });
+        }).catch(errorCallback);
+    };
     /**
      * Checks of the data with the specified type and id exists remotely.
      *
@@ -477,6 +519,12 @@ var LeDataService = (function () {
             if (fetchDataOptions.filterValue === undefined) {
                 fetchDataOptions.filterValue = null;
             }
+        }
+        if (queryObject.hasOwnProperty('limitToTop')) {
+            fetchDataOptions.limitToTop = queryObject.limitToTop;
+        }
+        if (queryObject.hasOwnProperty('startAt')) {
+            fetchDataOptions.startAt = queryObject.startAt;
         }
         if (!queryObject.includeDeleted) {
             return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);

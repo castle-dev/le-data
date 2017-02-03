@@ -40,6 +40,14 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
     if(fetchDataOptions && fetchDataOptions.hasOwnProperty('filterFieldName')) {
       locationRef = locationRef.orderByChild(fetchDataOptions.filterFieldName);
       locationRef = locationRef.equalTo(fetchDataOptions.filterValue);
+    }else {
+      locationRef = locationRef.orderByKey()
+    }
+    if(fetchDataOptions && fetchDataOptions.hasOwnProperty('limitToTop')){
+      locationRef = locationRef.limitToFirst(fetchDataOptions.limitToTop);
+    }
+    if(fetchDataOptions && fetchDataOptions.hasOwnProperty('startAt')) {
+      locationRef = locationRef.startAt(fetchDataOptions.startAt);
     }
     locationRef.once('value', function(snapshot){
       provider.updateStoreForLocation(location, snapshot.val());

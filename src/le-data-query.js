@@ -69,6 +69,27 @@ var LeDataQuery = (function () {
         this.queryObject.includeDeleted = true;
     };
     ;
+    LeDataQuery.prototype.startAt = function (value) {
+        this.queryObject.startAt = value;
+    };
+    /**
+    * Limit the number of results to the first ones returned.
+    * Only used if an id was not specified in the constructor.
+    *
+    * @function limitToTop
+    * @memberof LeDataQuery
+    * @instance
+    * @param number number -  the number of results to limit the query to
+    */
+    LeDataQuery.prototype.limitToTop = function (limit) {
+        if (limit <= 0) {
+            throw new Error('limitToTop only accepts positive numbers');
+        }
+        if (this.queryObject.limitToTop) {
+            throw new Error('limitToTop can only be called once on a query');
+        }
+        this.queryObject.limitToTop = limit;
+    };
     return LeDataQuery;
 }());
 exports.LeDataQuery = LeDataQuery;
