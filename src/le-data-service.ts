@@ -117,11 +117,17 @@ export class LeDataService {
     return this.deleteData(type, id);
   }
   stream(query:LeDataQuery, callback:(data:LeData[])=>Promise<any>):Promise<any> {
-    let packetSize = 100;
+
     if(query.queryObject.includeDeleted) {
-      throw new Error('stream does not support Queries that include deleted');
+      query.queryObject.includeDeleted = false;
+      query.queryObject.includeDeletedOnly = true;
+      return this.stream(query, callback).then(()=>{
+        query.queryObject.includeDeletedOnly = false;
+        return this.stream(query, callback);
+      });
     }
-    query.limitToTop(packetSize + 1);
+    let packetSize = 100;
+    query.queryObject.limitToTop = packetSize + 1;
     let deferred = Promise.defer();
     let errorCallback = (err)=>{
       deferred.reject(err);
@@ -486,7 +492,7 @@ export class LeDataService {
     return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
       return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
     }).then((data)=>{
-      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
+      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted && query.queryObject.includeDeletedOnly)) {
         throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
       }
       return data;
@@ -517,10 +523,10 @@ export class LeDataService {
     if(!outerMostQuery) {
       outerMostQuery = query;
     }
-    if(shouldSync) {
+    if(shouldSync && !queryObject.includeDeletedOnly) {
       this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
     }
-    if(shouldSync && queryObject.includeDeleted) {
+    if(shouldSync && (queryObject.includeDeleted || queryObject.includeDeletedOnly)) {
       this.syncLocation(archiveLocation, outerMostQuery, syncDictionary, callback, errorCallback);
     }
     var fetchDataOptions: FetchDataOptions = {};
@@ -538,9 +544,11 @@ export class LeDataService {
     if(queryObject.hasOwnProperty('startAt')) {
       fetchDataOptions.startAt = queryObject.startAt;
     }
-    if(!queryObject.includeDeleted) {
+    if(!queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
       return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
-    } else {
+    } else if(queryObject.includeDeletedOnly){
+      return this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+    } else{
       return Promise.all([
         this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{}),
         this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{})
@@ -567,7 +575,7 @@ export class LeDataService {
     var dataService = this;
     return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
       if(dataID) {
-        if(!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted)) {
+        if(!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly)) {
           throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
         }
         rawQueryRoot._id = dataID;
@@ -633,7 +641,7 @@ export class LeDataService {
     for(var objectID in rawDataObject) {
       if(rawDataObject.hasOwnProperty(objectID)) {
         promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
-          if(data[this.deletedAtFieldName] && !queryObject.includeDeleted) {
+          if(data[this.deletedAtFieldName] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
             return;
           }
           objectsToReturn.push(data);
@@ -742,6 +750,7 @@ export class LeDataService {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
     queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
+    queryForField.queryObject.includeDeletedOnly = fieldQueryObject.includeDeletedOnly;
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {
         return;
@@ -863,6 +872,7 @@ export class LeDataService {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
     queryForField.queryObject.includeDeleted =  fieldQueryObject.includeDeleted;
+    queryForField.queryObject.includeDeletedOnly =  fieldQueryObject.includeDeletedOnly;
 
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {

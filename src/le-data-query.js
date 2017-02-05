@@ -63,10 +63,17 @@ var LeDataQuery = (function () {
      * @instance
      */
     LeDataQuery.prototype.includeDeleted = function () {
-        if (this.queryObject.includeDeleted) {
-            throw new Error('includeDeleted can on be called once on a query');
+        if (this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+            throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
         }
         this.queryObject.includeDeleted = true;
+    };
+    ;
+    LeDataQuery.prototype.includeDeletedOnly = function () {
+        if (this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+            throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
+        }
+        this.queryObject.includeDeletedOnly = true;
     };
     ;
     LeDataQuery.prototype.startAt = function (value) {

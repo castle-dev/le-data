@@ -68,10 +68,17 @@ export class LeDataQuery {
    * @instance
    */
   includeDeleted(){
-    if(this.queryObject.includeDeleted) {
-      throw new Error('includeDeleted can on be called once on a query');
+    if(this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+      throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
     }
     this.queryObject.includeDeleted = true;
+  };
+
+  includeDeletedOnly(){
+    if(this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+      throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
+    }
+    this.queryObject.includeDeletedOnly = true;
   };
 
   startAt(value:string) {
