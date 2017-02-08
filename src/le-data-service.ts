@@ -5,7 +5,7 @@ import {LeDataServiceProvider, FetchDataOptions, UpdateType} from "./le-data-ser
 import LeTypeConfig from "./le-type-config";
 import LeTypeFieldConfig from "./le-type-field-config";
 import LeDataQuery from "./le-data-query";
-import LeEncryptionService from "./le-encryption-service";
+import { LeSymmetricEncryptionService } from "@castle/le-symmetric-encryption";
 
 var configObjectIndex = '_leTypeConfigs/';
 
@@ -32,11 +32,11 @@ export class LeDataService {
   private archiveDeletedData: boolean;
   private archiveLocation: string;
   private hasLoadedServiceConfig: boolean;
-  private encryptionService:LeEncryptionService;
+  private encryptionService:LeSymmetricEncryptionService;
 
   constructor(provider: LeDataServiceProvider) {
     this.dataServiceProvider = provider;
-    this.encryptionService = new LeEncryptionService();
+    this.encryptionService = new LeSymmetricEncryptionService();
     this.queryDictionary = {};
     this.dataServiceProvider.sync('_leTypeConfigs', ()=>{}, (err)=>{console.error(err)});
     this.dataServiceProvider.sync('_leTypeFieldConfigs', ()=>{}, (err)=>{console.error(err)});

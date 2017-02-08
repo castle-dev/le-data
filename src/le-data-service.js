@@ -4,7 +4,7 @@ var le_data_service_provider_1 = require("./le-data-service-provider");
 var le_type_config_1 = require("./le-type-config");
 var le_type_field_config_1 = require("./le-type-field-config");
 var le_data_query_1 = require("./le-data-query");
-var le_encryption_service_1 = require("./le-encryption-service");
+var le_symmetric_encryption_1 = require("@castle/le-symmetric-encryption");
 var configObjectIndex = '_leTypeConfigs/';
 /**
  * The main service for the module.
@@ -20,7 +20,7 @@ var LeDataService = (function () {
     function LeDataService(provider) {
         var _this = this;
         this.dataServiceProvider = provider;
-        this.encryptionService = new le_encryption_service_1["default"]();
+        this.encryptionService = new le_symmetric_encryption_1.LeSymmetricEncryptionService();
         this.queryDictionary = {};
         this.dataServiceProvider.sync('_leTypeConfigs', function () { }, function (err) { console.error(err); });
         this.dataServiceProvider.sync('_leTypeFieldConfigs', function () { }, function (err) { console.error(err); });
