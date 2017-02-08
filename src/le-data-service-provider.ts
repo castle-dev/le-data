@@ -3,6 +3,8 @@ import Promise from "ts-promise";
 export interface FetchDataOptions {
   filterFieldName?: string;
   filterValue?: any;
+  limitToTop?:number;
+  startAt?:string;
 }
 
 export enum UpdateType {

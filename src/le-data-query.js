@@ -63,12 +63,40 @@ var LeDataQuery = (function () {
      * @instance
      */
     LeDataQuery.prototype.includeDeleted = function () {
-        if (this.queryObject.includeDeleted) {
-            throw new Error('includeDeleted can on be called once on a query');
+        if (this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+            throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
         }
         this.queryObject.includeDeleted = true;
     };
     ;
+    LeDataQuery.prototype.includeDeletedOnly = function () {
+        if (this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+            throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
+        }
+        this.queryObject.includeDeletedOnly = true;
+    };
+    ;
+    LeDataQuery.prototype.startAt = function (value) {
+        this.queryObject.startAt = value;
+    };
+    /**
+    * Limit the number of results to the first ones returned.
+    * Only used if an id was not specified in the constructor.
+    *
+    * @function limitToTop
+    * @memberof LeDataQuery
+    * @instance
+    * @param number number -  the number of results to limit the query to
+    */
+    LeDataQuery.prototype.limitToTop = function (limit) {
+        if (limit <= 0) {
+            throw new Error('limitToTop only accepts positive numbers');
+        }
+        if (this.queryObject.limitToTop) {
+            throw new Error('limitToTop can only be called once on a query');
+        }
+        this.queryObject.limitToTop = limit;
+    };
     return LeDataQuery;
 }());
 exports.LeDataQuery = LeDataQuery;
