@@ -68,11 +68,40 @@ export class LeDataQuery {
    * @instance
    */
   includeDeleted(){
-    if(this.queryObject.includeDeleted) {
-      throw new Error('includeDeleted can on be called once on a query');
+    if(this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+      throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
     }
     this.queryObject.includeDeleted = true;
   };
+
+  includeDeletedOnly(){
+    if(this.queryObject.includeDeleted || this.queryObject.includeDeletedOnly) {
+      throw new Error('includeDeleted or includeDeletedOnly can on be called once on a query');
+    }
+    this.queryObject.includeDeletedOnly = true;
+  };
+
+  startAt(value:string) {
+    this.queryObject.startAt = value;
+  }
+  /**
+  * Limit the number of results to the first ones returned.
+  * Only used if an id was not specified in the constructor.
+  *
+  * @function limitToTop
+  * @memberof LeDataQuery
+  * @instance
+  * @param number number -  the number of results to limit the query to
+  */
+  limitToTop(limit: number) {
+    if(limit <= 0) {
+      throw new Error('limitToTop only accepts positive numbers');
+    }
+    if(this.queryObject.limitToTop) {
+      throw new Error('limitToTop can only be called once on a query');
+    }
+    this.queryObject.limitToTop = limit;
+  }
   //
   // /**
   //  * Sorts the returned values with repect to the specified field.
@@ -88,18 +117,6 @@ export class LeDataQuery {
   //
   // }
   //
-  // /**
-  //  * Limit the number of results to the first ones returned.
-  //  * Only used if an id was not specified in the constructor.
-  //  *
-  //  * @function limitToTop
-  //  * @memberof LeDataQuery
-  //  * @instance
-  //  * @param number number -  the number of results to limit the query to
-  //  */
-  // limitToTop(number: number) {
-  //
-  // }
   //
   // /**
   //  * Limit the number of results to the last ones returned.

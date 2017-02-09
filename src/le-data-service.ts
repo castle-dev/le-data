@@ -116,6 +116,52 @@ export class LeDataService {
   delete(type:string, id:string): Promise<void>{
     return this.deleteData(type, id);
   }
+  stream(query:LeDataQuery, callback:(data:LeData[])=>Promise<any>):Promise<any> {
+
+    if(query.queryObject.includeDeleted) {
+      query.queryObject.includeDeleted = false;
+      query.queryObject.includeDeletedOnly = true;
+      return this.stream(query, callback).then(()=>{
+        query.queryObject.includeDeletedOnly = false;
+        return this.stream(query, callback);
+      });
+    }
+    let packetSize = 100;
+    query.queryObject.limitToTop = packetSize + 1;
+    let deferred = Promise.defer();
+    let errorCallback = (err)=>{
+      deferred.reject(err);
+    }
+    let complete = ()=>{
+      deferred.resolve();
+    }
+    this.streamSection(undefined, packetSize, query, callback, complete, errorCallback);
+    return deferred.promise;
+  }
+  private streamSection(startAt:string, packetSize:number, query:LeDataQuery, callback:(data:LeData[])=>Promise<any>, complete:()=>void, errorCallback:(error:Error)=>void):void {
+    if(startAt) {
+      query.startAt(startAt);
+    }
+    let newStartAt;
+    this.search(query).then((data)=>{
+      let anyData:any = data;
+      let callbackData:LeData[] = anyData;
+      callbackData.sort((a, b)=>{
+        return a._id < b._id? -1:1;
+      });
+      if(callbackData.length === packetSize + 1) {
+        newStartAt = callbackData[packetSize]._id;
+        callbackData.splice(packetSize, 1);
+      }
+      callback(callbackData).then(()=>{
+        if(newStartAt) {
+          this.streamSection(newStartAt, packetSize, query, callback, complete, errorCallback);
+        } else {
+          complete();
+        }
+      });
+    }).catch(errorCallback);
+  }
   /**
    * Checks of the data with the specified type and id exists remotely.
    *
@@ -446,7 +492,7 @@ export class LeDataService {
     return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
       return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
     }).then((data)=>{
-      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
+      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted && query.queryObject.includeDeletedOnly)) {
         throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
       }
       return data;
@@ -477,10 +523,10 @@ export class LeDataService {
     if(!outerMostQuery) {
       outerMostQuery = query;
     }
-    if(shouldSync) {
+    if(shouldSync && !queryObject.includeDeletedOnly) {
       this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
     }
-    if(shouldSync && queryObject.includeDeleted) {
+    if(shouldSync && (queryObject.includeDeleted || queryObject.includeDeletedOnly)) {
       this.syncLocation(archiveLocation, outerMostQuery, syncDictionary, callback, errorCallback);
     }
     var fetchDataOptions: FetchDataOptions = {};
@@ -492,9 +538,17 @@ export class LeDataService {
         fetchDataOptions.filterValue = null;
       }
     }
-    if(!queryObject.includeDeleted) {
+    if(queryObject.hasOwnProperty('limitToTop')) {
+      fetchDataOptions.limitToTop = queryObject.limitToTop;
+    }
+    if(queryObject.hasOwnProperty('startAt')) {
+      fetchDataOptions.startAt = queryObject.startAt;
+    }
+    if(!queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
       return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
-    } else {
+    } else if(queryObject.includeDeletedOnly){
+      return this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+    } else{
       return Promise.all([
         this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{}),
         this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).catch(()=>{})
@@ -521,7 +575,7 @@ export class LeDataService {
     var dataService = this;
     return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function(rawQueryRoot){
       if(dataID) {
-        if(!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted)) {
+        if(!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly)) {
           throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
         }
         rawQueryRoot._id = dataID;
@@ -587,7 +641,7 @@ export class LeDataService {
     for(var objectID in rawDataObject) {
       if(rawDataObject.hasOwnProperty(objectID)) {
         promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
-          if(data[this.deletedAtFieldName] && !queryObject.includeDeleted) {
+          if(data[this.deletedAtFieldName] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
             return;
           }
           objectsToReturn.push(data);
@@ -696,6 +750,7 @@ export class LeDataService {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
     queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
+    queryForField.queryObject.includeDeletedOnly = fieldQueryObject.includeDeletedOnly;
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {
         return;
@@ -817,6 +872,7 @@ export class LeDataService {
     var queryForField = new LeDataQuery(type, id);
     queryForField.queryObject.includedFields =  fieldQueryObject.includedFields;
     queryForField.queryObject.includeDeleted =  fieldQueryObject.includeDeleted;
+    queryForField.queryObject.includeDeletedOnly =  fieldQueryObject.includeDeletedOnly;
 
     return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then((data)=>{
       if(!data) {

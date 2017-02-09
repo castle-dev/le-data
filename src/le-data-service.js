@@ -102,6 +102,54 @@ var LeDataService = (function () {
     LeDataService.prototype.delete = function (type, id) {
         return this.deleteData(type, id);
     };
+    LeDataService.prototype.stream = function (query, callback) {
+        var _this = this;
+        if (query.queryObject.includeDeleted) {
+            query.queryObject.includeDeleted = false;
+            query.queryObject.includeDeletedOnly = true;
+            return this.stream(query, callback).then(function () {
+                query.queryObject.includeDeletedOnly = false;
+                return _this.stream(query, callback);
+            });
+        }
+        var packetSize = 100;
+        query.queryObject.limitToTop = packetSize + 1;
+        var deferred = ts_promise_1["default"].defer();
+        var errorCallback = function (err) {
+            deferred.reject(err);
+        };
+        var complete = function () {
+            deferred.resolve();
+        };
+        this.streamSection(undefined, packetSize, query, callback, complete, errorCallback);
+        return deferred.promise;
+    };
+    LeDataService.prototype.streamSection = function (startAt, packetSize, query, callback, complete, errorCallback) {
+        var _this = this;
+        if (startAt) {
+            query.startAt(startAt);
+        }
+        var newStartAt;
+        this.search(query).then(function (data) {
+            var anyData = data;
+            var callbackData = anyData;
+            callbackData.sort(function (a, b) {
+                return a._id < b._id ? -1 : 1;
+            });
+            if (callbackData.length === packetSize + 1) {
+                newStartAt = callbackData[packetSize]._id;
+                callbackData.splice(packetSize, 1);
+            }
+            callback(callbackData).then(function () {
+                if (newStartAt) {
+                    _this.streamSection(newStartAt, packetSize, query, callback, complete, errorCallback);
+                }
+                else {
+                    complete();
+                }
+            });
+        }).catch(errorCallback);
+    };
     /**
      * Checks of the data with the specified type and id exists remotely.
      *
@@ -432,7 +480,7 @@ var LeDataService = (function () {
         return this.fetchTypeConfig(queryObject.type).then(function (typeConfig) {
             return _this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }).then(function (data) {
-            if (!data || (data[_this.deletedAtFieldName] && !query.queryObject.includeDeleted)) {
+            if (!data || (data[_this.deletedAtFieldName] && !query.queryObject.includeDeleted && query.queryObject.includeDeletedOnly)) {
                 throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
             }
             return data;
@@ -463,10 +511,10 @@ var LeDataService = (function () {
         if (!outerMostQuery) {
             outerMostQuery = query;
         }
-        if (shouldSync) {
+        if (shouldSync && !queryObject.includeDeletedOnly) {
             this.syncLocation(location, outerMostQuery, syncDictionary, callback, errorCallback);
         }
-        if (shouldSync && queryObject.includeDeleted) {
+        if (shouldSync && (queryObject.includeDeleted || queryObject.includeDeletedOnly)) {
             this.syncLocation(archiveLocation, outerMostQuery, syncDictionary, callback, errorCallback);
         }
         var fetchDataOptions = {};
@@ -478,8 +526,17 @@ var LeDataService = (function () {
                 fetchDataOptions.filterValue = null;
             }
         }
-        if (!queryObject.includeDeleted) {
+        if (queryObject.hasOwnProperty('limitToTop')) {
+            fetchDataOptions.limitToTop = queryObject.limitToTop;
+        }
+        if (queryObject.hasOwnProperty('startAt')) {
+            fetchDataOptions.startAt = queryObject.startAt;
+        }
+        if (!queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
             return this.fetchAndConvertData(location, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
+        }
+        else if (queryObject.includeDeletedOnly) {
+            return this.fetchAndConvertData(archiveLocation, fetchDataOptions, dataID, dataType, typeConfig, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
         }
         else {
             return ts_promise_1["default"].all([
@@ -508,7 +565,7 @@ var LeDataService = (function () {
         var dataService = this;
         return this.dataServiceProvider.fetchData(location, fetchDataOptions).then(function (rawQueryRoot) {
             if (dataID) {
-                if (!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted)) {
+                if (!rawQueryRoot || (rawQueryRoot[this.deletedAtSaveLocation] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly)) {
                     throw new Error('No data exists of type ' + dataType + ' with id ' + dataID + '. Queries cannot start with data that does not exist. Use checkExistence before searching if there is a risk of the data not existing.');
                 }
                 rawQueryRoot._id = dataID;
@@ -578,7 +635,7 @@ var LeDataService = (function () {
         for (var objectID in rawDataObject) {
             if (rawDataObject.hasOwnProperty(objectID)) {
                 promises.push(this.addFieldsToRawDataObject(rawDataObject[objectID], fieldConfigs, queryObject, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
-                    if (data[_this.deletedAtFieldName] && !queryObject.includeDeleted) {
+                    if (data[_this.deletedAtFieldName] && !queryObject.includeDeleted && !queryObject.includeDeletedOnly) {
                         return;
                     }
                     objectsToReturn.push(data);
@@ -693,6 +750,7 @@ var LeDataService = (function () {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
         queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
+        queryForField.queryObject.includeDeletedOnly = fieldQueryObject.includeDeletedOnly;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;
@@ -818,6 +876,7 @@ var LeDataService = (function () {
         var queryForField = new le_data_query_1["default"](type, id);
         queryForField.queryObject.includedFields = fieldQueryObject.includedFields;
         queryForField.queryObject.includeDeleted = fieldQueryObject.includeDeleted;
+        queryForField.queryObject.includeDeletedOnly = fieldQueryObject.includeDeletedOnly;
         return this.fetchQuery(queryForField, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery).then(function (data) {
             if (!data) {
                 return;
