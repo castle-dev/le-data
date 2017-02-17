@@ -109,6 +109,7 @@ var LeDataService = (function () {
             query.queryObject.includeDeletedOnly = true;
             return this.stream(query, callback).then(function () {
                 query.queryObject.includeDeletedOnly = false;
+                delete query.queryObject.startAt;
                 return _this.stream(query, callback);
             });
         }
