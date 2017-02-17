@@ -123,6 +123,7 @@ export class LeDataService {
       query.queryObject.includeDeletedOnly = true;
       return this.stream(query, callback).then(()=>{
         query.queryObject.includeDeletedOnly = false;
+        delete query.queryObject.startAt;
         return this.stream(query, callback);
       });
     }
