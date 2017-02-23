@@ -150,8 +150,8 @@ export class LeDataService {
       callbackData.sort((a, b)=>{
         return a._id < b._id? -1:1;
       });
-      if(callbackData.length === packetSize + 1) {
-        newStartAt = callbackData[packetSize]._id;
+      if(callbackData.length > 1) {
+        newStartAt = callbackData[callbackData.length - 1]._id;
         callbackData.splice(packetSize, 1);
       }
       callback(callbackData).then(()=>{
