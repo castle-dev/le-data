@@ -152,7 +152,7 @@ export class LeDataService {
       });
       if(callbackData.length > 1) {
         newStartAt = callbackData[callbackData.length - 1]._id;
-        callbackData.splice(packetSize, 1);
+        callbackData.splice(callbackData.length - 1, 1);
       }
       callback(callbackData).then(()=>{
         if(newStartAt) {
