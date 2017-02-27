@@ -1197,11 +1197,11 @@ export class LeDataService {
 
   private validateRequiredPropertyOnField(fieldConfig: LeTypeFieldConfig, data: LeData, isUpdate: boolean): Promise<void> {
     var fieldName = fieldConfig.getFieldName();
-    if(fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
+    if(fieldConfig.required && data[fieldName] === undefined && data.hasOwnProperty(fieldName)) {
       var errorMessage = fieldConfig.getFieldName() +' is required but was set to undefined on the LeData object, data: '  + JSON.stringify(data);
       var error = new Error(errorMessage);
       return Promise.reject(error);
-    } else if(fieldConfig.required && !data[fieldName] && !isUpdate) {
+    } else if(fieldConfig.required && data[fieldName] === undefined && !isUpdate) {
       return new Promise<void>((resolve, reject)=>{
         if(data._id) {
           this.checkExistence(data._type, data._id).then((doesExist)=>{

@@ -17,6 +17,16 @@ describe('LeDataService', function () {
         expect(dataService).to.exist;
     });
     describe('createData', function () {
+        before(function (done) {
+            var exampleConfig = new le_type_config_1["default"]('ExampleType');
+            exampleConfig.saveAt('exampleTypes');
+            exampleConfig.addField('objectField', 'object');
+            exampleConfig.addField('requiredBoolean', 'boolean').required = true;
+            exampleConfig.addField('requiredNumber', 'number').required = true;
+            dataService.configureType(exampleConfig).then(function () {
+                done();
+            });
+        });
         it('should return a promise', function () {
             var returnedObject = dataService.createData({ _type: 'exampleType' });
             expect(returnedObject instanceof ts_promise_1["default"]).to.be.true;
@@ -33,6 +43,24 @@ describe('LeDataService', function () {
             returnedPromise.then(undefined, function (err) {
                 expect(err.message).to.equal('No data passed to createData function');
                 done();
+            });
+        });
+        it('should reject if a required field is not set', function (done) {
+            dataService.create({
+                _type: 'ExampleType'
+            }).catch(function (err) {
+                done();
+            });
+        });
+        it('should succeed if the field is set to 0 or false', function (done) {
+            dataService.create({
+                _type: 'ExampleType',
+                requiredBoolean: false,
+                requiredNumber: 0
+            }).then(function () {
+                done();
+            }).catch(function (err) {
+                console.log(err);
             });
         });
     });
