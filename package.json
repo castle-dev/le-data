@@ -1,6 +1,6 @@
 {
   "name": "le-data",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "description": "Send and receive arbirary JSON data to and from a remote storage provider.",
   "main": "src/index.js",
   "typings": "src/index.ts",
