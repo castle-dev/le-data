@@ -1204,12 +1204,12 @@ var LeDataService = (function () {
     LeDataService.prototype.validateRequiredPropertyOnField = function (fieldConfig, data, isUpdate) {
         var _this = this;
         var fieldName = fieldConfig.getFieldName();
-        if (fieldConfig.required && !data[fieldName] && data.hasOwnProperty(fieldName)) {
+        if (fieldConfig.required && data[fieldName] === undefined && data.hasOwnProperty(fieldName)) {
             var errorMessage = fieldConfig.getFieldName() + ' is required but was set to undefined on the LeData object, data: ' + JSON.stringify(data);
             var error = new Error(errorMessage);
             return ts_promise_1["default"].reject(error);
         }
-        else if (fieldConfig.required && !data[fieldName] && !isUpdate) {
+        else if (fieldConfig.required && data[fieldName] === undefined && !isUpdate) {
             return new ts_promise_1["default"](function (resolve, reject) {
                 if (data._id) {
                     _this.checkExistence(data._type, data._id).then(function (doesExist) {

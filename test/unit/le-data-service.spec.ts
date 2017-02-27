@@ -24,6 +24,16 @@ describe('LeDataService', ()=>{
     expect(dataService).to.exist;
   });
   describe('createData', ()=>{
+    before((done)=>{
+      var exampleConfig = new LeTypeConfig('ExampleType');
+      exampleConfig.saveAt('exampleTypes');
+      exampleConfig.addField('objectField', 'object');
+      exampleConfig.addField('requiredBoolean', 'boolean').required = true;
+      exampleConfig.addField('requiredNumber', 'number').required = true;
+      dataService.configureType(exampleConfig).then(()=>{
+        done();
+      });
+    });
     it('should return a promise', ()=>{
       var returnedObject = dataService.createData({_type:'exampleType'});
       expect(returnedObject instanceof Promise).to.be.true;
@@ -40,6 +50,24 @@ describe('LeDataService', ()=>{
       returnedPromise.then(undefined, (err)=>{
         expect(err.message).to.equal('No data passed to createData function');
         done();
+      });
+    });
+    it('should reject if a required field is not set', (done)=>{
+      dataService.create({
+        _type:'ExampleType'
+      }).catch((err)=>{
+        done();
+      });
+    });
+    it('should succeed if the field is set to 0 or false', (done)=>{
+      dataService.create({
+        _type:'ExampleType',
+        requiredBoolean:false,
+        requiredNumber:0
+      }).then(()=>{
+        done();
+      }).catch((err)=>{
+        console.log(err);
       });
     });
   });
