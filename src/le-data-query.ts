@@ -81,6 +81,18 @@ export class LeDataQuery {
     this.queryObject.includeDeletedOnly = true;
   };
 
+  setStreamSize(size:number){
+    if(this.queryObject.streamSize) {
+      throw new Error('setStreamSize can on be called once on a query');
+    }
+    this.queryObject.streamSize = size;
+  };
+
+  getStreamSize():number{
+    let streamSize = this.queryObject && this.queryObject.streamSize || 100;
+    return streamSize;
+  };
+
   startAt(value:string) {
     this.queryObject.startAt = value;
   }

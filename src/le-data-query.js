@@ -76,6 +76,18 @@ var LeDataQuery = (function () {
         this.queryObject.includeDeletedOnly = true;
     };
     ;
+    LeDataQuery.prototype.setStreamSize = function (size) {
+        if (this.queryObject.streamSize) {
+            throw new Error('setStreamSize can on be called once on a query');
+        }
+        this.queryObject.streamSize = size;
+    };
+    ;
+    LeDataQuery.prototype.getStreamSize = function () {
+        var streamSize = this.queryObject && this.queryObject.streamSize || 100;
+        return streamSize;
+    };
+    ;
     LeDataQuery.prototype.startAt = function (value) {
         this.queryObject.startAt = value;
     };

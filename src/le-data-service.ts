@@ -127,7 +127,7 @@ export class LeDataService {
         return this.stream(query, callback);
       });
     }
-    let packetSize = 100;
+    let packetSize = query.getStreamSize();
     query.queryObject.limitToTop = packetSize + 1;
     let deferred = Promise.defer();
     let errorCallback = (err)=>{

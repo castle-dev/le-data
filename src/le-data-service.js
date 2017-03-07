@@ -113,7 +113,7 @@ var LeDataService = (function () {
                 return _this.stream(query, callback);
             });
         }
-        var packetSize = 100;
+        var packetSize = query.getStreamSize();
         query.queryObject.limitToTop = packetSize + 1;
         var deferred = ts_promise_1["default"].defer();
         var errorCallback = function (err) {
