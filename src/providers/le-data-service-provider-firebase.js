@@ -115,6 +115,7 @@ var LeDataServiceProviderFirebase = (function () {
             });
         }
         else {
+            removeUndefinedFields(data);
             mergeDataIfNeededPromise = ts_promise_1["default"].resolve();
         }
         return mergeDataIfNeededPromise.then(function () {

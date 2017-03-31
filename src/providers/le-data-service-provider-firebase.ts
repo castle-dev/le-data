@@ -115,6 +115,7 @@ export class LeDataServiceProviderFirebase implements LeDataServiceProvider {
         data = mergeData(oldData, data);
       });
     } else {
+      removeUndefinedFields(data);
       mergeDataIfNeededPromise = Promise.resolve();
     }
 
