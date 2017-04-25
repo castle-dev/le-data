@@ -493,7 +493,7 @@ export class LeDataService {
     return this.fetchTypeConfig(queryObject.type).then((typeConfig)=>{
       return this.fetchDataWithQueryObjectAndTypeConfig(query, typeConfig, shouldSync, syncDictionary, callback, errorCallback, outerMostQuery);
     }).then((data)=>{
-      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted && query.queryObject.includeDeletedOnly)) {
+      if(!data || (data[this.deletedAtFieldName] && !query.queryObject.includeDeleted && !query.queryObject.includeDeletedOnly)) {
         throw new Error('No data exists for Type ' + queryObject.type + ' and ID ' + queryObject.id);
       }
       return data;
