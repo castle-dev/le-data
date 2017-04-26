@@ -636,13 +636,13 @@ describe('LeDataService', function () {
                         owners: {
                             owner_id3: {
                                 createdAt: 1479514260000,
-                                deletedAt: 1479514270000
+                                _deletedAt: 1479514270000
                             }
                         },
                         properties: {
                             property_1a: {
                                 createdAt: 1479514260000,
-                                deletedAt: 1479514270000
+                                _deletedAt: 1479514270000
                             }
                         }
                     },
@@ -651,7 +651,8 @@ describe('LeDataService', function () {
                             createdAt: 1479514267482,
                             property_ids: {
                                 property_1a: true,
-                                property_1b: true
+                                property_1b: true,
+                                property_1c: true
                             }
                         },
                         owner_id2: {
@@ -662,12 +663,15 @@ describe('LeDataService', function () {
                         property_1b: {
                             createdAt: 1479514260000,
                             owner_id: 'owner_id3'
+                        },
+                        property_1c: {
+                            createdAt: 1479514260000,
+                            _deletedAt: 1479514270000
                         }
                     }
                 };
                 var ownerConfig = new le_type_config_1["default"]('Owner');
                 ownerConfig.saveAt('owners');
-                ownerConfig.addField('deletedAt', 'Date');
                 ownerConfig.addField('properties', 'Property[]').saveAt('property_ids');
                 var propertyConfig = new le_type_config_1["default"]('Property');
                 propertyConfig.saveAt('properties');
@@ -692,7 +696,7 @@ describe('LeDataService', function () {
                 ownerQuery.includeDeleted();
                 dataService.search(ownerQuery).then(function (ownerData) {
                     expect(ownerData._id === 'owner_id3');
-                    expect(ownerData.deletedAt).to.exist;
+                    expect(ownerData._deletedAt).to.exist;
                     done();
                 });
             });
@@ -709,7 +713,7 @@ describe('LeDataService', function () {
                 var ownerQuery = new le_data_query_1["default"]('Owner', 'owner_id1');
                 ownerQuery.include('properties').includeDeleted();
                 dataService.search(ownerQuery).then(function (ownerData) {
-                    expect(ownerData.properties.length).to.equal(2);
+                    expect(ownerData.properties.length).to.equal(3);
                     done();
                 });
             });
