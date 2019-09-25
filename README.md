@@ -7,12 +7,6 @@ le-data
 
   `npm install le-data`
 
-## Usage
-
-```
-  //TODO
-```
-
 ## Tests
 
 * `npm test` to run unit tests once
@@ -22,7 +16,3 @@ le-data
 ## Contributing
 
 Please follow the project's [conventions](https://github.com/castle-dev/le-data/blob/develop/CONTRIBUTING.md) or your changes will not be accepted
-
-## Release History
-
-* 0.1.0 Initial release
